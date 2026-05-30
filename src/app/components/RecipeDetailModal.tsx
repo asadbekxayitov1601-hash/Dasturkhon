@@ -1,9 +1,11 @@
 import { X, Clock, Users, ChefHat, PlayCircle, Plus, Minus } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { ReviewSection } from './ReviewSection';
+import { getRecipeReviews, averageRating } from '../api/reviewsApi';
 
 interface RecipeDetailModalProps {
   recipe: Recipe | null;
@@ -14,24 +16,26 @@ interface RecipeDetailModalProps {
 export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModalProps) {
   const { t } = useTranslation();
   const [servings, setServings] = useState(recipe?.servings || 1);
+  const [avgRating, setAvgRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
 
   useEffect(() => {
     if (recipe) {
       setServings(recipe.servings || 1);
+      // Load summary rating for header display
+      getRecipeReviews(recipe.id)
+        .then((reviews) => {
+          setAvgRating(averageRating(reviews));
+          setReviewCount(reviews.length);
+        })
+        .catch(() => {});
     }
   }, [recipe]);
 
   if (!isOpen || !recipe) return null;
 
-  const increaseServings = () => {
-    setServings(prev => prev + 1);
-  };
-
-  const decreaseServings = () => {
-    if (servings > 1) {
-      setServings(prev => prev - 1);
-    }
-  };
+  const increaseServings = () => setServings((prev) => prev + 1);
+  const decreaseServings = () => { if (servings > 1) setServings((prev) => prev - 1); };
 
   return (
     <div
@@ -59,7 +63,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           <div className="absolute bottom-6 left-6 right-6">
             <h2 className="text-white text-2xl sm:text-3xl mb-3">{recipe.title}</h2>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 items-center">
               {recipe.cookTime && (
                 <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-4 py-2">
                   <Clock className="w-4 h-4 text-white" />
@@ -71,6 +75,15 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                   <span className="text-white text-sm capitalize">{recipe.category}</span>
                 </div>
               )}
+              {/* ── Average rating badge in header ── */}
+              {reviewCount > 0 && (
+                <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-sm rounded-full px-4 py-2">
+                  <Star className="w-4 h-4 text-amber-400" fill="#F59E0B" />
+                  <span className="text-white text-sm">
+                    {avgRating.toFixed(1)} ({reviewCount})
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -79,7 +92,6 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
         <div className="p-6 sm:p-8">
           {/* Servings Section */}
           <div className="mb-8 p-6 rounded-[24px] bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10 flex flex-wrap items-center justify-between gap-6">
-            {/* Servings Selector */}
             <div>
               <label className="flex items-center gap-2 text-sm text-gray-600 mb-3">
                 <Users className="w-4 h-4" />
@@ -106,7 +118,6 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
               </div>
             </div>
 
-            {/* Watch Video Button */}
             {recipe.youtubeUrl && (
               <a
                 href={recipe.youtubeUrl}
@@ -140,7 +151,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
           </div>
 
           {/* Instructions */}
-          <div>
+          <div className="mb-8">
             <h3 className="text-xl text-gray-900 mb-4">{t('recipes.instructions')}</h3>
             <div className="space-y-4">
               {(recipe.instructions || []).map((instruction, index) => (
@@ -152,6 +163,11 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* ── Reviews Section ── */}
+          <div className="border-t border-gray-100 pt-8">
+            <ReviewSection recipeId={recipe.id} />
           </div>
         </div>
       </div>

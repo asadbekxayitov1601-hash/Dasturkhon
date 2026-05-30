@@ -517,6 +517,138 @@ app.post('/api/subscribe/cancel', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/recipes/:id/reviews
+// Public – anyone can read reviews for a recipe
+app.get('/api/recipes/:id/reviews', async (req, res) => {
+  try {
+    const recipeId = Number(req.params.id);
+    const reviews = await prisma.review.findMany({
+      where: { recipeId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { id: true, name: true, email: true } }
+      }
+    });
+    res.json(reviews);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /api/recipes/:id/reviews
+// Protected – logged-in users only, one review per recipe
+app.post('/api/recipes/:id/reviews', requireAuth, async (req, res) => {
+  try {
+    const recipeId = Number(req.params.id);
+    const { rating, comment, photoUrl } = req.body;
+
+    // Validate rating
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+
+    // Check recipe exists
+    const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } });
+    if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
+
+    // Check if user already reviewed this recipe
+    const existing = await prisma.review.findUnique({
+      where: { userId_recipeId: { userId: req.user.id, recipeId } }
+    });
+    if (existing) {
+      return res.status(409).json({ message: 'You have already reviewed this recipe' });
+    }
+
+    const review = await prisma.review.create({
+      data: {
+        userId: req.user.id,
+        recipeId,
+        rating: Number(rating),
+        comment: comment || null,
+        photoUrl: photoUrl || null
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    res.json(review);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// PUT /api/reviews/:id
+// Protected – owner can update their own review
+app.put('/api/reviews/:id', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { rating, comment, photoUrl } = req.body;
+
+    const existing = await prisma.review.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ message: 'Review not found' });
+    if (existing.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    if (rating && (rating < 1 || rating > 5)) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+
+    const updated = await prisma.review.update({
+      where: { id },
+      data: {
+        rating: rating ? Number(rating) : existing.rating,
+        comment: comment !== undefined ? comment : existing.comment,
+        photoUrl: photoUrl !== undefined ? photoUrl : existing.photoUrl
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    res.json(updated);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// DELETE /api/reviews/:id
+// Protected – owner or admin can delete a review
+app.delete('/api/reviews/:id', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const existing = await prisma.review.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ message: 'Review not found' });
+    if (existing.userId !== req.user.id && !req.user.isAdmin) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    await prisma.review.delete({ where: { id } });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/recipes/:id/reviews/me
+// Protected – get current user's review for this recipe (to pre-fill the form)
+app.get('/api/recipes/:id/reviews/me', requireAuth, async (req, res) => {
+  try {
+    const recipeId = Number(req.params.id);
+    const review = await prisma.review.findUnique({
+      where: { userId_recipeId: { userId: req.user.id, recipeId } }
+    });
+    res.json(review || null);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);

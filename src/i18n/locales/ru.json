@@ -89,5 +89,24 @@
     "subscribed_success": "Спасибо за подписку!",
     "already_subscribed": "Вы уже подписаны.",
     "subscribe_error": "Не удалось подписаться. Попробуйте еще раз."
+  },
+  "reviews": {
+    "title": "Отзывы",
+    "write_review": "Написать отзыв",
+    "your_rating": "Ваша оценка",
+    "comment_placeholder": "Как вы готовили? Советы?",
+    "add_photo": "Добавить фото",
+    "submit": "Отправить отзыв",
+    "submitting": "Отправка...",
+    "submitted_success": "Отзыв добавлен!",
+    "updated_success": "Отзыв обновлён!",
+    "deleted_success": "Отзыв удалён.",
+    "submit_error": "Не удалось отправить отзыв",
+    "review": "отзыв",
+    "reviews": "отзывов",
+    "no_reviews": "Пока нет отзывов. Будьте первым!",
+    "login_to_review": "Войдите, чтобы оставить отзыв.",
+    "rating_required": "Пожалуйста, выберите оценку",
+    "photo_too_large": "Фото должно быть меньше 3 МБ"
   }
 }

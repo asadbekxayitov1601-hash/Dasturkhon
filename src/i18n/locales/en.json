@@ -96,6 +96,25 @@
     "already_subscribed": "You are already subscribed.",
     "subscribe_error": "Failed to subscribe. Please try again."
   },
+  "reviews": {
+    "title": "Reviews",
+    "write_review": "Write a review",
+    "your_rating": "Your rating",
+    "comment_placeholder": "How did it turn out? Any tips?",
+    "add_photo": "Add a photo",
+    "submit": "Submit review",
+    "submitting": "Submitting...",
+    "submitted_success": "Review added!",
+    "updated_success": "Review updated!",
+    "deleted_success": "Review deleted.",
+    "submit_error": "Failed to submit review",
+    "review": "review",
+    "reviews": "reviews",
+    "no_reviews": "No reviews yet. Be the first!",
+    "login_to_review": "Log in to leave a review.",
+    "rating_required": "Please select a star rating",
+    "photo_too_large": "Photo must be under 3 MB"
+  },
   "common": {
     "sync": "Sync",
     "close": "Close"

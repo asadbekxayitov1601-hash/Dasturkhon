@@ -96,6 +96,25 @@
     "already_subscribed": "Siz allaqachon obuna bo'lgansiz.",
     "subscribe_error": "Obuna bo'lib bo'lmadi. Iltimos, qayta urinib ko'ring."
   },
+  "reviews": {
+    "title": "Sharhlar",
+    "write_review": "Sharh yozish",
+    "your_rating": "Sizning bahongiz",
+    "comment_placeholder": "Taomni qanday tayyorladingiz? Maslahatlar?",
+    "add_photo": "Fotosurat qo'shish",
+    "submit": "Sharh yuborish",
+    "submitting": "Yuborilmoqda...",
+    "submitted_success": "Sharhingiz qo'shildi!",
+    "updated_success": "Sharh yangilandi!",
+    "deleted_success": "Sharh o'chirildi.",
+    "submit_error": "Sharh yuborib bo'lmadi",
+    "review": "sharh",
+    "reviews": "sharh",
+    "no_reviews": "Hali hech kim sharh qoldirmagan. Birinchi bo'ling!",
+    "login_to_review": "Sharh qoldirish uchun tizimga kiring.",
+    "rating_required": "Iltimos, yulduz bahosini tanlang",
+    "photo_too_large": "Rasm 3MB dan kichik bo'lishi kerak"
+  },
   "common": {
     "sync": "Sinxronlash",
     "close": "Yopish"
