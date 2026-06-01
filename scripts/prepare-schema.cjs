@@ -1,9 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-// This script switches the Prisma schema for Vercel deployment
-if (process.env.VERCEL) {
-    console.log('Detected Vercel environment. Switching to PostgreSQL schema...');
+// This script switches the Prisma schema for Vercel/Railway deployment
+if (process.env.VERCEL || process.env.DATABASE_URL || process.env.RAILWAY_ENVIRONMENT) {
+    console.log('Detected production environment. Switching to PostgreSQL schema...');
     try {
         const source = path.join(__dirname, '../server/prisma/schema.prod.prisma');
         const dest = path.join(__dirname, '../server/prisma/schema.prisma');
@@ -20,5 +20,5 @@ if (process.env.VERCEL) {
         process.exit(1);
     }
 } else {
-    console.log('Not Vercel environment. Keeping SQLite schema for local development.');
+    console.log('Not production environment. Keeping SQLite schema for local development.');
 }
