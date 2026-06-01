@@ -1,4 +1,9 @@
-// API Configuration
+const isDev = import.meta.env.DEV;
+
 export const config = {
-    apiBaseUrl: (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000',
+  // In development: use localhost:4000
+  // In production: use your Railway backend URL (set via VITE_API_URL env var in Vercel)
+  apiBaseUrl: isDev
+    ? 'http://localhost:4000'
+    : (import.meta.env.VITE_API_URL || ''),
 };

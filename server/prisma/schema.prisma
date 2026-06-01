@@ -18,12 +18,28 @@ model User {
   subEndDate    DateTime?
   cardToken     String?
   cardLast4     String?
+  bio           String?        // NEW: chef bio
+  avatarUrl     String?        // NEW: chef avatar
   createdAt     DateTime       @default(now())
   pantryItems   PantryItem[]
   shoppingItems ShoppingItem[]
   recipes       Recipe[]
   favorites     Favorite[]
-  reviews       Review[]       // NEW
+  reviews       Review[]
+  // Follow relations
+  following     Follow[]       @relation("follower")  // people this user follows
+  followers     Follow[]       @relation("following") // people following this user
+}
+
+model Follow {
+  id          Int      @id @default(autoincrement())
+  followerId  Int      // the user who follows
+  followingId Int      // the user being followed
+  follower    User     @relation("follower",  fields: [followerId],  references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
 }
 
 model PantryItem {
@@ -60,11 +76,12 @@ model Recipe {
   instructions String
   youtubeUrl   String?
   isPro        Boolean    @default(false)
-  status       String     @default("pending") // pending, approved, rejected
+  status       String     @default("pending")
   userId       Int
   user         User       @relation(fields: [userId], references: [id])
   favorites    Favorite[]
-  reviews      Review[]   // NEW
+  reviews      Review[]
+  views        RecipeView[]
   createdAt    DateTime   @default(now())
 }
 
@@ -79,17 +96,26 @@ model Favorite {
   @@unique([userId, recipeId])
 }
 
-// ─── NEW MODEL ───────────────────────────────────────────────────────────────
 model Review {
   id        Int      @id @default(autoincrement())
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   recipeId  Int
   recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  rating    Int      // 1–5 stars
-  comment   String?  // optional text
-  photoUrl  String?  // base64 or URL of their cooked dish photo
+  rating    Int
+  comment   String?
+  photoUrl  String?
   createdAt DateTime @default(now())
 
-  @@unique([userId, recipeId]) // one review per user per recipe
+  @@unique([userId, recipeId])
+}
+
+model RecipeView {
+  id        Int      @id @default(autoincrement())
+  recipeId  Int
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  viewedAt  DateTime @default(now())
+
+  @@index([recipeId])
+  @@index([viewedAt])
 }

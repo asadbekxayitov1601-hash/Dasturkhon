@@ -1,3 +1,6 @@
+// src/app/components/RecipeDetailModal.tsx
+// Updated: added DeliveryLinks section between instructions and reviews
+
 import { X, Clock, Users, ChefHat, PlayCircle, Plus, Minus } from 'lucide-react';
 import { Star } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
@@ -5,7 +8,9 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReviewSection } from './ReviewSection';
+import { DeliveryLinks } from './DeliveryLinks'; // NEW
 import { getRecipeReviews, averageRating } from '../api/reviewsApi';
+import { recordView } from '../api/analyticsApi';
 
 interface RecipeDetailModalProps {
   recipe: Recipe | null;
@@ -22,7 +27,10 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
   useEffect(() => {
     if (recipe) {
       setServings(recipe.servings || 1);
-      // Load summary rating for header display
+
+      // Record view — fire-and-forget, never blocks UI
+      recordView(recipe.id);
+
       getRecipeReviews(recipe.id)
         .then((reviews) => {
           setAvgRating(averageRating(reviews));
@@ -35,7 +43,9 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
   if (!isOpen || !recipe) return null;
 
   const increaseServings = () => setServings((prev) => prev + 1);
-  const decreaseServings = () => { if (servings > 1) setServings((prev) => prev - 1); };
+  const decreaseServings = () => {
+    if (servings > 1) setServings((prev) => prev - 1);
+  };
 
   return (
     <div
@@ -75,10 +85,9 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                   <span className="text-white text-sm capitalize">{recipe.category}</span>
                 </div>
               )}
-              {/* ── Average rating badge in header ── */}
               {reviewCount > 0 && (
                 <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-sm rounded-full px-4 py-2">
-                  <Star className="w-4 h-4 text-amber-400" fill="#F59E0B" />
+                  <Star className="w-4 h-4" fill="#E6B566" stroke="#E6B566" />
                   <span className="text-white text-sm">
                     {avgRating.toFixed(1)} ({reviewCount})
                   </span>
@@ -90,30 +99,43 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
         {/* Content */}
         <div className="p-6 sm:p-8">
-          {/* Servings Section */}
-          <div className="mb-8 p-6 rounded-[24px] bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10 flex flex-wrap items-center justify-between gap-6">
+
+          {/* Servings + YouTube */}
+          <div
+            className="mb-8 p-6 rounded-[24px] flex flex-wrap items-center justify-between gap-6"
+            style={{
+              background: 'linear-gradient(135deg, rgba(74,124,126,0.05), rgba(230,181,102,0.06))',
+              border: '1px solid rgba(74,124,126,0.12)',
+            }}
+          >
             <div>
-              <label className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+              <label className="flex items-center gap-2 text-sm mb-3" style={{ color: '#7A8B99' }}>
                 <Users className="w-4 h-4" />
                 {t('recipes.servings_label')}
               </label>
               <div className="flex items-center gap-4">
                 <button
                   onClick={decreaseServings}
-                  className="w-10 h-10 rounded-full bg-white border-2 border-primary/20 hover:border-primary hover:bg-primary/5 flex items-center justify-center transition-all"
                   disabled={servings <= 1}
+                  className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-all disabled:opacity-40"
+                  style={{ border: '2px solid rgba(74,124,126,0.2)' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#4A7C7E')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(74,124,126,0.2)')}
                 >
-                  <Minus className="w-4 h-4 text-primary" />
+                  <Minus className="w-4 h-4" style={{ color: '#4A7C7E' }} />
                 </button>
-                <div className="flex-1 text-center min-w-[60px]">
-                  <div className="text-3xl text-primary">{servings}</div>
-                  <div className="text-xs text-gray-600">{t('recipes.servings')}</div>
+                <div className="text-center min-w-[60px]">
+                  <div className="text-3xl font-bold" style={{ color: '#4A7C7E' }}>{servings}</div>
+                  <div className="text-xs" style={{ color: '#7A8B99' }}>{t('recipes.servings')}</div>
                 </div>
                 <button
                   onClick={increaseServings}
-                  className="w-10 h-10 rounded-full bg-white border-2 border-primary/20 hover:border-primary hover:bg-primary/5 flex items-center justify-center transition-all"
+                  className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-all"
+                  style={{ border: '2px solid rgba(74,124,126,0.2)' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#4A7C7E')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(74,124,126,0.2)')}
                 >
-                  <Plus className="w-4 h-4 text-primary" />
+                  <Plus className="w-4 h-4" style={{ color: '#4A7C7E' }} />
                 </button>
               </div>
             </div>
@@ -123,28 +145,36 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                 href={recipe.youtubeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-[#FF0000] text-white rounded-full hover:bg-[#CC0000] transition-colors shadow-lg shadow-red-500/20"
+                className="flex items-center gap-2 px-6 py-3 bg-[#FF0000] text-white rounded-full hover:bg-[#CC0000] transition-colors shadow-lg"
+                style={{ boxShadow: '0 4px 12px rgba(255,0,0,0.2)' }}
               >
                 <PlayCircle className="w-5 h-5" />
-                <span>Watch Video</span>
+                <span className="font-medium">Watch Video</span>
               </a>
             )}
           </div>
 
           {/* Ingredients */}
           <div className="mb-8">
-            <h3 className="flex items-center gap-2 text-xl text-gray-900 mb-4">
-              <ChefHat className="w-5 h-5 text-primary" />
+            <h3
+              className="flex items-center gap-2 text-xl mb-4"
+              style={{ color: '#2C3E50' }}
+            >
+              <ChefHat className="w-5 h-5" style={{ color: '#4A7C7E' }} />
               {t('recipes.key_ingredients')}
             </h3>
             <div className="grid sm:grid-cols-2 gap-3">
               {(recipe.ingredients || []).map((ingredient, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 p-4 rounded-[20px] bg-white border border-primary/10"
+                  className="flex items-center gap-3 p-4 rounded-[20px] bg-white"
+                  style={{ border: '1px solid rgba(74,124,126,0.1)' }}
                 >
-                  <div className="w-2 h-2 rounded-full bg-primary" />
-                  <span className="text-gray-900">{ingredient}</span>
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: '#4A7C7E' }}
+                  />
+                  <span style={{ color: '#2C3E50' }}>{ingredient}</span>
                 </div>
               ))}
             </div>
@@ -152,21 +182,29 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
           {/* Instructions */}
           <div className="mb-8">
-            <h3 className="text-xl text-gray-900 mb-4">{t('recipes.instructions')}</h3>
+            <h3 className="text-xl mb-4" style={{ color: '#2C3E50' }}>
+              {t('recipes.instructions')}
+            </h3>
             <div className="space-y-4">
               {(recipe.instructions || []).map((instruction, index) => (
                 <div key={index} className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/70 text-white flex items-center justify-center text-sm">
+                  <div
+                    className="flex-shrink-0 w-8 h-8 rounded-full text-white flex items-center justify-center text-sm font-medium"
+                    style={{ background: 'linear-gradient(135deg, #4A7C7E, #5A9FA3)' }}
+                  >
                     {index + 1}
                   </div>
-                  <p className="flex-1 text-gray-700 pt-1">{instruction}</p>
+                  <p className="flex-1 pt-1" style={{ color: '#2C3E50' }}>{instruction}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* ── Reviews Section ── */}
-          <div className="border-t border-gray-100 pt-8">
+          {/* ── Delivery deep links ── NEW */}
+          <DeliveryLinks recipeName={recipe.title} />
+
+          {/* Reviews */}
+          <div className="border-t mt-8 pt-8" style={{ borderColor: 'rgba(74,124,126,0.1)' }}>
             <ReviewSection recipeId={recipe.id} />
           </div>
         </div>

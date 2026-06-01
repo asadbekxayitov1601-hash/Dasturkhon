@@ -1,16 +1,39 @@
+import 'dotenv/config';
+import crypto from 'crypto';
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
+import { verifyCard, confirmOtp, chargeCard, removeCard, PLAN_AMOUNTS } from './services/payme.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:5173',                        // local dev
+  'http://localhost:4173',                        // local preview
+  process.env.FRONTEND_URL,                       // your Vercel URL (set in Railway env vars)
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true,
+}));
+
 app.use(express.json({ limit: '50mb' }));
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // auth middleware
@@ -428,95 +451,6 @@ app.delete('/api/favorites/:recipeId', requireAuth, async (req, res) => {
   }
 });
 
-// Pro Subscription
-app.post('/api/subscribe/pro', requireAuth, async (req, res) => {
-  try {
-    const { plan, cardToken } = req.body; // 'weekly', 'monthly', 'yearly'
-
-    // If cardToken is provided, save it (simplified logic)
-    if (cardToken) {
-      await prisma.user.update({
-        where: { id: req.user.id },
-        data: { cardToken }
-      });
-    }
-
-    // In a real app, charge the card here using the token!
-
-    let endDate = new Date();
-    if (plan === 'weekly') endDate.setDate(endDate.getDate() + 7);
-    else if (plan === 'yearly') endDate.setFullYear(endDate.getFullYear() + 1);
-    else endDate.setMonth(endDate.getMonth() + 1); // Monthly default
-
-    const user = await prisma.user.update({
-      where: { id: req.user.id },
-      data: {
-        isPro: true,
-        subType: plan,
-        subEndDate: endDate
-      }
-    });
-
-    res.json({ ok: true, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, isPro: user.isPro, cardLast4: user.cardLast4 } });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-app.post('/api/payment/verify-card', requireAuth, async (req, res) => {
-  try {
-    const { cardNumber, expiry } = req.body;
-    // Mock gateway call
-    // Return transaction ID for OTP step
-    res.json({ transactionId: 'txn_' + Date.now(), message: 'SMS sent to linked phone number' });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Gateway error' });
-  }
-});
-
-app.post('/api/payment/confirm-otp', requireAuth, async (req, res) => {
-  try {
-    const { transactionId, otp, cardNumber } = req.body;
-
-    if (otp !== '1111') { // Mock OTP
-      return res.status(400).json({ message: 'Invalid SMS code' });
-    }
-
-    // Mock token generation
-    const cardToken = 'tok_' + Math.random().toString(36).substr(2, 9);
-    const cardLast4 = cardNumber.slice(-4);
-
-    await prisma.user.update({
-      where: { id: req.user.id },
-      data: { cardToken, cardLast4 }
-    });
-
-    res.json({ ok: true, cardToken, cardLast4 });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Verification failed' });
-  }
-});
-
-app.post('/api/subscribe/cancel', requireAuth, async (req, res) => {
-  try {
-    const user = await prisma.user.update({
-      where: { id: req.user.id },
-      data: {
-        isPro: false, // Immediately cancel for now
-        subType: null,
-        subEndDate: null
-      }
-    });
-    res.json({ ok: true, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, isPro: user.isPro, cardLast4: user.cardLast4 } });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
 // GET /api/recipes/:id/reviews
 // Public – anyone can read reviews for a recipe
 app.get('/api/recipes/:id/reviews', async (req, res) => {
@@ -648,6 +582,458 @@ app.get('/api/recipes/:id/reviews/me', requireAuth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHEF PROFILE & FOLLOW ROUTES
+// Paste these into server/index.js before the app.listen() call
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/chefs/:id  —  public chef profile with stats
+app.get('/api/chefs/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const chef = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        bio: true,
+        avatarUrl: true,
+        isPro: true,
+        createdAt: true,
+        recipes: {
+          where: { status: 'approved' },
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true, title: true, image: true,
+            cookTime: true, servings: true, category: true,
+            ingredients: true, instructions: true,
+            youtubeUrl: true, isPro: true, createdAt: true,
+            reviews: { select: { rating: true } }
+          }
+        },
+        _count: {
+          select: {
+            followers: true,
+            following: true,
+            recipes: { where: { status: 'approved' } }
+          }
+        }
+      }
+    });
+
+    if (!chef) return res.status(404).json({ message: 'Chef not found' });
+
+    // Parse recipe JSON fields and calculate avg ratings
+    const recipes = chef.recipes.map(r => {
+      const avg = r.reviews.length
+        ? r.reviews.reduce((s, rv) => s + rv.rating, 0) / r.reviews.length
+        : null;
+      return {
+        ...r,
+        id: String(r.id),
+        ingredients: JSON.parse(r.ingredients),
+        instructions: JSON.parse(r.instructions),
+        reviewCount: r.reviews.length,
+        avgRating: avg
+      };
+    });
+
+    res.json({
+      id: chef.id,
+      name: chef.name,
+      email: chef.email,
+      bio: chef.bio,
+      avatarUrl: chef.avatarUrl,
+      isPro: chef.isPro,
+      createdAt: chef.createdAt,
+      recipes,
+      followerCount: chef._count.followers,
+      followingCount: chef._count.following,
+      recipeCount: chef._count.recipes
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/chefs/:id/follow-status  —  is current user following this chef?
+app.get('/api/chefs/:id/follow-status', requireAuth, async (req, res) => {
+  try {
+    const followingId = Number(req.params.id);
+    const existing = await prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId: req.user.id, followingId } }
+    });
+    res.json({ isFollowing: !!existing });
+  } catch (e) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /api/chefs/:id/follow  —  follow a chef
+app.post('/api/chefs/:id/follow', requireAuth, async (req, res) => {
+  try {
+    const followingId = Number(req.params.id);
+    if (followingId === req.user.id) {
+      return res.status(400).json({ message: 'Cannot follow yourself' });
+    }
+    const chef = await prisma.user.findUnique({ where: { id: followingId } });
+    if (!chef) return res.status(404).json({ message: 'Chef not found' });
+
+    await prisma.follow.upsert({
+      where: { followerId_followingId: { followerId: req.user.id, followingId } },
+      create: { followerId: req.user.id, followingId },
+      update: {}
+    });
+
+    const count = await prisma.follow.count({ where: { followingId } });
+    res.json({ ok: true, followerCount: count });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// DELETE /api/chefs/:id/follow  —  unfollow a chef
+app.delete('/api/chefs/:id/follow', requireAuth, async (req, res) => {
+  try {
+    const followingId = Number(req.params.id);
+    await prisma.follow.deleteMany({
+      where: { followerId: req.user.id, followingId }
+    });
+    const count = await prisma.follow.count({ where: { followingId } });
+    res.json({ ok: true, followerCount: count });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// PUT /api/profile  —  update own bio and avatar
+app.put('/api/profile', requireAuth, async (req, res) => {
+  try {
+    const { bio, avatarUrl, name } = req.body;
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(bio !== undefined && { bio }),
+        ...(avatarUrl !== undefined && { avatarUrl })
+      }
+    });
+    res.json({
+      id: updated.id, name: updated.name, email: updated.email,
+      bio: updated.bio, avatarUrl: updated.avatarUrl, isPro: updated.isPro
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ── In-memory OTP session store (use Redis in production) ─────────────────────
+// Stores { token, plan } keyed by a sessionId
+const otpSessions = new Map();
+
+// POST /api/payment/verify-card
+// Step 1: Validate card → Payme sends OTP SMS to cardholder
+app.post('/api/payment/verify-card', requireAuth, async (req, res) => {
+  try {
+    const { cardNumber, expiry, plan } = req.body;
+
+    if (!cardNumber || cardNumber.replace(/\s/g, '').length !== 16) {
+      return res.status(400).json({ message: 'Card number must be 16 digits' });
+    }
+    if (!expiry || expiry.length < 4) {
+      return res.status(400).json({ message: 'Invalid expiry date' });
+    }
+    if (!plan || !PLAN_AMOUNTS[plan]) {
+      return res.status(400).json({ message: 'Invalid plan selected' });
+    }
+
+    const { token, phone } = await verifyCard(cardNumber, expiry);
+
+    // Store token + plan in memory session
+    const sessionId = crypto.randomUUID();
+    otpSessions.set(sessionId, {
+      token,
+      plan,
+      userId: req.user.id,
+      cardLast4: cardNumber.replace(/\s/g, '').slice(-4),
+      createdAt: Date.now(),
+    });
+
+    // Auto-expire session after 10 minutes
+    setTimeout(() => otpSessions.delete(sessionId), 10 * 60 * 1000);
+
+    res.json({
+      sessionId,
+      phone,    // masked phone shown to user: "+998 ** *** 45 67"
+      message: `Verification code sent to ${phone}`,
+    });
+  } catch (e) {
+    console.error('verify-card error:', e);
+    res.status(400).json({ message: e.message || 'Card verification failed' });
+  }
+});
+
+// POST /api/payment/confirm-otp
+// Step 2: Confirm OTP → charge card → activate Pro
+app.post('/api/payment/confirm-otp', requireAuth, async (req, res) => {
+  try {
+    const { sessionId, otp } = req.body;
+
+    if (!sessionId || !otp) {
+      return res.status(400).json({ message: 'Session ID and OTP are required' });
+    }
+
+    const session = otpSessions.get(sessionId);
+    if (!session) {
+      return res.status(400).json({ message: 'Session expired. Please start again.' });
+    }
+    if (session.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    // Step 2a: Verify OTP with Payme → get permanent card token
+    const { token: permanentToken, verified } = await confirmOtp(session.token, otp);
+    if (!verified) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    // Step 2b: Charge the card
+    const amount = PLAN_AMOUNTS[session.plan];
+    const orderId = `dasturkhon_${req.user.id}_${Date.now()}`;
+    const description = `Dasturkhon Pro - ${session.plan} plan`;
+
+    await chargeCard(permanentToken, amount, orderId, description);
+
+    // Step 2c: Calculate subscription end date
+    const endDate = new Date();
+    if (session.plan === 'weekly')  endDate.setDate(endDate.getDate() + 7);
+    if (session.plan === 'monthly') endDate.setMonth(endDate.getMonth() + 1);
+    if (session.plan === 'yearly')  endDate.setFullYear(endDate.getFullYear() + 1);
+
+    // Step 2d: Save to database
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        isPro: true,
+        subType: session.plan,
+        subEndDate: endDate,
+        cardToken: permanentToken,
+        cardLast4: session.cardLast4,
+      },
+    });
+
+    // Clean up session
+    otpSessions.delete(sessionId);
+
+    res.json({
+      success: true,
+      message: `Successfully subscribed to ${session.plan} plan!`,
+      subEndDate: endDate,
+    });
+  } catch (e) {
+    console.error('confirm-otp error:', e);
+    res.status(400).json({ message: e.message || 'Payment failed' });
+  }
+});
+
+// POST /api/payment/use-saved-card
+// One-click subscribe with previously saved card token
+app.post('/api/payment/use-saved-card', requireAuth, async (req, res) => {
+  try {
+    const { plan } = req.body;
+
+    if (!plan || !PLAN_AMOUNTS[plan]) {
+      return res.status(400).json({ message: 'Invalid plan' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user?.cardToken) {
+      return res.status(400).json({ message: 'No saved card found' });
+    }
+
+    const amount = PLAN_AMOUNTS[plan];
+    const orderId = `dasturkhon_${req.user.id}_${Date.now()}`;
+    const description = `Dasturkhon Pro - ${plan} plan`;
+
+    await chargeCard(user.cardToken, amount, orderId, description);
+
+    const endDate = new Date();
+    if (plan === 'weekly')  endDate.setDate(endDate.getDate() + 7);
+    if (plan === 'monthly') endDate.setMonth(endDate.getMonth() + 1);
+    if (plan === 'yearly')  endDate.setFullYear(endDate.getFullYear() + 1);
+
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { isPro: true, subType: plan, subEndDate: endDate },
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully subscribed to ${plan} plan!`,
+      subEndDate: endDate,
+    });
+  } catch (e) {
+    console.error('use-saved-card error:', e);
+    res.status(400).json({ message: e.message || 'Payment failed' });
+  }
+});
+
+// POST /api/subscribe/cancel
+// Cancel Pro subscription and remove saved card
+app.post('/api/subscribe/cancel', requireAuth, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+
+    // Remove card token from Payme if exists
+    if (user?.cardToken) {
+      try { await removeCard(user.cardToken); } catch (_) {}
+    }
+
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        isPro: false,
+        subType: null,
+        subEndDate: null,
+        cardToken: null,
+        cardLast4: null,
+      },
+    });
+
+    res.json({ success: true, message: 'Subscription cancelled' });
+  } catch (e) {
+    console.error('cancel error:', e);
+    res.status(500).json({ message: 'Failed to cancel subscription' });
+  }
+});
+
+// POST /api/recipes/:id/view  — record a view (called when modal opens)
+app.post('/api/recipes/:id/view', async (req, res) => {
+  try {
+    const recipeId = Number(req.params.id);
+    await prisma.recipeView.create({ data: { recipeId } });
+    res.json({ ok: true });
+  } catch (e) {
+    // Silently fail — don't break the UX for a view count
+    res.json({ ok: false });
+  }
+});
+
+// GET /api/analytics/my  — chef's full analytics dashboard data
+app.get('/api/analytics/my', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get all approved recipes by this chef
+    const recipes = await prisma.recipe.findMany({
+      where: { userId, status: 'approved' },
+      select: {
+        id: true,
+        title: true,
+        image: true,
+        category: true,
+        createdAt: true,
+        isPro: true,
+        _count: {
+          select: {
+            views:     true,
+            favorites: true,
+            reviews:   true,
+          },
+        },
+        reviews: {
+          select: { rating: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Get follower count
+    const followerCount = await prisma.follow.count({
+      where: { followingId: userId },
+    });
+
+    // Get views over last 30 days (for chart)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const recipeIds = recipes.map(r => r.id);
+
+    const recentViews = recipeIds.length
+      ? await prisma.recipeView.findMany({
+          where: {
+            recipeId: { in: recipeIds },
+            viewedAt: { gte: thirtyDaysAgo },
+          },
+          select: { viewedAt: true },
+          orderBy: { viewedAt: 'asc' },
+        })
+      : [];
+
+    // Group views by day for chart
+    const viewsByDay = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10); // "2025-06-01"
+      viewsByDay[key] = 0;
+    }
+    recentViews.forEach(v => {
+      const key = v.viewedAt.toISOString().slice(0, 10);
+      if (viewsByDay[key] !== undefined) viewsByDay[key]++;
+    });
+
+    const viewsChart = Object.entries(viewsByDay).map(([date, count]) => ({
+      date,
+      views: count,
+    }));
+
+    // Build per-recipe stats
+    const recipeStats = recipes.map(r => {
+      const avgRating = r.reviews.length
+        ? r.reviews.reduce((s, rv) => s + rv.rating, 0) / r.reviews.length
+        : null;
+      return {
+        id: r.id,
+        title: r.title,
+        image: r.image,
+        category: r.category,
+        isPro: r.isPro,
+        createdAt: r.createdAt,
+        views: r._count.views,
+        saves: r._count.favorites,
+        reviews: r._count.reviews,
+        avgRating,
+      };
+    });
+
+    // Totals
+    const totalViews   = recipeStats.reduce((s, r) => s + r.views, 0);
+    const totalSaves   = recipeStats.reduce((s, r) => s + r.saves, 0);
+    const totalReviews = recipeStats.reduce((s, r) => s + r.reviews, 0);
+    const totalRecipes = recipeStats.length;
+
+    // Top recipe by views
+    const topRecipe = [...recipeStats].sort((a, b) => b.views - a.views)[0] || null;
+
+    res.json({
+      summary: { totalViews, totalSaves, totalReviews, totalRecipes, followerCount },
+      topRecipe,
+      recipeStats,
+      viewsChart,
+    });
+  } catch (e) {
+    console.error('analytics error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {

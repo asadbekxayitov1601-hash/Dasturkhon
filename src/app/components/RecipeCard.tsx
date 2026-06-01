@@ -1,9 +1,13 @@
+// src/app/components/RecipeCard.tsx
+// Updated: added clickable chef name linking to /chef/:userId
+
 import { motion } from 'motion/react';
-import { Clock, Users, Plus, Heart, Crown, Lock } from 'lucide-react';
+import { Clock, Users, Plus, Heart, Crown, Lock, ChefHat } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useAuth } from '../auth/AuthProvider';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SubscriptionModal } from './SubscriptionModal';
 
 interface RecipeCardProps {
@@ -16,24 +20,24 @@ interface RecipeCardProps {
 
 export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewRecipe, onToggleFavorite }: RecipeCardProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [showSubscription, setShowSubscription] = useState(false);
   const isLocked = recipe.isPro && !user?.isPro;
 
   const handleClick = () => {
-    if (isLocked) {
-      setShowSubscription(true);
-    } else {
-      onViewRecipe(recipe);
-    }
+    if (isLocked) setShowSubscription(true);
+    else onViewRecipe(recipe);
   };
 
   const handleAddToShopping = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isLocked) {
-      setShowSubscription(true);
-    } else {
-      onAddToShoppingList(recipe);
-    }
+    if (isLocked) setShowSubscription(true);
+    else onAddToShoppingList(recipe);
+  };
+
+  const handleChefClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (recipe.userId) navigate(`/chef/${recipe.userId}`);
   };
 
   return (
@@ -63,7 +67,6 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
             <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-0 transition-opacity duration-300" />
 
-            {/* Lock Overlay for non-pro */}
             {isLocked && (
               <div className="absolute inset-0 bg-black/20 flex items-center justify-center backdrop-blur-[1px]">
                 <div className="bg-black/60 p-3 rounded-full text-white shadow-xl border border-white/10">
@@ -72,15 +75,11 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
               </div>
             )}
 
-            {/* Favorite Button */}
             {onToggleFavorite && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleFavorite(recipe);
-                }}
+                onClick={(e) => { e.stopPropagation(); onToggleFavorite(recipe); }}
                 className="absolute top-3 right-3 p-2.5 rounded-full bg-white/90 shadow-sm backdrop-blur-sm hover:bg-white transition-all z-10 hover:scale-110 active:scale-95 group/btn"
-                title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
               >
                 <Heart className={`w-5 h-5 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover/btn:text-red-500'}`} />
               </button>
@@ -103,11 +102,27 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
           </div>
 
           <div className="p-5 flex-1 flex flex-col">
-            <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex items-start justify-between gap-4 mb-2">
               <h3 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-primary transition-colors line-clamp-2 capitalize">
                 {recipe.title}
               </h3>
             </div>
+
+            {/* ── Clickable chef name ── */}
+            {recipe.user && (
+              <button
+                onClick={handleChefClick}
+                className="flex items-center gap-1.5 mb-3 w-fit"
+                style={{ color: '#7A8B99' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#4A7C7E')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#7A8B99')}
+              >
+                <ChefHat className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">
+                  {recipe.user.name || recipe.user.email?.split('@')[0] || 'Chef'}
+                </span>
+              </button>
+            )}
 
             <div className="mb-6">
               {recipe.category && (

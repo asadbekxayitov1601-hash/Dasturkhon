@@ -118,5 +118,39 @@
   "common": {
     "sync": "Sinxronlash",
     "close": "Yopish"
+  },
+  "chef": {
+    "follow": "Kuzatish",
+    "following": "Kuzatilmoqda",
+    "followed": "Kuzatuvga oldingiz!",
+    "unfollowed": "Kuzatuvdan chiqdingiz",
+    "followers": "Kuzatuvchilar",
+    "following_count": "Kuzatilmoqdalar",
+    "recipes": "Retseptlar",
+    "joined": "Qo'shilgan",
+    "anonymous": "Oshpaz",
+    "no_bio": "Bio hali qo'shilmagan. Profilni tahrirlang.",
+    "edit_profile": "Profilni tahrirlash",
+    "login_to_follow": "Kuzatish uchun tizimga kiring",
+    "no_recipes_yet": "Hali retsept yo'q",
+    "recipes_by": "{{name}} retseptlari",
+    "this_chef": "ushbu oshpaz"
+  },
+  "delivery": {
+    "cant_cook": "Pishirolmaysizmi? Buyurtma bering!",
+    "order_from_platforms": "Tayyor platformalardan topish",
+    "disclaimer": "\"{{dish}}\" bo'yicha qidiruv ochiladi. Mavjudligi platformaga bog'liq."
+  },
+  "analytics": {
+    "title": "Mening statistikam",
+    "total_views": "Jami ko'rishlar",
+    "total_saves": "Jami saqlashlar",
+    "total_reviews": "Jami sharhlar",
+    "total_recipes": "Retseptlar",
+    "followers": "Kuzatuvchilar",
+    "views_last_14": "So'nggi 14 kun ko'rishlar",
+    "top_recipe": "Eng ko'p ko'rilgan retsept",
+    "recipe_performance": "Retsept ko'rsatkichlari",
+    "no_recipes": "Hali tasdiqlangan retseptlaringiz yo'q"
   }
 }

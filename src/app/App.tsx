@@ -14,6 +14,7 @@ import { ShoppingListPage } from './pages/ShoppingListPage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AdminPage } from './pages/AdminPage';
+import { ChefProfilePage } from './pages/ChefProfilePage';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import '../i18n/config';
 
@@ -65,6 +66,7 @@ function App() {
             <Route path="/" element={<HomePage dailyCalories={dailyCalories} />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/chef/:id" element={<ChefProfilePage />} />
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route

@@ -118,5 +118,39 @@
   "common": {
     "sync": "Sync",
     "close": "Close"
+  },
+  "chef": {
+    "follow": "Follow",
+    "following": "Following",
+    "followed": "You are now following this chef!",
+    "unfollowed": "Unfollowed",
+    "followers": "Followers",
+    "following_count": "Following",
+    "recipes": "Recipes",
+    "joined": "Joined",
+    "anonymous": "Chef",
+    "no_bio": "No bio yet. Edit your profile to add one.",
+    "edit_profile": "Edit Profile",
+    "login_to_follow": "Log in to follow this chef",
+    "no_recipes_yet": "No recipes posted yet",
+    "recipes_by": "Recipes by {{name}}",
+    "this_chef": "this chef"
+  },
+  "delivery": {
+    "cant_cook": "Can't cook? Order it!",
+    "order_from_platforms": "Find it on delivery platforms",
+    "disclaimer": "Opens a search for \"{{dish}}\". Availability depends on the platform."
+  },
+  "analytics": {
+    "title": "My Analytics",
+    "total_views": "Total Views",
+    "total_saves": "Total Saves",
+    "total_reviews": "Total Reviews",
+    "total_recipes": "Recipes",
+    "followers": "Followers",
+    "views_last_14": "Views — Last 14 Days",
+    "top_recipe": "Top Recipe",
+    "recipe_performance": "Recipe Performance",
+    "no_recipes": "No approved recipes yet"
   }
 }
