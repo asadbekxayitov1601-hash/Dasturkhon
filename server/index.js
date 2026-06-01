@@ -15,6 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 const allowedOrigins = [
   'http://localhost:5173',                        // local dev
   'http://localhost:4173',                        // local preview
+  'https://dasturkhon-six.vercel.app',            // Vercel deployment
   process.env.FRONTEND_URL,                       // your Vercel URL (set in Railway env vars)
 ].filter(Boolean);
 
