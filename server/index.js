@@ -13,10 +13,7 @@ const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 const allowedOrigins = [
-  'http://localhost:5173',                        // local dev
-  'http://localhost:4173',                        // local preview
-  'https://dasturkhon-six.vercel.app',            // Vercel deployment
-  process.env.FRONTEND_URL,                       // your Vercel URL (set in Railway env vars)
+  process.env.FRONTEND_URL               // your Vercel URL (set in Railway env vars)
 ].filter(Boolean);
 
 app.use(cors({
@@ -813,9 +810,9 @@ app.post('/api/payment/confirm-otp', requireAuth, async (req, res) => {
 
     // Step 2c: Calculate subscription end date
     const endDate = new Date();
-    if (session.plan === 'weekly')  endDate.setDate(endDate.getDate() + 7);
+    if (session.plan === 'weekly') endDate.setDate(endDate.getDate() + 7);
     if (session.plan === 'monthly') endDate.setMonth(endDate.getMonth() + 1);
-    if (session.plan === 'yearly')  endDate.setFullYear(endDate.getFullYear() + 1);
+    if (session.plan === 'yearly') endDate.setFullYear(endDate.getFullYear() + 1);
 
     // Step 2d: Save to database
     await prisma.user.update({
@@ -865,9 +862,9 @@ app.post('/api/payment/use-saved-card', requireAuth, async (req, res) => {
     await chargeCard(user.cardToken, amount, orderId, description);
 
     const endDate = new Date();
-    if (plan === 'weekly')  endDate.setDate(endDate.getDate() + 7);
+    if (plan === 'weekly') endDate.setDate(endDate.getDate() + 7);
     if (plan === 'monthly') endDate.setMonth(endDate.getMonth() + 1);
-    if (plan === 'yearly')  endDate.setFullYear(endDate.getFullYear() + 1);
+    if (plan === 'yearly') endDate.setFullYear(endDate.getFullYear() + 1);
 
     await prisma.user.update({
       where: { id: req.user.id },
@@ -893,7 +890,7 @@ app.post('/api/subscribe/cancel', requireAuth, async (req, res) => {
 
     // Remove card token from Payme if exists
     if (user?.cardToken) {
-      try { await removeCard(user.cardToken); } catch (_) {}
+      try { await removeCard(user.cardToken); } catch (_) { }
     }
 
     await prisma.user.update({
@@ -943,9 +940,9 @@ app.get('/api/analytics/my', requireAuth, async (req, res) => {
         isPro: true,
         _count: {
           select: {
-            views:     true,
+            views: true,
             favorites: true,
-            reviews:   true,
+            reviews: true,
           },
         },
         reviews: {
@@ -968,13 +965,13 @@ app.get('/api/analytics/my', requireAuth, async (req, res) => {
 
     const recentViews = recipeIds.length
       ? await prisma.recipeView.findMany({
-          where: {
-            recipeId: { in: recipeIds },
-            viewedAt: { gte: thirtyDaysAgo },
-          },
-          select: { viewedAt: true },
-          orderBy: { viewedAt: 'asc' },
-        })
+        where: {
+          recipeId: { in: recipeIds },
+          viewedAt: { gte: thirtyDaysAgo },
+        },
+        select: { viewedAt: true },
+        orderBy: { viewedAt: 'asc' },
+      })
       : [];
 
     // Group views by day for chart
@@ -1015,8 +1012,8 @@ app.get('/api/analytics/my', requireAuth, async (req, res) => {
     });
 
     // Totals
-    const totalViews   = recipeStats.reduce((s, r) => s + r.views, 0);
-    const totalSaves   = recipeStats.reduce((s, r) => s + r.saves, 0);
+    const totalViews = recipeStats.reduce((s, r) => s + r.views, 0);
+    const totalSaves = recipeStats.reduce((s, r) => s + r.saves, 0);
     const totalReviews = recipeStats.reduce((s, r) => s + r.reviews, 0);
     const totalRecipes = recipeStats.length;
 
