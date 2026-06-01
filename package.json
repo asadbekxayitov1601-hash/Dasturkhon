@@ -7,7 +7,7 @@
     "build": "vite build",
     "dev": "vite",
     "install:server": "cd server && npm install",
-    "postinstall": "node scripts/prepare-schema.js",
+    "postinstall": "node scripts/prepare-schema.cjs",
     "start:server": "cd server && node index.js",
     "create:admin": "cd server && node scripts/create-admin.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run start:server\""
