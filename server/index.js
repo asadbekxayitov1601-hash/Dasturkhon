@@ -1035,10 +1035,8 @@ app.get('/api/analytics/my', requireAuth, async (req, res) => {
 });
 
 
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
-  });
-}
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server listening on port ${PORT}`);
+});
 
 export default app;
