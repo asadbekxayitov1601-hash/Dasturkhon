@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { ChefHat, Mail, Lock, AlertCircle } from 'lucide-react';
+import { config } from '../config';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ export function LoginPage() {
     e.preventDefault();
     setError(null);
     try {
-      const res = await fetch('http://localhost:4000/api/login', {
+      const res = await fetch(`${config.apiBaseUrl}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
