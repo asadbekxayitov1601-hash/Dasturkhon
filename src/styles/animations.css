@@ -1,0 +1,54 @@
+/* Site-wide animation utilities. All motion is disabled automatically for
+   users who prefer reduced motion. */
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes dx-fade-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes dx-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes dx-scale-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes dx-float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+  @keyframes dx-shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .animate-fade-up  { animation: dx-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .animate-fade-in  { animation: dx-fade-in 0.6s ease both; }
+  .animate-scale-in { animation: dx-scale-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .animate-float    { animation: dx-float 5s ease-in-out infinite; }
+
+  /* Stagger helpers — add alongside an animate-* class on list items. */
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.10s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.20s; }
+  .stagger-5 { animation-delay: 0.25s; }
+  .stagger-6 { animation-delay: 0.30s; }
+
+  /* Generic gentle lift for interactive cards/buttons using plain CSS. */
+  .hover-lift { transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease; }
+  .hover-lift:hover { transform: translateY(-4px); }
+}
+
+/* Smooth, consistent easing for common interactive elements site-wide. */
+a, button {
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Shimmer skeleton background (works regardless of motion preference). */
+.dx-skeleton {
+  background: linear-gradient(90deg, rgba(74,124,126,0.06) 25%, rgba(74,124,126,0.14) 37%, rgba(74,124,126,0.06) 63%);
+  background-size: 400% 100%;
+  animation: dx-shimmer 1.4s ease infinite;
+}
