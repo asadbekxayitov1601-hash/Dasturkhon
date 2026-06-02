@@ -49,21 +49,31 @@ export function RecipesPage() {
       return;
     }
 
+    const wasFavorite = favorites.has(recipe.id);
+    // Optimistic update: flip the heart immediately for instant feedback.
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (wasFavorite) next.delete(recipe.id);
+      else next.add(recipe.id);
+      return next;
+    });
+
     try {
-      if (favorites.has(recipe.id)) {
+      if (wasFavorite) {
         await removeFavorite(recipe.id);
-        const next = new Set(favorites);
-        next.delete(recipe.id);
-        setFavorites(next);
         toast.success(`Removed "${recipe.title}" from favorites`);
       } else {
         await addFavorite(recipe.id);
-        const next = new Set(favorites);
-        next.add(recipe.id);
-        setFavorites(next);
         toast.success(`Added "${recipe.title}" to favorites`);
       }
     } catch (e) {
+      // Revert on failure.
+      setFavorites((prev) => {
+        const next = new Set(prev);
+        if (wasFavorite) next.add(recipe.id);
+        else next.delete(recipe.id);
+        return next;
+      });
       toast.error('Failed to update favorite');
     }
   };

@@ -201,29 +201,16 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                 </div>
                             )}
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Cook Time</label>
-                                <input
-                                    required
-                                    type="text"
-                                    placeholder="e.g. 45 min"
-                                    value={formData.cookTime}
-                                    onChange={e => setFormData({ ...formData, cookTime: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Servings</label>
-                                <input
-                                    required
-                                    type="number"
-                                    min="1"
-                                    value={formData.servings}
-                                    onChange={e => setFormData({ ...formData, servings: Number(e.target.value) })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
-                                />
-                            </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Cook Time</label>
+                            <input
+                                required
+                                type="text"
+                                placeholder="e.g. 45 min"
+                                value={formData.cookTime}
+                                onChange={e => setFormData({ ...formData, cookTime: e.target.value })}
+                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
