@@ -12,15 +12,27 @@ const PORT = process.env.PORT || 4000;
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
-const allowedOrigins = [
-  process.env.FRONTEND_URL               // your Vercel URL (set in Railway env vars)
-].filter(Boolean);
+// Normalize an origin/URL for comparison: trim whitespace and drop any
+// trailing slash so "https://site.app/" and "https://site.app" are equal.
+const normalizeOrigin = (value) => (value || '').trim().replace(/\/+$/, '');
+
+// FRONTEND_URL may be a single URL or a comma-separated list of allowed origins.
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(normalizeOrigin)
+  .filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, Postman)
+    // Allow requests with no origin (mobile apps, curl, Postman, same-origin
+    // proxied requests from Vercel).
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    const normalized = normalizeOrigin(origin);
+    // Allow configured origins (trailing-slash-insensitive) and any
+    // *.vercel.app deployment (covers preview deployments too).
+    if (allowedOrigins.includes(normalized) || /\.vercel\.app$/.test(normalized)) {
+      return callback(null, true);
+    }
     callback(new Error(`CORS blocked: ${origin}`));
   },
   credentials: true,
