@@ -26,6 +26,7 @@ model User {
   recipes       Recipe[]
   favorites     Favorite[]
   reviews       Review[]
+  likes         RecipeLike[]
   // Follow relations
   following     Follow[]       @relation("follower")  // people this user follows
   followers     Follow[]       @relation("following") // people following this user
@@ -82,6 +83,7 @@ model Recipe {
   favorites    Favorite[]
   reviews      Review[]
   views        RecipeView[]
+  likes        RecipeLike[]
   createdAt    DateTime   @default(now())
 }
 
@@ -118,4 +120,17 @@ model RecipeView {
 
   @@index([recipeId])
   @@index([viewedAt])
+}
+
+model RecipeLike {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId  Int
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  type      String   // "like" or "dislike"
+  createdAt DateTime @default(now())
+
+  @@unique([userId, recipeId])
+  @@index([recipeId])
 }
