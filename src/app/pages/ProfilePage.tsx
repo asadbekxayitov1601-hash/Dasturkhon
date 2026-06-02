@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { toast } from 'sonner';
 import { LogOut, Settings, Camera } from 'lucide-react';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
+import { EarningsDashboard } from '../components/EarningsDashboard';
 import { updateProfile } from '../api/chefApi';
 
 export function ProfilePage() {
@@ -151,6 +152,9 @@ export function ProfilePage() {
             <LogOut className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Earnings */}
+        <EarningsDashboard />
 
         {/* Analytics */}
         <AnalyticsDashboard />

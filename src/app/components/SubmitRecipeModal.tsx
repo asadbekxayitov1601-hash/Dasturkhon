@@ -19,6 +19,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
         image: '',
         cookTime: '',
         servings: 4,
+        price: 0,
         category: 'main',
         youtubeUrl: '',
         ingredientsStr: '',
@@ -75,6 +76,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                 image: '',
                 cookTime: '',
                 servings: 4,
+                price: 0,
                 category: 'main',
                 youtubeUrl: '',
                 ingredientsStr: '',
@@ -201,16 +203,31 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                 </div>
                             )}
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Cook Time</label>
-                            <input
-                                required
-                                type="text"
-                                placeholder="e.g. 45 min"
-                                value={formData.cookTime}
-                                onChange={e => setFormData({ ...formData, cookTime: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Cook Time</label>
+                                <input
+                                    required
+                                    type="text"
+                                    placeholder="e.g. 45 min"
+                                    value={formData.cookTime}
+                                    onChange={e => setFormData({ ...formData, cookTime: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Price (so'm)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="1000"
+                                    placeholder="0 = free"
+                                    value={formData.price}
+                                    onChange={e => setFormData({ ...formData, price: Math.max(0, Number(e.target.value) || 0) })}
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
+                                />
+                                <p className="text-[11px] text-gray-400 mt-1">Leave 0 to keep it free. Paid recipes earn you money.</p>
+                            </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
