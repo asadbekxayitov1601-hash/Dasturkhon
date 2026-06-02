@@ -15,7 +15,7 @@ export const recipes: Recipe[] = [
     },
     {
         id: 'r3',
-        title: "Sho'va",
+        title: "Sho'rva",
         image: 'https://api.silkphoto.uz/storage/ResourceThumbnail/dafd0320-c071-4d7c-962e-5d2fb323ded2/ZGFmZDAzMjAtYzA3MS00ZDdjLTk2MmUtNWQyZmIzMjNkZWQyLTE3MzcxODQ4OTk=.webp'
     }
 ];
