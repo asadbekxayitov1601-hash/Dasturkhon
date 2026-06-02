@@ -1,7 +1,7 @@
 // src/app/components/RecipeDetailModal.tsx
 // Updated: added DeliveryLinks section between instructions and reviews
 
-import { X, Clock, ChefHat, PlayCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { X, Clock, ChefHat, PlayCircle } from 'lucide-react';
 import { Star } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -11,8 +11,6 @@ import { ReviewSection } from './ReviewSection';
 import { DeliveryLinks } from './DeliveryLinks'; // NEW
 import { getRecipeReviews, averageRating } from '../api/reviewsApi';
 import { recordView } from '../api/analyticsApi';
-import { getLikes, voteRecipe, LikesData } from '../api/likesApi';
-import { useAuth } from '../auth/AuthProvider';
 
 interface RecipeDetailModalProps {
   recipe: Recipe | null;
@@ -20,26 +18,10 @@ interface RecipeDetailModalProps {
   onClose: () => void;
 }
 
-// Predict the new like/dislike state when the user clicks a vote, matching the
-// server's toggle behaviour (clicking the same vote removes it; clicking the
-// other switches). Used for instant, optimistic UI feedback.
-function computeOptimisticVote(current: LikesData, type: 'like' | 'dislike'): LikesData {
-  let { likes, dislikes, userVote } = current;
-  if (userVote === 'like') likes -= 1;
-  if (userVote === 'dislike') dislikes -= 1;
-  const nextVote = userVote === type ? null : type;
-  if (nextVote === 'like') likes += 1;
-  if (nextVote === 'dislike') dislikes += 1;
-  return { likes, dislikes, userVote: nextVote };
-}
-
 export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModalProps) {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
-  const [likesData, setLikesData] = useState<LikesData>({ likes: 0, dislikes: 0, userVote: null });
-  const [voteLoading, setVoteLoading] = useState(false);
 
   useEffect(() => {
     if (recipe) {
@@ -52,30 +34,8 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
           setReviewCount(reviews.length);
         })
         .catch(() => {});
-
-      getLikes(recipe.id)
-        .then(setLikesData)
-        .catch(() => {});
     }
   }, [recipe]);
-
-  const handleVote = async (type: 'like' | 'dislike') => {
-    if (!user || !recipe || voteLoading) return;
-
-    // Optimistic update: reflect the vote instantly, then reconcile with the
-    // server response (and revert if it fails).
-    const prev = likesData;
-    setLikesData(computeOptimisticVote(prev, type));
-    setVoteLoading(true);
-    try {
-      const updated = await voteRecipe(recipe.id, type);
-      setLikesData(updated);
-    } catch (_) {
-      setLikesData(prev);
-    } finally {
-      setVoteLoading(false);
-    }
-  };
 
   if (!isOpen || !recipe) return null;
 
@@ -132,45 +92,15 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
         {/* Content */}
         <div className="p-6 sm:p-8">
 
-          {/* Like / Dislike + YouTube */}
-          <div
-            className="mb-8 p-6 rounded-[24px] flex flex-wrap items-center justify-between gap-6"
-            style={{
-              background: 'linear-gradient(135deg, rgba(74,124,126,0.05), rgba(230,181,102,0.06))',
-              border: '1px solid rgba(74,124,126,0.12)',
-            }}
-          >
-            {/* Like / Dislike */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => handleVote('like')}
-                disabled={!user || voteLoading}
-                title={user ? 'Like' : 'Log in to vote'}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium text-sm active:scale-95 ${
-                  likesData.userVote === 'like'
-                    ? 'bg-[#4A7C7E] border-[#4A7C7E] text-white shadow-md scale-105'
-                    : 'bg-white border-[rgba(74,124,126,0.2)] text-[#4A7C7E] hover:border-[#4A7C7E]'
-                } disabled:opacity-40 disabled:cursor-not-allowed`}
-              >
-                <ThumbsUp className={`w-4 h-4 transition-transform ${likesData.userVote === 'like' ? 'fill-current' : ''}`} />
-                <span>{likesData.likes}</span>
-              </button>
-              <button
-                onClick={() => handleVote('dislike')}
-                disabled={!user || voteLoading}
-                title={user ? 'Dislike' : 'Log in to vote'}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium text-sm active:scale-95 ${
-                  likesData.userVote === 'dislike'
-                    ? 'bg-red-500 border-red-500 text-white shadow-md scale-105'
-                    : 'bg-white border-red-200 text-red-400 hover:border-red-400'
-                } disabled:opacity-40 disabled:cursor-not-allowed`}
-              >
-                <ThumbsDown className={`w-4 h-4 transition-transform ${likesData.userVote === 'dislike' ? 'fill-current' : ''}`} />
-                <span>{likesData.dislikes}</span>
-              </button>
-            </div>
-
-            {recipe.youtubeUrl && (
+          {/* Watch video */}
+          {recipe.youtubeUrl && (
+            <div
+              className="mb-8 p-6 rounded-[24px] flex flex-wrap items-center justify-between gap-6"
+              style={{
+                background: 'linear-gradient(135deg, rgba(74,124,126,0.05), rgba(230,181,102,0.06))',
+                border: '1px solid rgba(74,124,126,0.12)',
+              }}
+            >
               <a
                 href={recipe.youtubeUrl}
                 target="_blank"
@@ -181,8 +111,8 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                 <PlayCircle className="w-5 h-5" />
                 <span className="font-medium">Watch Video</span>
               </a>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Ingredients */}
           <div className="mb-8">
