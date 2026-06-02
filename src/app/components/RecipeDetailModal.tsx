@@ -1,7 +1,7 @@
 // src/app/components/RecipeDetailModal.tsx
 // Updated: added DeliveryLinks section between instructions and reviews
 
-import { X, Clock, Users, ChefHat, PlayCircle, Plus, Minus } from 'lucide-react';
+import { X, Clock, Users, ChefHat, PlayCircle, Plus, Minus, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Star } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -11,6 +11,8 @@ import { ReviewSection } from './ReviewSection';
 import { DeliveryLinks } from './DeliveryLinks'; // NEW
 import { getRecipeReviews, averageRating } from '../api/reviewsApi';
 import { recordView } from '../api/analyticsApi';
+import { getLikes, voteRecipe, LikesData } from '../api/likesApi';
+import { useAuth } from '../auth/AuthProvider';
 
 interface RecipeDetailModalProps {
   recipe: Recipe | null;
@@ -20,9 +22,12 @@ interface RecipeDetailModalProps {
 
 export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModalProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [servings, setServings] = useState(recipe?.servings || 1);
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
+  const [likesData, setLikesData] = useState<LikesData>({ likes: 0, dislikes: 0, userVote: null });
+  const [voteLoading, setVoteLoading] = useState(false);
 
   useEffect(() => {
     if (recipe) {
@@ -37,8 +42,23 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
           setReviewCount(reviews.length);
         })
         .catch(() => {});
+
+      getLikes(recipe.id)
+        .then(setLikesData)
+        .catch(() => {});
     }
   }, [recipe]);
+
+  const handleVote = async (type: 'like' | 'dislike') => {
+    if (!user || !recipe || voteLoading) return;
+    setVoteLoading(true);
+    try {
+      const updated = await voteRecipe(recipe.id, type);
+      setLikesData(updated);
+    } catch (_) {} finally {
+      setVoteLoading(false);
+    }
+  };
 
   if (!isOpen || !recipe) return null;
 
@@ -138,6 +158,36 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                   <Plus className="w-4 h-4" style={{ color: '#4A7C7E' }} />
                 </button>
               </div>
+            </div>
+
+            {/* Like / Dislike */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleVote('like')}
+                disabled={!user || voteLoading}
+                title={user ? 'Like' : 'Log in to vote'}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium text-sm ${
+                  likesData.userVote === 'like'
+                    ? 'bg-[#4A7C7E] border-[#4A7C7E] text-white shadow-md'
+                    : 'bg-white border-[rgba(74,124,126,0.2)] text-[#4A7C7E] hover:border-[#4A7C7E]'
+                } disabled:opacity-40 disabled:cursor-not-allowed`}
+              >
+                <ThumbsUp className="w-4 h-4" />
+                <span>{likesData.likes}</span>
+              </button>
+              <button
+                onClick={() => handleVote('dislike')}
+                disabled={!user || voteLoading}
+                title={user ? 'Dislike' : 'Log in to vote'}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium text-sm ${
+                  likesData.userVote === 'dislike'
+                    ? 'bg-red-500 border-red-500 text-white shadow-md'
+                    : 'bg-white border-red-200 text-red-400 hover:border-red-400'
+                } disabled:opacity-40 disabled:cursor-not-allowed`}
+              >
+                <ThumbsDown className="w-4 h-4" />
+                <span>{likesData.dislikes}</span>
+              </button>
             </div>
 
             {recipe.youtubeUrl && (

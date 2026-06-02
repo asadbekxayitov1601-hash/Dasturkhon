@@ -953,6 +953,78 @@ app.post('/api/subscribe/cancel', requireAuth, async (req, res) => {
   }
 });
 
+// ── Like / Dislike ────────────────────────────────────────────────────────────
+
+// GET /api/recipes/:id/likes  — public, returns { likes, dislikes, userVote }
+app.get('/api/recipes/:id/likes', async (req, res) => {
+  try {
+    const recipeId = Number(req.params.id);
+
+    const [likes, dislikes] = await Promise.all([
+      prisma.recipeLike.count({ where: { recipeId, type: 'like' } }),
+      prisma.recipeLike.count({ where: { recipeId, type: 'dislike' } }),
+    ]);
+
+    // Optionally return the current user's vote if they're logged in
+    let userVote = null;
+    const auth = req.headers.authorization;
+    if (auth) {
+      try {
+        const token = auth.split(' ')[1];
+        const payload = jwt.verify(token, JWT_SECRET);
+        const existing = await prisma.recipeLike.findUnique({
+          where: { userId_recipeId: { userId: payload.id, recipeId } }
+        });
+        userVote = existing ? existing.type : null;
+      } catch (_) {}
+    }
+
+    res.json({ likes, dislikes, userVote });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// POST /api/recipes/:id/vote  — toggle like or dislike (requireAuth)
+// body: { type: 'like' | 'dislike' }
+app.post('/api/recipes/:id/vote', requireAuth, async (req, res) => {
+  try {
+    const recipeId = Number(req.params.id);
+    const { type } = req.body;
+
+    if (type !== 'like' && type !== 'dislike') {
+      return res.status(400).json({ message: 'type must be "like" or "dislike"' });
+    }
+
+    const existing = await prisma.recipeLike.findUnique({
+      where: { userId_recipeId: { userId: req.user.id, recipeId } }
+    });
+
+    if (existing && existing.type === type) {
+      // Same vote again → remove (toggle off)
+      await prisma.recipeLike.delete({ where: { id: existing.id } });
+    } else if (existing) {
+      // Switching vote
+      await prisma.recipeLike.update({ where: { id: existing.id }, data: { type } });
+    } else {
+      await prisma.recipeLike.create({ data: { userId: req.user.id, recipeId, type } });
+    }
+
+    const [likes, dislikes] = await Promise.all([
+      prisma.recipeLike.count({ where: { recipeId, type: 'like' } }),
+      prisma.recipeLike.count({ where: { recipeId, type: 'dislike' } }),
+    ]);
+
+    const userVote = existing && existing.type === type ? null : type;
+
+    res.json({ likes, dislikes, userVote });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // POST /api/recipes/:id/view  — record a view (called when modal opens)
 app.post('/api/recipes/:id/view', async (req, res) => {
   try {
