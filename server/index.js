@@ -46,6 +46,21 @@ app.get('/api/health', (req, res) => {
 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Shape a Prisma user into the object sent to the client. Keep this in one
+// place so every endpoint returns the same fields (incl. avatarUrl/bio).
+function publicUser(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    isAdmin: user.isAdmin,
+    isPro: user.isPro,
+    avatarUrl: user.avatarUrl,
+    bio: user.bio,
+    cardLast4: user.cardLast4,
+  };
+}
+
 // auth middleware
 function requireAuth(req, res, next) {
   const auth = req.headers.authorization;
@@ -87,7 +102,7 @@ app.post('/api/signup', async (req, res) => {
       }
     });
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, isPro: user.isPro }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, isPro: user.isPro } });
+    res.json({ token, user: publicUser(user) });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: 'Server error' });
@@ -103,7 +118,7 @@ app.post('/api/login', async (req, res) => {
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, isPro: user.isPro }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, isPro: user.isPro } });
+    res.json({ token, user: publicUser(user) });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: 'Server error' });
@@ -121,7 +136,7 @@ app.get('/api/me', (req, res) => {
     // Fetch latest user data from DB to ensure isAdmin is up to date
     prisma.user.findUnique({ where: { id: payload.id } }).then(user => {
       if (!user) return res.status(401).json({ message: 'User not found' });
-      res.json({ user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, isPro: user.isPro } });
+      res.json({ user: publicUser(user) });
     }).catch(e => res.status(500).json({ message: 'Server error' }));
   } catch (e) {
     res.status(401).json({ message: 'Invalid token' });

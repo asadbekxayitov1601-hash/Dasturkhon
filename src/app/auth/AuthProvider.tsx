@@ -9,6 +9,8 @@ interface User {
   isAdmin?: boolean;
   isPro?: boolean;
   photoURL?: string;
+  avatarUrl?: string;
+  bio?: string;
   cardLast4?: string;
 }
 
