@@ -4,9 +4,6 @@ import { PantryItem, IngredientStatus } from '../types/kitchen';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getPantry, addPantryItem, updatePantryItem, deletePantryItem } from '../api/pantryApi';
-import { useAuth } from '../auth/AuthProvider';
-import { useNavigate } from 'react-router-dom';
-import { SubscriptionModal } from '../components/SubscriptionModal';
 
 export function PantryPage() {
   const [items, setItems] = useState<PantryItem[]>([]);
@@ -100,9 +97,6 @@ export function PantryPage() {
     }
   };
 
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -112,24 +106,6 @@ export function PantryPage() {
         </div>
       </div>
     );
-  }
-
-  if (!user?.isPro) {
-    return (
-      <>
-        <div className="min-h-screen bg-background filter blur-sm pointer-events-none select-none overflow-hidden h-screen fixed inset-0 z-0">
-          <div className="max-w-[1400px] mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8 text-gray-900">My Pantry</h1>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="h-48 bg-gray-100 rounded-2xl border border-gray-200" />
-              ))}
-            </div>
-          </div>
-        </div>
-        <SubscriptionModal open={true} onOpenChange={(open) => !open && navigate('/')} />
-      </>
-    )
   }
 
   return (

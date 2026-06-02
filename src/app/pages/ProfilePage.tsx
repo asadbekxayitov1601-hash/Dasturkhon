@@ -3,39 +3,20 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
-import { authFetch } from '../auth/authFetch';
 import { toast } from 'sonner';
-import { Crown, User as UserIcon, LogOut, CreditCard, TrendingUp, Settings, Camera } from 'lucide-react';
+import { LogOut, Settings, Camera } from 'lucide-react';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { updateProfile } from '../api/chefApi';
-
-type Tab = 'account' | 'analytics';
 
 export function ProfilePage() {
   const { user, refresh, logout } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<Tab>('account');
 
   // Edit profile fields
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [bio, setBio] = useState('');
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>();
-
-  const handleCancelSubscription = async () => {
-    if (!confirm('Are you sure you want to cancel your Pro subscription?')) return;
-    setLoading(true);
-    try {
-      const res = await authFetch('/api/subscribe/cancel', { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to cancel');
-      await refresh();
-      toast.success('Subscription cancelled');
-    } catch (e: any) {
-      toast.error(e.message || 'Error cancelling subscription');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -87,11 +68,6 @@ export function ProfilePage() {
                 style={{ background: 'linear-gradient(135deg, #4A7C7E, #5A9FA3)' }}
               >
                 {initials}
-              </div>
-            )}
-            {user.isPro && (
-              <div className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full p-1.5 border-2 border-white shadow">
-                <Crown className="w-4 h-4 text-white fill-current" />
               </div>
             )}
             {editing && (
@@ -146,18 +122,11 @@ export function ProfilePage() {
                 <h1 className="text-2xl font-bold mb-1" style={{ color: '#2C3E50' }}>{user.name || 'Your Name'}</h1>
                 <p className="text-sm mb-1" style={{ color: '#7A8B99' }}>{user.email}</p>
                 {user.bio && <p className="text-sm mb-3" style={{ color: '#2C3E50' }}>{user.bio}</p>}
-                <div className="flex flex-wrap gap-2 justify-center sm:justify-start mb-3">
-                  {user.isAdmin && (
+                {user.isAdmin && (
+                  <div className="flex flex-wrap gap-2 justify-center sm:justify-start mb-3">
                     <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Admin</span>
-                  )}
-                  {user.isPro ? (
-                    <span className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold border border-amber-200 flex items-center gap-1.5">
-                      <Crown className="w-3 h-3 fill-current" /> Pro Member
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 bg-gray-50 text-gray-500 rounded-full text-xs border">Free Plan</span>
-                  )}
-                </div>
+                  </div>
+                )}
                 <button
                   onClick={() => { setEditing(true); setName(user.name || ''); setBio(user.bio || ''); }}
                   className="text-xs flex items-center gap-1.5 transition-colors"
@@ -183,94 +152,8 @@ export function ProfilePage() {
           </button>
         </div>
 
-        {/* Tab switcher */}
-        <div
-          className="flex rounded-[20px] p-1 gap-1"
-          style={{ background: 'rgba(74,124,126,0.07)' }}
-        >
-          {([
-            { key: 'account' as Tab, label: 'Account & Billing', icon: <CreditCard className="w-4 h-4" /> },
-            { key: 'analytics' as Tab, label: 'My Analytics', icon: <TrendingUp className="w-4 h-4" /> },
-          ]).map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[16px] text-sm font-medium transition-all"
-              style={{
-                background: tab === t.key ? '#fff' : 'transparent',
-                color: tab === t.key ? '#4A7C7E' : '#7A8B99',
-                boxShadow: tab === t.key ? '0 1px 4px rgba(74,124,126,0.12)' : 'none',
-              }}
-            >
-              {t.icon}
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Account tab */}
-        {tab === 'account' && (
-          <div
-            className="rounded-[28px] overflow-hidden"
-            style={{ background: '#fff', border: '1px solid rgba(74,124,126,0.12)' }}
-          >
-            <div className="p-6 border-b" style={{ borderColor: 'rgba(74,124,126,0.1)' }}>
-              <h2 className="text-lg font-semibold" style={{ color: '#2C3E50' }}>Subscription & Billing</h2>
-            </div>
-            <div className="p-6 space-y-5">
-              {user.isPro ? (
-                <div
-                  className="flex items-center justify-between p-4 rounded-[16px]"
-                  style={{ background: 'rgba(230,181,102,0.08)', border: '1px solid rgba(230,181,102,0.2)' }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center"
-                      style={{ background: 'rgba(230,181,102,0.15)' }}>
-                      <Crown className="w-6 h-6 text-amber-500 fill-current" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold" style={{ color: '#2C3E50' }}>Pro Subscription Active</h3>
-                      <p className="text-sm" style={{ color: '#E6B566' }}>Full access to all features</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleCancelSubscription}
-                    disabled={loading}
-                    className="px-4 py-2 text-sm font-medium rounded-[10px] border transition-colors disabled:opacity-50"
-                    style={{ color: '#D17A52', borderColor: '#D17A52' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(209,122,82,0.06)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    {loading ? 'Cancelling...' : 'Cancel'}
-                  </button>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-sm mb-2" style={{ color: '#7A8B99' }}>You are on the free plan.</p>
-                  <p className="text-xs" style={{ color: '#C4B49A' }}>Upgrade to Pro to unlock all recipes.</p>
-                </div>
-              )}
-
-              {user.cardLast4 && (
-                <div
-                  className="flex items-center gap-4 p-4 rounded-[16px]"
-                  style={{ background: 'rgba(74,124,126,0.04)', border: '1px solid rgba(74,124,126,0.1)' }}
-                >
-                  <CreditCard className="w-5 h-5 flex-shrink-0" style={{ color: '#4A7C7E' }} />
-                  <div>
-                    <p className="font-mono font-medium" style={{ color: '#2C3E50' }}>
-                      •••• •••• •••• {user.cardLast4}
-                    </p>
-                    <p className="text-xs" style={{ color: '#7A8B99' }}>Linked card for payments</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Analytics tab */}
-        {tab === 'analytics' && <AnalyticsDashboard />}
+        {/* Analytics */}
+        <AnalyticsDashboard />
 
       </div>
     </div>

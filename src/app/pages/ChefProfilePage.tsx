@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChefHat, Users, BookOpen, Star, UserPlus, UserCheck, ArrowLeft, Crown, Calendar } from 'lucide-react';
+import { ChefHat, Users, BookOpen, Star, UserPlus, UserCheck, ArrowLeft, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
@@ -53,11 +53,6 @@ function MiniRecipeCard({
           alt={recipe.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        {recipe.isPro && (
-          <div className="absolute top-2 left-2 flex items-center gap-1 bg-gradient-to-r from-amber-400 to-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-            <Crown className="w-2.5 h-2.5 fill-current" /> PRO
-          </div>
-        )}
       </div>
       <div className="p-4">
         <h4 className="font-semibold text-sm leading-tight mb-1 group-hover:text-[#4A7C7E] transition-colors line-clamp-2"
@@ -227,11 +222,6 @@ export function ChefProfilePage() {
                   style={{ background: 'linear-gradient(135deg, #4A7C7E, #5A9FA3)' }}
                 >
                   {initials}
-                </div>
-              )}
-              {chef.isPro && (
-                <div className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full p-1.5 border-2 border-white shadow">
-                  <Crown className="w-3.5 h-3.5 text-white fill-current" />
                 </div>
               )}
             </div>

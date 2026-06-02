@@ -3,7 +3,7 @@
 // Embed inside ProfilePage for chefs
 
 import { useEffect, useState } from 'react';
-import { Eye, Heart, Star, BookOpen, Users, TrendingUp, Crown, ChefHat } from 'lucide-react';
+import { Eye, Heart, Star, BookOpen, Users, TrendingUp, ChefHat } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getMyAnalytics, AnalyticsData, RecipeStat } from '../api/analyticsApi';
 
@@ -104,7 +104,6 @@ function RecipeRow({ recipe, rank }: { recipe: RecipeStat; rank: number }) {
           <p className="text-sm font-semibold truncate" style={{ color: '#2C3E50' }}>
             {recipe.title}
           </p>
-          {recipe.isPro && <Crown className="w-3 h-3 text-amber-500 fill-current flex-shrink-0" />}
         </div>
         <span
           className="text-xs px-1.5 py-0.5 rounded-md capitalize"
