@@ -1,4 +1,4 @@
-import { ShoppingCart, Trash2, Check, Plus, Download, ExternalLink, ShoppingBag } from 'lucide-react';
+import { ShoppingCart, Trash2, Check, Plus, Download, ExternalLink, ShoppingBag, ChefHat } from 'lucide-react';
 import { DELIVERY_PLATFORMS } from '../lib/delivery';
 import { PanLoader } from '../components/PanLoader';
 import { ShoppingListItem } from '../types/kitchen';
@@ -56,25 +56,44 @@ export function ShoppingListPage() {
     }
   };
 
+  // Optimistic toggle: flip instantly, reconcile/revert with the server.
   const handleToggleItem = async (id: string) => {
     const item = items.find((i) => i.id === id);
     if (!item) return;
+    const nextChecked = !item.checked;
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked: nextChecked } : i)));
     try {
-      const updated = await updateShoppingItem(id, { checked: !item.checked });
+      const updated = await updateShoppingItem(id, { checked: nextChecked });
       setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
-      toast.success(updated.checked ? 'Item completed' : 'Item marked as pending');
     } catch (e: any) {
+      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked: item.checked } : i)));
       toast.error(e.message || 'Failed to update item');
     }
   };
 
+  // Optimistic remove: drop instantly, restore on failure.
   const handleRemoveItem = async (id: string, name: string) => {
+    const prev = items;
+    setItems((curr) => curr.filter((item) => item.id !== id));
     try {
       await deleteShoppingItem(id);
-      setItems((prev) => prev.filter((item) => item.id !== id));
-      toast.success(`${name} removed from list`);
     } catch (e: any) {
-      toast.error(e.message || 'Failed to delete item');
+      setItems(prev);
+      toast.error(e.message || `Failed to remove ${name}`);
+    }
+  };
+
+  const handleClearCompleted = async () => {
+    if (completedItems.length === 0) return;
+    const prev = items;
+    const toRemove = completedItems.map((i) => i.id);
+    setItems((curr) => curr.filter((i) => !i.checked));
+    try {
+      await Promise.all(toRemove.map((id) => deleteShoppingItem(id)));
+      toast.success('Cleared completed items');
+    } catch (e: any) {
+      setItems(prev);
+      toast.error('Failed to clear completed items');
     }
   };
 
@@ -93,37 +112,15 @@ export function ShoppingListPage() {
       });
   };
 
-  const handleOrderFromKorzinka = () => {
-    const listText = activeItems.map((item) => `${item.name} - ${item.quantity || '1x'}`).join('\n');
-
-    navigator.clipboard
-      .writeText(listText)
-      .then(() => {
-        toast.success('Shopping list copied!', {
-          description: 'Opening Korzinka.uz...',
-        });
-
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-        if (isMobile) {
-          const korzinkaAppUrl = 'korzinka://';
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = korzinkaAppUrl;
-          document.body.appendChild(iframe);
-
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-            window.open('https://korzinka.uz', '_blank');
-          }, 2000);
-        } else {
-          window.open('https://korzinka.uz', '_blank');
-        }
-      })
-      .catch(() => {
-        toast.error('Failed to copy list');
-      });
-  };
+  // Group active items by the recipe they came from (manual items go to "Other").
+  const groupedActive = activeItems.reduce<Record<string, ShoppingListItem[]>>((acc, item) => {
+    const key = item.recipeName || 'Other items';
+    (acc[key] ||= []).push(item);
+    return acc;
+  }, {});
+  const boughtCount = completedItems.length;
+  const totalCount = items.length;
+  const progress = totalCount > 0 ? Math.round((boughtCount / totalCount) * 100) : 0;
 
   if (loading) {
     return (
@@ -153,6 +150,24 @@ export function ShoppingListPage() {
               <span className="hidden sm:inline">Add Item</span>
             </button>
           </div>
+
+          {/* Progress */}
+          {totalCount > 0 && (
+            <div>
+              <div className="flex items-center justify-between text-xs font-medium text-gray-500 mb-1.5">
+                <span>{boughtCount} of {totalCount} bought</span>
+                <span>{progress}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-primary/10 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70"
+                  initial={false}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Order ingredients (affiliate) */}
@@ -239,13 +254,6 @@ export function ShoppingListPage() {
         {activeItems.length > 0 && (
           <div className="mb-8 flex flex-wrap gap-3">
             <button
-              onClick={handleOrderFromKorzinka}
-              className="flex items-center gap-2 px-6 py-3 rounded-[20px] bg-gradient-to-r from-secondary to-secondary/80 text-white hover:shadow-lg transition-all"
-            >
-              <ExternalLink className="w-5 h-5" />
-              Order from Korzinka
-            </button>
-            <button
               onClick={handleExportList}
               className="flex items-center gap-2 px-6 py-3 rounded-[20px] bg-white border border-primary/20 text-gray-700 hover:bg-primary/5 transition-all"
             >
@@ -257,58 +265,71 @@ export function ShoppingListPage() {
 
         {/* Shopping List Items */}
         <div className="space-y-6">
-          {/* Active Items */}
+          {/* Active Items, grouped by recipe */}
           {activeItems.length > 0 && (
-            <div>
-              <h2 className="text-xl text-gray-900 mb-4">To Buy</h2>
-              <div className="space-y-3">
-                <AnimatePresence>
-                  {activeItems.map((item) => (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      className="group"
-                    >
-                      <div className="p-5 rounded-[24px] bg-white border border-gray-200 hover:shadow-md transition-all">
-                        <div className="flex items-start gap-4">
-                          <button
-                            onClick={() => handleToggleItem(item.id)}
-                            className="mt-1 w-6 h-6 rounded-full border-2 border-gray-300 hover:border-primary transition-colors shrink-0 flex items-center justify-center"
-                          >
-                            {item.checked && <Check className="w-4 h-4 text-primary" />}
-                          </button>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-gray-900">{item.name}</h3>
-                            {item.quantity && (
-                              <p className="text-sm text-gray-600 mt-1">{item.quantity}</p>
-                            )}
-                            {item.recipeName && (
-                              <p className="text-sm text-primary mt-1">
-                                For: {item.recipeName}
-                              </p>
-                            )}
+            <div className="space-y-6">
+              {Object.entries(groupedActive).map(([groupName, groupItems]) => (
+                <div key={groupName}>
+                  <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
+                    {groupName !== 'Other items' && <ChefHat className="w-4 h-4 text-primary" />}
+                    {groupName}
+                    <span className="text-gray-400 font-normal normal-case">({groupItems.length})</span>
+                  </h2>
+                  <div className="space-y-3">
+                    <AnimatePresence>
+                      {groupItems.map((item) => (
+                        <motion.div
+                          key={item.id}
+                          layout
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          className="group"
+                        >
+                          <div className="p-5 rounded-[24px] bg-white border border-gray-200 hover:shadow-md transition-all">
+                            <div className="flex items-center gap-4">
+                              <button
+                                onClick={() => handleToggleItem(item.id)}
+                                className="w-6 h-6 rounded-full border-2 border-gray-300 hover:border-primary transition-colors shrink-0 flex items-center justify-center active:scale-90"
+                              >
+                                {item.checked && <Check className="w-4 h-4 text-primary" />}
+                              </button>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-gray-900">{item.name}</h3>
+                                {item.quantity && (
+                                  <p className="text-sm text-gray-600 mt-0.5">{item.quantity}</p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => handleRemoveItem(item.id, item.name)}
+                                className="w-10 h-10 rounded-full hover:bg-red-50 flex items-center justify-center transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </button>
+                            </div>
                           </div>
-                          <button
-                            onClick={() => handleRemoveItem(item.id, item.name)}
-                            className="w-10 h-10 rounded-full hover:bg-red-50 flex items-center justify-center transition-colors shrink-0 opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
           {/* Completed Items */}
           {completedItems.length > 0 && (
             <div>
-              <h2 className="text-xl text-gray-900 mb-4">Completed</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl text-gray-900">Completed ({completedItems.length})</h2>
+                <button
+                  onClick={handleClearCompleted}
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Clear completed
+                </button>
+              </div>
               <div className="space-y-3">
                 <AnimatePresence>
                   {completedItems.map((item) => (
