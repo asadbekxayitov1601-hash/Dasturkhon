@@ -86,19 +86,31 @@ function requireAdmin(req, res, next) {
 }
 
 app.post('/api/signup', async (req, res) => {
-  const { name, email, password, isAdmin } = req.body;
-  if (!email || !password) return res.status(400).json({ message: 'Missing email or password' });
+  const { name, email, password } = req.body;
+  // Basic input validation.
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ message: 'Invalid email or password' });
+  }
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {
+    return res.status(400).json({ message: 'Invalid email address' });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters' });
+  }
   try {
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) return res.status(409).json({ message: 'Email already registered' });
     const passwordHash = await bcrypt.hash(password, 10);
-    // Allow setting isAdmin for dev/demo purposes
+    // NOTE: isAdmin is intentionally NOT taken from the request body — that
+    // would let anyone self-promote to admin. New users are always non-admin;
+    // admins are created via server/scripts/create-admin.js.
     const user = await prisma.user.create({
       data: {
-        name: name || '',
-        email,
+        name: typeof name === 'string' ? name.trim() : '',
+        email: normalizedEmail,
         passwordHash,
-        isAdmin: !!isAdmin
+        isAdmin: false
       }
     });
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, isPro: user.isPro }, JWT_SECRET, { expiresIn: '7d' });
@@ -111,9 +123,12 @@ app.post('/api/signup', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ message: 'Missing email or password' });
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ message: 'Missing email or password' });
+  }
+  const normalizedEmail = email.trim().toLowerCase();
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
