@@ -21,6 +21,8 @@ export interface Recipe {
   status?: 'pending' | 'approved' | 'rejected';
   userId?: number;
   isPro?: boolean;
+  price?: number;   // 0 = free, otherwise price in so'm (UZS)
+  locked?: boolean; // true when paid and the current viewer hasn't unlocked it
   user?: { name?: string | null; email?: string };
   createdAt?: string;
 }

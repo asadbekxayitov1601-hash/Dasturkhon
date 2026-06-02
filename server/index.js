@@ -84,6 +84,35 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// Like requireAuth, but never blocks: sets req.user if a valid token is present,
+// otherwise leaves it undefined. Used by public endpoints that personalise
+// results (e.g. which paid recipes the viewer has unlocked).
+function optionalAuth(req, _res, next) {
+  const auth = req.headers.authorization;
+  if (auth) {
+    const parts = auth.split(' ');
+    if (parts.length === 2) {
+      try { req.user = jwt.verify(parts[1], JWT_SECRET); } catch (_) { /* ignore */ }
+    }
+  }
+  next();
+}
+
+// Payment mode: "test" confirms orders instantly without charging (no gateway
+// wired yet). Switch to a real provider (Uzum) later by confirming orders from
+// its webhook instead. confirmOrderPaid is the single place an order becomes
+// "paid" and starts counting toward a creator's balance.
+const PAYMENTS_MODE = process.env.PAYMENTS_MODE || 'test';
+
+async function confirmOrderPaid(orderId) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order || order.status === 'paid') return order;
+  return prisma.order.update({
+    where: { id: orderId },
+    data: { status: 'paid', paidAt: new Date() },
+  });
+}
+
 app.post('/api/signup', async (req, res) => {
   const { name, email, password } = req.body;
   // Basic input validation.
@@ -255,31 +284,38 @@ app.delete('/api/shopping/:id', requireAuth, async (req, res) => {
 
 // Recipe CRUD
 // Recipe CRUD
-app.get('/api/recipes', async (req, res) => {
+app.get('/api/recipes', optionalAuth, async (req, res) => {
   try {
-    const { status } = req.query;
-    const where = {};
-
-    // If asking for pending/rejected, must be admin (but we can't easily check auth in a public endpoint without middleware)
-    // So let's make the default behavior "approved only".
-    // If a special header or query param is passed AND the user is admin, allow it.
-    // However, simplest is: This public endpoint returns APPROVED recipes.
-    // We'll add a separate protected endpoint for admin to get pending recipes.
-
-    where.status = 'approved';
-
+    // Public endpoint: only approved recipes.
     const recipes = await prisma.recipe.findMany({
-      where,
+      where: { status: 'approved' },
       orderBy: { createdAt: 'desc' }
     });
 
-    // Parse JSON strings back to arrays
-    const parsedRecipes = recipes.map(r => ({
-      ...r,
-      ingredients: JSON.parse(r.ingredients),
-      instructions: JSON.parse(r.instructions),
-      id: String(r.id)
-    }));
+    // Which paid recipes has the viewer already unlocked?
+    let ownedRecipeIds = new Set();
+    if (req.user) {
+      const owned = await prisma.order.findMany({
+        where: { buyerId: req.user.id, type: 'purchase', status: 'paid' },
+        select: { recipeId: true },
+      });
+      ownedRecipeIds = new Set(owned.map(o => o.recipeId));
+    }
+
+    const parsedRecipes = recipes.map(r => {
+      const isOwner = req.user && req.user.id === r.userId;
+      const hasAccess = r.price === 0 || isOwner || ownedRecipeIds.has(r.id);
+      const locked = r.price > 0 && !hasAccess;
+      return {
+        ...r,
+        price: r.price,
+        locked,
+        // Hide the paid content until unlocked.
+        ingredients: locked ? [] : JSON.parse(r.ingredients),
+        instructions: locked ? [] : JSON.parse(r.instructions),
+        id: String(r.id),
+      };
+    });
     res.json(parsedRecipes);
   } catch (e) {
     console.error(e);
@@ -311,7 +347,7 @@ app.get('/api/recipes/pending', requireAuth, requireAdmin, async (req, res) => {
 
 app.post('/api/recipes', requireAuth, async (req, res) => {
   try {
-    const { title, image, cookTime, servings, category, ingredients, instructions, youtubeUrl } = req.body;
+    const { title, image, cookTime, servings, category, ingredients, instructions, youtubeUrl, price } = req.body;
 
     const recipe = await prisma.recipe.create({
       data: {
@@ -321,6 +357,7 @@ app.post('/api/recipes', requireAuth, async (req, res) => {
         servings: Number(servings),
         category,
         youtubeUrl: youtubeUrl || null,
+        price: Math.max(0, Math.round(Number(price) || 0)),
         ingredients: JSON.stringify(ingredients || []),
         instructions: JSON.stringify(instructions || []),
         userId: req.user.id,
@@ -363,7 +400,7 @@ app.put('/api/recipes/:id/status', requireAuth, requireAdmin, async (req, res) =
 app.put('/api/recipes/:id', requireAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { title, image, cookTime, servings, category, ingredients, instructions, youtubeUrl } = req.body;
+    const { title, image, cookTime, servings, category, ingredients, instructions, youtubeUrl, price } = req.body;
 
     // Check existence and permission
     const existing = await prisma.recipe.findUnique({ where: { id } });
@@ -383,6 +420,7 @@ app.put('/api/recipes/:id', requireAuth, async (req, res) => {
         servings: Number(servings),
         category,
         youtubeUrl: youtubeUrl || null,
+        ...(price !== undefined && { price: Math.max(0, Math.round(Number(price) || 0)) }),
         ingredients: JSON.stringify(ingredients || []),
         instructions: JSON.stringify(instructions || [])
       }
@@ -965,6 +1003,180 @@ app.get('/api/analytics/my', requireAuth, async (req, res) => {
   }
 });
 
+
+// ── Paid recipes, tips & creator earnings ─────────────────────────────────────
+
+// Unlock (buy) a paid recipe. In test mode the order is confirmed instantly.
+app.post('/api/recipes/:id/buy', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const recipe = await prisma.recipe.findUnique({ where: { id } });
+    if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
+
+    const unlocked = () => ({
+      ...recipe,
+      price: recipe.price,
+      locked: false,
+      ingredients: JSON.parse(recipe.ingredients),
+      instructions: JSON.parse(recipe.instructions),
+      id: String(recipe.id),
+    });
+
+    if (recipe.userId === req.user.id || recipe.price <= 0) {
+      return res.json({ access: true, recipe: unlocked() });
+    }
+
+    const already = await prisma.order.findFirst({
+      where: { buyerId: req.user.id, recipeId: id, type: 'purchase', status: 'paid' },
+    });
+    if (already) return res.json({ access: true, recipe: unlocked() });
+
+    const order = await prisma.order.create({
+      data: {
+        type: 'purchase',
+        amount: recipe.price,
+        buyerId: req.user.id,
+        creatorId: recipe.userId,
+        recipeId: id,
+        provider: PAYMENTS_MODE,
+      },
+    });
+    if (PAYMENTS_MODE === 'test') await confirmOrderPaid(order.id);
+
+    res.json({ access: true, recipe: unlocked() });
+  } catch (e) {
+    console.error('buy error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Tip a recipe's creator.
+app.post('/api/recipes/:id/tip', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const amount = Math.round(Number(req.body.amount) || 0);
+    if (amount <= 0) return res.status(400).json({ message: 'Invalid tip amount' });
+
+    const recipe = await prisma.recipe.findUnique({ where: { id } });
+    if (!recipe) return res.status(404).json({ message: 'Recipe not found' });
+    if (recipe.userId === req.user.id) {
+      return res.status(400).json({ message: "You can't tip your own recipe" });
+    }
+
+    const order = await prisma.order.create({
+      data: {
+        type: 'tip',
+        amount,
+        buyerId: req.user.id,
+        creatorId: recipe.userId,
+        recipeId: id,
+        provider: PAYMENTS_MODE,
+      },
+    });
+    if (PAYMENTS_MODE === 'test') await confirmOrderPaid(order.id);
+
+    res.json({ success: true, message: 'Thank you for supporting the chef!' });
+  } catch (e) {
+    console.error('tip error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Helper: compute a creator's earnings summary.
+async function getEarnings(creatorId) {
+  const [paidOrders, payouts] = await Promise.all([
+    prisma.order.findMany({
+      where: { creatorId, status: 'paid' },
+      orderBy: { paidAt: 'desc' },
+      include: { recipe: { select: { title: true } }, buyer: { select: { name: true, email: true } } },
+    }),
+    prisma.payout.findMany({ where: { creatorId }, orderBy: { requestedAt: 'desc' } }),
+  ]);
+  const totalEarned = paidOrders.reduce((s, o) => s + o.amount, 0);
+  const totalPaidOut = payouts.filter(p => p.status === 'paid').reduce((s, p) => s + p.amount, 0);
+  const pending = payouts.filter(p => p.status === 'requested').reduce((s, p) => s + p.amount, 0);
+  return { paidOrders, payouts, totalEarned, totalPaidOut, pending, balance: totalEarned - totalPaidOut - pending };
+}
+
+// Current user's earnings dashboard data.
+app.get('/api/me/earnings', requireAuth, async (req, res) => {
+  try {
+    const e = await getEarnings(req.user.id);
+    res.json({
+      balance: e.balance,
+      totalEarned: e.totalEarned,
+      totalPaidOut: e.totalPaidOut,
+      pending: e.pending,
+      earnings: e.paidOrders.map(o => ({
+        id: o.id,
+        type: o.type,
+        amount: o.amount,
+        recipeTitle: o.recipe?.title || null,
+        from: o.buyer?.name || o.buyer?.email?.split('@')[0] || 'Someone',
+        date: o.paidAt,
+      })),
+      payouts: e.payouts,
+    });
+  } catch (e) {
+    console.error('earnings error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Request a payout (creator). Amount must not exceed the available balance.
+app.post('/api/payouts/request', requireAuth, async (req, res) => {
+  try {
+    const amount = Math.round(Number(req.body.amount) || 0);
+    const note = typeof req.body.note === 'string' ? req.body.note.slice(0, 500) : null;
+    if (amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
+
+    const e = await getEarnings(req.user.id);
+    if (amount > e.balance) {
+      return res.status(400).json({ message: 'Amount exceeds your available balance' });
+    }
+
+    const payout = await prisma.payout.create({
+      data: { creatorId: req.user.id, amount, note, status: 'requested' },
+    });
+    res.json(payout);
+  } catch (e) {
+    console.error('payout request error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Admin: list all payout requests (newest / pending first).
+app.get('/api/admin/payouts', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const payouts = await prisma.payout.findMany({
+      orderBy: [{ status: 'asc' }, { requestedAt: 'desc' }],
+      include: { creator: { select: { id: true, name: true, email: true } } },
+    });
+    res.json(payouts);
+  } catch (e) {
+    console.error('admin payouts error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Admin: mark a payout request paid (after sending money manually) or reject it.
+app.post('/api/admin/payouts/:id/:action', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { action } = req.params;
+    if (action !== 'mark-paid' && action !== 'reject') {
+      return res.status(400).json({ message: 'Unknown action' });
+    }
+    const data = action === 'mark-paid'
+      ? { status: 'paid', paidAt: new Date() }
+      : { status: 'rejected' };
+    const updated = await prisma.payout.update({ where: { id }, data });
+    res.json(updated);
+  } catch (e) {
+    console.error('admin payout update error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server listening on port ${PORT}`);

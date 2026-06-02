@@ -1,16 +1,21 @@
 // src/app/components/RecipeDetailModal.tsx
 // Updated: added DeliveryLinks section between instructions and reviews
 
-import { X, Clock, ChefHat, PlayCircle } from 'lucide-react';
+import { X, Clock, ChefHat, PlayCircle, Heart } from 'lucide-react';
 import { Star } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { ReviewSection } from './ReviewSection';
 import { DeliveryLinks } from './DeliveryLinks'; // NEW
 import { getRecipeReviews, averageRating } from '../api/reviewsApi';
 import { recordView } from '../api/analyticsApi';
+import { useAuth } from '../auth/AuthProvider';
+import { tipRecipe, formatSom } from '../api/earningsApi';
+
+const TIP_PRESETS = [5000, 10000, 25000];
 
 interface RecipeDetailModalProps {
   recipe: Recipe | null;
@@ -20,8 +25,10 @@ interface RecipeDetailModalProps {
 
 export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModalProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
+  const [tipping, setTipping] = useState(false);
 
   useEffect(() => {
     if (recipe) {
@@ -37,7 +44,24 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
     }
   }, [recipe]);
 
+  const sendTip = async (amount: number) => {
+    if (!recipe) return;
+    if (!user) { toast.error('Please sign in to tip the chef'); return; }
+    setTipping(true);
+    try {
+      await tipRecipe(recipe.id, amount);
+      toast.success(`You tipped the chef ${formatSom(amount)} — thank you!`);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to send tip');
+    } finally {
+      setTipping(false);
+    }
+  };
+
   if (!isOpen || !recipe) return null;
+
+  // Show the tip control to logged-in users who aren't the recipe's author.
+  const canTip = !!user && Number(user.id) !== Number(recipe.userId);
 
   return (
     <div
@@ -91,6 +115,48 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
         {/* Content */}
         <div className="p-6 sm:p-8">
+
+          {/* Tip the chef */}
+          {canTip && (
+            <div
+              className="mb-8 p-5 rounded-[24px]"
+              style={{
+                background: 'linear-gradient(135deg, rgba(209,122,82,0.06), rgba(230,181,102,0.10))',
+                border: '1px solid rgba(209,122,82,0.18)',
+              }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Heart className="w-4 h-4" style={{ color: '#D17A52' }} />
+                <p className="text-sm font-semibold" style={{ color: '#2C3E50' }}>
+                  Enjoyed this recipe? Tip the chef
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {TIP_PRESETS.map((amt) => (
+                  <button
+                    key={amt}
+                    onClick={() => sendTip(amt)}
+                    disabled={tipping}
+                    className="px-4 py-2 rounded-full text-sm font-medium text-white shadow-sm transition-all hover:shadow-md active:scale-95 disabled:opacity-60"
+                    style={{ background: 'linear-gradient(135deg, #D17A52, #E6B566)' }}
+                  >
+                    {formatSom(amt)}
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    const v = Math.round(Number(prompt('Enter a tip amount in so\'m:') || 0));
+                    if (v > 0) sendTip(v);
+                  }}
+                  disabled={tipping}
+                  className="px-4 py-2 rounded-full text-sm font-medium border transition-all hover:bg-white active:scale-95 disabled:opacity-60"
+                  style={{ borderColor: 'rgba(209,122,82,0.4)', color: '#D17A52' }}
+                >
+                  Other amount
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Watch video */}
           {recipe.youtubeUrl && (
