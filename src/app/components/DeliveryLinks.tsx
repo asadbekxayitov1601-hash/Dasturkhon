@@ -1,43 +1,13 @@
 // src/app/components/DeliveryLinks.tsx
-// New file — drop into src/app/components/
-// Shows "Can't cook? Order it" section with Wolt, Yandex Food, Korzinka links
+// Shows "Can't cook? Order it" section with affiliate-tracked delivery links.
 
 import { ShoppingBag, ExternalLink, Bike } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { DELIVERY_PLATFORMS } from '../lib/delivery';
 
 interface DeliveryLinksProps {
   recipeName: string;
 }
-
-interface Platform {
-  name: string;
-  color: string;
-  textColor: string;
-  logo: string; // emoji or text logo
-  buildUrl: (query: string) => string;
-  description: string;
-}
-
-const PLATFORMS: Platform[] = [
-  {
-    name: 'Yandex Eda',
-    color: '#FC3F1D',
-    textColor: '#fff',
-    logo: '🔴',
-    buildUrl: (q) =>
-      `https://eda.yandex.uz/search?text=${encodeURIComponent(q)}`,
-    description: 'eda.yandex.uz',
-  },
-  {
-    name: 'Korzinka',
-    color: '#6DBE45',
-    textColor: '#fff',
-    logo: '🟢',
-    buildUrl: (q) =>
-      `https://korzinka.uz/search?query=${encodeURIComponent(q)}`,
-    description: 'korzinka.uz',
-  },
-];
 
 export function DeliveryLinks({ recipeName }: DeliveryLinksProps) {
   const { t } = useTranslation();
@@ -73,10 +43,10 @@ export function DeliveryLinks({ recipeName }: DeliveryLinksProps) {
 
       {/* Platform buttons */}
       <div className="flex flex-wrap gap-2">
-        {PLATFORMS.map((platform) => (
+        {DELIVERY_PLATFORMS.map((platform) => (
           <a
             key={platform.name}
-            href={platform.buildUrl(searchQuery)}
+            href={platform.searchUrl(searchQuery)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all hover:scale-105 active:scale-95 shadow-sm"

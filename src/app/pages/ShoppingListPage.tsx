@@ -1,4 +1,5 @@
-import { ShoppingCart, Trash2, Check, Plus, Download, ExternalLink } from 'lucide-react';
+import { ShoppingCart, Trash2, Check, Plus, Download, ExternalLink, ShoppingBag } from 'lucide-react';
+import { DELIVERY_PLATFORMS } from '../lib/delivery';
 import { PanLoader } from '../components/PanLoader';
 import { ShoppingListItem } from '../types/kitchen';
 import { motion, AnimatePresence } from 'motion/react';
@@ -153,6 +154,38 @@ export function ShoppingListPage() {
             </button>
           </div>
         </div>
+
+        {/* Order ingredients (affiliate) */}
+        {activeItems.length > 0 && (
+          <div
+            className="mb-8 p-5 rounded-[24px]"
+            style={{
+              background: 'linear-gradient(135deg, rgba(74,124,126,0.05), rgba(230,181,102,0.07))',
+              border: '1px solid rgba(74,124,126,0.15)',
+            }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <ShoppingBag className="w-4 h-4 text-primary" />
+              <p className="text-sm font-semibold text-gray-800">Don't want to shop? Order your ingredients</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {DELIVERY_PLATFORMS.map((p) => (
+                <a
+                  key={p.key}
+                  href={p.searchUrl(activeItems.slice(0, 5).map((i) => i.name).join(', '))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all hover:scale-105 active:scale-95 shadow-sm"
+                  style={{ background: p.color, color: p.textColor, boxShadow: `0 2px 8px ${p.color}40` }}
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  Order on {p.name}
+                  <ExternalLink className="w-3 h-3 opacity-70" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Add Item Form */}
         <AnimatePresence>
