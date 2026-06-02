@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Toaster } from 'sonner';
@@ -20,6 +21,35 @@ import '../i18n/config';
 
 import { useAuth } from './auth/AuthProvider';
 import { PanLoader } from './components/PanLoader';
+
+// Wraps the routed pages so each navigation fades/slides in for a modern feel.
+function AnimatedRoutes({ dailyCalories }: { dailyCalories: number }) {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <Routes location={location}>
+          <Route path="/" element={<HomePage dailyCalories={dailyCalories} />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/chef/:id" element={<ChefProfilePage />} />
+          <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/recipes" element={<RecipesPage />} />
+          <Route path="/pantry" element={<ProtectedRoute><PantryPage /></ProtectedRoute>} />
+          <Route path="/shopping" element={<ProtectedRoute><ShoppingListPage /></ProtectedRoute>} />
+          <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 function App() {
   const { loading } = useAuth();
@@ -62,42 +92,7 @@ function App() {
           <Header />
           {/* NewsTicker removed per request */}
 
-          <Routes>
-            <Route path="/" element={<HomePage dailyCalories={dailyCalories} />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/chef/:id" element={<ChefProfilePage />} />
-            <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route
-              path="/recipes"
-              element={<RecipesPage />}
-            />
-            <Route
-              path="/pantry"
-              element={
-                <ProtectedRoute>
-                  <PantryPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/shopping"
-              element={
-                <ProtectedRoute>
-                  <ShoppingListPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/favorites"
-              element={
-                <ProtectedRoute>
-                  <FavoritesPage />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+          <AnimatedRoutes dailyCalories={dailyCalories} />
 
           <Footer />
 

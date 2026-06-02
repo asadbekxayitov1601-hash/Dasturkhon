@@ -20,15 +20,6 @@ interface Platform {
 
 const PLATFORMS: Platform[] = [
   {
-    name: 'Wolt',
-    color: '#009DE0',
-    textColor: '#fff',
-    logo: '🔵',
-    buildUrl: (q) =>
-      `https://wolt.com/uz/uzb/tashkent/search?q=${encodeURIComponent(q)}`,
-    description: 'wolt.com',
-  },
-  {
     name: 'Yandex Eda',
     color: '#FC3F1D',
     textColor: '#fff',

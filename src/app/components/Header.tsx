@@ -30,7 +30,7 @@ export function Header() {
   }
 
   const languages = [
-    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'en', name: 'English', flag: 'EN' },
     { code: 'uz', name: "O'zbek", flag: '🇺🇿' },
     { code: 'ru', name: 'Русский', flag: '🇷🇺' },
   ];
@@ -57,13 +57,13 @@ export function Header() {
     >
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 transition-all duration-300">
-          <Link to="/" className="flex items-center gap-3 group relative z-10">
+          <Link to="/" className="flex items-center group relative z-10" aria-label="Dasturkhon home">
             <motion.img
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
               src={logo}
               alt="Dasturkhon"
-              className="w-auto h-10 sm:h-12 transition-all duration-300 !border-none !outline-none !ring-0 bg-transparent block drop-shadow-md"
+              className="h-11 sm:h-14 w-auto object-contain select-none !border-none !outline-none !ring-0 bg-transparent block"
             />
           </Link>
 
@@ -198,7 +198,8 @@ export function Header() {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-full hover:bg-gray-100 transition-colors relative z-50 text-gray-700"
+              className={`lg:hidden p-2 rounded-full transition-colors relative z-50 text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 [@media(hover:hover)]:hover:bg-gray-100 ${isMobileMenuOpen ? 'bg-gray-100' : 'bg-transparent'
+                }`}
               aria-label="Toggle menu"
             >
               <AnimatePresence mode="wait">

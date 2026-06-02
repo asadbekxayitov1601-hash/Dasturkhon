@@ -45,6 +45,8 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        whileHover={{ y: -6 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 24 }}
         className="group cursor-pointer relative h-full w-full"
         onClick={handleClick}
       >
