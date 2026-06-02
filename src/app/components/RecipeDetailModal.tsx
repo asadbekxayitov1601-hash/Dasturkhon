@@ -1,7 +1,7 @@
 // src/app/components/RecipeDetailModal.tsx
 // Updated: added DeliveryLinks section between instructions and reviews
 
-import { X, Clock, Users, ChefHat, PlayCircle, Plus, Minus, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { X, Clock, ChefHat, PlayCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Star } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -20,10 +20,22 @@ interface RecipeDetailModalProps {
   onClose: () => void;
 }
 
+// Predict the new like/dislike state when the user clicks a vote, matching the
+// server's toggle behaviour (clicking the same vote removes it; clicking the
+// other switches). Used for instant, optimistic UI feedback.
+function computeOptimisticVote(current: LikesData, type: 'like' | 'dislike'): LikesData {
+  let { likes, dislikes, userVote } = current;
+  if (userVote === 'like') likes -= 1;
+  if (userVote === 'dislike') dislikes -= 1;
+  const nextVote = userVote === type ? null : type;
+  if (nextVote === 'like') likes += 1;
+  if (nextVote === 'dislike') dislikes += 1;
+  return { likes, dislikes, userVote: nextVote };
+}
+
 export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModalProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [servings, setServings] = useState(recipe?.servings || 1);
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
   const [likesData, setLikesData] = useState<LikesData>({ likes: 0, dislikes: 0, userVote: null });
@@ -31,8 +43,6 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
   useEffect(() => {
     if (recipe) {
-      setServings(recipe.servings || 1);
-
       // Record view — fire-and-forget, never blocks UI
       recordView(recipe.id);
 
@@ -51,21 +61,23 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
   const handleVote = async (type: 'like' | 'dislike') => {
     if (!user || !recipe || voteLoading) return;
+
+    // Optimistic update: reflect the vote instantly, then reconcile with the
+    // server response (and revert if it fails).
+    const prev = likesData;
+    setLikesData(computeOptimisticVote(prev, type));
     setVoteLoading(true);
     try {
       const updated = await voteRecipe(recipe.id, type);
       setLikesData(updated);
-    } catch (_) {} finally {
+    } catch (_) {
+      setLikesData(prev);
+    } finally {
       setVoteLoading(false);
     }
   };
 
   if (!isOpen || !recipe) return null;
-
-  const increaseServings = () => setServings((prev) => prev + 1);
-  const decreaseServings = () => {
-    if (servings > 1) setServings((prev) => prev - 1);
-  };
 
   return (
     <div
@@ -120,7 +132,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
         {/* Content */}
         <div className="p-6 sm:p-8">
 
-          {/* Servings + YouTube */}
+          {/* Like / Dislike + YouTube */}
           <div
             className="mb-8 p-6 rounded-[24px] flex flex-wrap items-center justify-between gap-6"
             style={{
@@ -128,64 +140,32 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
               border: '1px solid rgba(74,124,126,0.12)',
             }}
           >
-            <div>
-              <label className="flex items-center gap-2 text-sm mb-3" style={{ color: '#7A8B99' }}>
-                <Users className="w-4 h-4" />
-                {t('recipes.servings_label')}
-              </label>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={decreaseServings}
-                  disabled={servings <= 1}
-                  className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-all disabled:opacity-40"
-                  style={{ border: '2px solid rgba(74,124,126,0.2)' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#4A7C7E')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(74,124,126,0.2)')}
-                >
-                  <Minus className="w-4 h-4" style={{ color: '#4A7C7E' }} />
-                </button>
-                <div className="text-center min-w-[60px]">
-                  <div className="text-3xl font-bold" style={{ color: '#4A7C7E' }}>{servings}</div>
-                  <div className="text-xs" style={{ color: '#7A8B99' }}>{t('recipes.servings')}</div>
-                </div>
-                <button
-                  onClick={increaseServings}
-                  className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-all"
-                  style={{ border: '2px solid rgba(74,124,126,0.2)' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#4A7C7E')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(74,124,126,0.2)')}
-                >
-                  <Plus className="w-4 h-4" style={{ color: '#4A7C7E' }} />
-                </button>
-              </div>
-            </div>
-
             {/* Like / Dislike */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => handleVote('like')}
                 disabled={!user || voteLoading}
                 title={user ? 'Like' : 'Log in to vote'}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium text-sm ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium text-sm active:scale-95 ${
                   likesData.userVote === 'like'
-                    ? 'bg-[#4A7C7E] border-[#4A7C7E] text-white shadow-md'
+                    ? 'bg-[#4A7C7E] border-[#4A7C7E] text-white shadow-md scale-105'
                     : 'bg-white border-[rgba(74,124,126,0.2)] text-[#4A7C7E] hover:border-[#4A7C7E]'
                 } disabled:opacity-40 disabled:cursor-not-allowed`}
               >
-                <ThumbsUp className="w-4 h-4" />
+                <ThumbsUp className={`w-4 h-4 transition-transform ${likesData.userVote === 'like' ? 'fill-current' : ''}`} />
                 <span>{likesData.likes}</span>
               </button>
               <button
                 onClick={() => handleVote('dislike')}
                 disabled={!user || voteLoading}
                 title={user ? 'Dislike' : 'Log in to vote'}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium text-sm ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all font-medium text-sm active:scale-95 ${
                   likesData.userVote === 'dislike'
-                    ? 'bg-red-500 border-red-500 text-white shadow-md'
+                    ? 'bg-red-500 border-red-500 text-white shadow-md scale-105'
                     : 'bg-white border-red-200 text-red-400 hover:border-red-400'
                 } disabled:opacity-40 disabled:cursor-not-allowed`}
               >
-                <ThumbsDown className="w-4 h-4" />
+                <ThumbsDown className={`w-4 h-4 transition-transform ${likesData.userVote === 'dislike' ? 'fill-current' : ''}`} />
                 <span>{likesData.dislikes}</span>
               </button>
             </div>

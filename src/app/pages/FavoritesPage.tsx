@@ -39,11 +39,14 @@ export function FavoritesPage() {
     };
 
     const handleToggleFavorite = async (recipe: Recipe) => {
+        // Optimistic removal for instant feedback; restore on failure.
+        const prev = recipes;
+        setRecipes(curr => curr.filter(r => r.id !== recipe.id));
         try {
             await removeFavorite(recipe.id);
-            setRecipes(prev => prev.filter(r => r.id !== recipe.id));
             toast.success(`Removed "${recipe.title}" from favorites`);
         } catch (e) {
+            setRecipes(prev);
             toast.error('Failed to remove favorite');
         }
     };

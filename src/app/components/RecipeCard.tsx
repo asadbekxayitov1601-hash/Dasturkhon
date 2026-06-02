@@ -2,7 +2,7 @@
 // Updated: added clickable chef name linking to /chef/:userId
 
 import { motion } from 'motion/react';
-import { Clock, Users, Plus, Heart, Crown, Lock, ChefHat } from 'lucide-react';
+import { Clock, Plus, Heart, Crown, Lock, ChefHat } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useAuth } from '../auth/AuthProvider';
@@ -78,13 +78,23 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
             )}
 
             {onToggleFavorite && (
-              <button
+              <motion.button
                 onClick={(e) => { e.stopPropagation(); onToggleFavorite(recipe); }}
-                className="absolute top-3 right-3 p-2.5 rounded-full bg-white/90 shadow-sm backdrop-blur-sm hover:bg-white transition-all z-10 hover:scale-110 active:scale-95 group/btn"
+                whileTap={{ scale: 0.8 }}
+                className="absolute top-3 right-3 p-2.5 rounded-full bg-white/90 shadow-sm backdrop-blur-sm hover:bg-white transition-all z-10 group/btn"
                 title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                aria-pressed={isFavorite}
               >
-                <Heart className={`w-5 h-5 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover/btn:text-red-500'}`} />
-              </button>
+                <motion.span
+                  key={isFavorite ? 'liked' : 'unliked'}
+                  initial={{ scale: 0.4 }}
+                  animate={{ scale: [0.4, 1.35, 1] }}
+                  transition={{ duration: 0.35, ease: 'easeOut' }}
+                  className="block"
+                >
+                  <Heart className={`w-5 h-5 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400 group-hover/btn:text-red-500'}`} />
+                </motion.span>
+              </motion.button>
             )}
 
             <div className="absolute bottom-3 left-3 flex gap-2 group-hover:translate-y-1 transition-transform duration-300">
@@ -92,12 +102,6 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
                 <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-md rounded-full px-3 py-1 text-gray-700 text-xs font-medium border border-white/20 shadow-sm">
                   <Clock className="w-3.5 h-3.5 text-primary" />
                   <span>{recipe.cookTime}</span>
-                </div>
-              )}
-              {recipe.servings && (
-                <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-md rounded-full px-3 py-1 text-gray-700 text-xs font-medium border border-white/20 shadow-sm">
-                  <Users className="w-3.5 h-3.5 text-primary" />
-                  <span>{recipe.servings}</span>
                 </div>
               )}
             </div>
