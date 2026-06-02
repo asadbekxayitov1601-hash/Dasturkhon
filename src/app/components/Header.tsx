@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Globe, ChevronDown, User, LogOut, Crown } from 'lucide-react';
+import { Menu, X, Globe, ChevronDown, User, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { useTranslation } from 'react-i18next';
@@ -151,11 +151,6 @@ export function Header() {
                         ) : (
                           <User className="w-4 h-4" />
                         )}
-                        {auth.user.isPro && (
-                          <div className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full p-0.5 border-2 border-white shadow-sm">
-                            <Crown className="w-2 h-2 text-white fill-current" />
-                          </div>
-                        )}
                       </div>
                       <span>{auth.user.name?.split(' ')[0] || 'User'}</span>
                     </Link>
@@ -302,11 +297,6 @@ export function Header() {
                       >
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary relative">
                           <User className="w-4 h-4" />
-                          {auth.user.isPro && (
-                            <div className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full p-0.5 border-2 border-white shadow-sm">
-                              <Crown className="w-2 h-2 text-white fill-current" />
-                            </div>
-                          )}
                         </div>
                         <span className="font-medium">Profile ({auth.user.name})</span>
                       </Link>
