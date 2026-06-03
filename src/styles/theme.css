@@ -202,3 +202,27 @@
   -ms-overflow-style: none;
   /* IE as if relevant */
 }
+
+/* ── Dark mode: retrofit common hardcoded light utility classes ─────────────── */
+.dark {
+  color-scheme: dark;
+}
+.dark body {
+  background-color: #0f141b;
+  color: #e5e7eb;
+}
+.dark .bg-white { background-color: #18202b !important; }
+.dark .bg-gray-50 { background-color: #131a23 !important; }
+.dark .bg-gray-100 { background-color: #1f2731 !important; }
+.dark .bg-gray-200 { background-color: #283039 !important; }
+
+.dark .text-gray-900 { color: #f3f4f6 !important; }
+.dark .text-gray-800 { color: #e5e7eb !important; }
+.dark .text-gray-700 { color: #d1d5db !important; }
+.dark .text-gray-600 { color: #9aa3b2 !important; }
+.dark .text-gray-500 { color: #8b94a3 !important; }
+
+.dark .border-gray-50,
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 { border-color: rgba(255, 255, 255, 0.08) !important; }

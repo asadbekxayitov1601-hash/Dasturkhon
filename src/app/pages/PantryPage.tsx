@@ -288,10 +288,19 @@ export function PantryPage() {
         </div>
 
         {filteredItems.length === 0 && (
-          <div className="text-center py-16">
-            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl text-gray-900 mb-2">{t('pantry.no_items')}</h3>
-            <p className="text-gray-600">{t('pantry.no_items_sub')}</p>
+          <div className="text-center py-20">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+              <Package className="w-10 h-10 text-primary" />
+            </div>
+            <h3 className="text-2xl text-gray-900 mb-3">{t('pantry.no_items')}</h3>
+            <p className="text-gray-600 mb-6">{t('pantry.no_items_sub')}</p>
+            <button
+              onClick={() => setIsAddingItem(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-[20px] bg-gradient-to-r from-primary to-primary/80 text-white hover:shadow-lg transition-all"
+            >
+              <Plus className="w-5 h-5" />
+              {t('pantry.add_item')}
+            </button>
           </div>
         )}
 
