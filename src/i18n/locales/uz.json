@@ -207,7 +207,14 @@
     "recipes_by": "{{name}} retseptlari",
     "this_chef": "ushbu oshpaz",
     "no_followers": "Hali obunachilar yo'q",
-    "no_following": "Hali hech kimga obuna bo'lmagan"
+    "no_following": "Hali hech kimga obuna bo'lmagan",
+    "view_profile": "Profilni ko'rish",
+    "my_recipes": "Mening retseptlarim"
+  },
+  "notif": {
+    "title": "Bildirishnomalar",
+    "empty": "Hozircha bildirishnomalar yo'q",
+    "new_recipe": "{{name}} yangi retsept e'lon qildi"
   },
   "delivery": {
     "cant_cook": "Pishirolmaysizmi? Buyurtma bering!",
