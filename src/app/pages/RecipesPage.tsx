@@ -194,7 +194,7 @@ export function RecipesPage() {
                       : 'bg-white border border-primary/20 text-gray-700 hover:bg-primary/5'
                       }`}
                   >
-                    {category === 'all' ? t('recipes.all') : category.charAt(0).toUpperCase() + category.slice(1)}
+                    {t(`categories.${category}`, category.charAt(0).toUpperCase() + category.slice(1))}
                   </button>
                 ))}
               </div>
