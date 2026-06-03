@@ -286,10 +286,12 @@ app.delete('/api/shopping/:id', requireAuth, async (req, res) => {
 // Recipe CRUD
 app.get('/api/recipes', optionalAuth, async (req, res) => {
   try {
-    // Public endpoint: only approved recipes.
+    // Public endpoint: only approved recipes. Include review ratings so cards
+    // can show an average score.
     const recipes = await prisma.recipe.findMany({
       where: { status: 'approved' },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: { reviews: { select: { rating: true } } },
     });
 
     // Which paid recipes has the viewer already unlocked?
@@ -306,10 +308,17 @@ app.get('/api/recipes', optionalAuth, async (req, res) => {
       const isOwner = req.user && req.user.id === r.userId;
       const hasAccess = r.price === 0 || isOwner || ownedRecipeIds.has(r.id);
       const locked = r.price > 0 && !hasAccess;
+      const reviewCount = r.reviews.length;
+      const rating = reviewCount
+        ? Math.round((r.reviews.reduce((s, rv) => s + rv.rating, 0) / reviewCount) * 10) / 10
+        : 0;
+      const { reviews, ...rest } = r;
       return {
-        ...r,
+        ...rest,
         price: r.price,
         locked,
+        rating,
+        reviewCount,
         // Hide the paid content until unlocked.
         ingredients: locked ? [] : JSON.parse(r.ingredients),
         instructions: locked ? [] : JSON.parse(r.instructions),

@@ -3,12 +3,13 @@
 // paid recipes show a price and an unlock button.
 
 import { motion } from 'motion/react';
-import { Clock, Plus, Heart, ChefHat, Lock } from 'lucide-react';
+import { Clock, Plus, Heart, ChefHat, Lock, Star } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { buyRecipe, formatSom } from '../api/earningsApi';
 
@@ -23,21 +24,21 @@ interface RecipeCardProps {
 
 export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewRecipe, onToggleFavorite, onUnlocked }: RecipeCardProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [buying, setBuying] = useState(false);
   const isLocked = !!recipe.locked;
 
   const handleUnlock = async () => {
-    if (!user) { toast.error('Please sign in to unlock this recipe'); navigate('/login'); return; }
-    if (!confirm(`Unlock "${recipe.title}" for ${formatSom(recipe.price || 0)}?`)) return;
+    if (!user) { toast.error(t('recipes.sign_in_unlock')); navigate('/login'); return; }
     setBuying(true);
     try {
       const { recipe: unlocked } = await buyRecipe(recipe.id);
-      toast.success('Recipe unlocked! Enjoy cooking.');
+      toast.success(t('recipes.unlocked'));
       onUnlocked?.(unlocked);
       onViewRecipe(unlocked);
     } catch (e: any) {
-      toast.error(e.message || 'Failed to unlock recipe');
+      toast.error(e.message || t('recipes.unlock_failed'));
     } finally {
       setBuying(false);
     }
@@ -122,6 +123,13 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
                 <span>{recipe.cookTime}</span>
               </div>
             )}
+            {(recipe.reviewCount ?? 0) > 0 && (
+              <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-md rounded-full px-3 py-1 text-gray-700 text-xs font-medium border border-white/20 shadow-sm">
+                <Star className="w-3.5 h-3.5 fill-current" style={{ color: '#E6B566' }} />
+                <span>{recipe.rating?.toFixed(1)}</span>
+                <span className="text-gray-400">({recipe.reviewCount})</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -164,7 +172,9 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
             >
               {isLocked ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4 group-hover/add:rotate-90 transition-transform" />}
               <span className="font-medium text-sm">
-                {isLocked ? (buying ? 'Unlocking…' : `Unlock for ${formatSom(recipe.price || 0)}`) : 'Add Ingredients'}
+                {isLocked
+                  ? (buying ? t('recipes.unlocking') : t('recipes.unlock_for', { price: formatSom(recipe.price || 0) }))
+                  : t('recipes.add_ingredients')}
               </span>
             </button>
           </div>

@@ -156,7 +156,7 @@ export function RecipesPage() {
                         onAddToShoppingList={handleAddToShoppingList}
                         onViewRecipe={handleViewRecipe}
                         onToggleFavorite={handleToggleFavorite}
-                        onUnlocked={(r) => setRecipes((prev) => prev.map((x) => (x.id === r.id ? r : x)))}
+                        onUnlocked={(r) => setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, ...r } : x)))}
                       />
                     </motion.div>
                   ))}
