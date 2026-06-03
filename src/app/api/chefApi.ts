@@ -35,6 +35,28 @@ export interface ChefRecipe {
   avgRating: number | null;
 }
 
+export interface UserLite {
+  id: number;
+  name: string | null;
+  email: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  isFollowing: boolean;
+  isSelf: boolean;
+}
+
+export async function getFollowers(chefId: number | string): Promise<UserLite[]> {
+  const res = await authFetch(`/api/chefs/${chefId}/followers`);
+  if (!res.ok) throw new Error('Failed to load followers');
+  return res.json();
+}
+
+export async function getFollowing(chefId: number | string): Promise<UserLite[]> {
+  const res = await authFetch(`/api/chefs/${chefId}/following`);
+  if (!res.ok) throw new Error('Failed to load following');
+  return res.json();
+}
+
 export async function getChefProfile(chefId: number | string): Promise<ChefProfile> {
   const res = await fetch(`${API}/api/chefs/${chefId}`);
   if (!res.ok) throw new Error('Chef not found');

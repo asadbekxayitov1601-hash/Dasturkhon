@@ -205,7 +205,9 @@
     "login_to_follow": "Kuzatish uchun tizimga kiring",
     "no_recipes_yet": "Hali retsept yo'q",
     "recipes_by": "{{name}} retseptlari",
-    "this_chef": "ushbu oshpaz"
+    "this_chef": "ushbu oshpaz",
+    "no_followers": "Hali obunachilar yo'q",
+    "no_following": "Hali hech kimga obuna bo'lmagan"
   },
   "delivery": {
     "cant_cook": "Pishirolmaysizmi? Buyurtma bering!",

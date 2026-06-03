@@ -9,14 +9,18 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
 import { useAuth } from '../auth/AuthProvider';
 import { RecipeDetailModal } from '../components/RecipeDetailModal';
+import { FollowListModal } from '../components/FollowListModal';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import {
   ChefProfile,
   ChefRecipe,
+  UserLite,
   getChefProfile,
   getFollowStatus,
   followChef,
   unfollowChef,
+  getFollowers,
+  getFollowing,
 } from '../api/chefApi';
 import { Recipe } from '../types/kitchen';
 
@@ -26,11 +30,12 @@ const itemVariants = {
 };
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({ icon, value, label }: { icon: React.ReactNode; value: number | string; label: string }) {
+function StatCard({ icon, value, label, onClick }: { icon: React.ReactNode; value: number | string; label: string; onClick?: () => void }) {
   return (
     <motion.div
       variants={itemVariants}
-      className="flex flex-col items-center gap-1 px-6 py-4 rounded-[20px] bg-white"
+      onClick={onClick}
+      className={`flex flex-col items-center gap-1 px-6 py-4 rounded-[20px] bg-white ${onClick ? 'cursor-pointer hover:shadow-md active:scale-95 transition-all' : ''}`}
       style={{ border: '1px solid rgba(74,124,126,0.12)' }}
     >
       <div style={{ color: '#4A7C7E' }}>{icon}</div>
@@ -103,7 +108,29 @@ export function ChefProfilePage() {
   const [followLoading, setFollowLoading] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
+  // Followers / following list modal
+  const [listOpen, setListOpen] = useState(false);
+  const [listType, setListType] = useState<'followers' | 'following'>('followers');
+  const [listUsers, setListUsers] = useState<UserLite[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+
   const isOwnProfile = user && chef && Number(user.id) === chef.id;
+
+  const openList = async (type: 'followers' | 'following') => {
+    if (!chef) return;
+    setListType(type);
+    setListUsers([]);
+    setListLoading(true);
+    setListOpen(true);
+    try {
+      const users = type === 'followers' ? await getFollowers(chef.id) : await getFollowing(chef.id);
+      setListUsers(users);
+    } catch {
+      /* ignore */
+    } finally {
+      setListLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -320,11 +347,13 @@ export function ChefProfilePage() {
             icon={<Users className="w-5 h-5" />}
             value={followerCount}
             label={t('chef.followers')}
+            onClick={() => openList('followers')}
           />
           <StatCard
             icon={<ChefHat className="w-5 h-5" />}
             value={chef.followingCount}
             label={t('chef.following_count')}
+            onClick={() => openList('following')}
           />
         </motion.div>
 
@@ -376,6 +405,15 @@ export function ChefProfilePage() {
         recipe={selectedRecipe}
         isOpen={!!selectedRecipe}
         onClose={() => setSelectedRecipe(null)}
+      />
+
+      <FollowListModal
+        open={listOpen}
+        title={listType === 'followers' ? t('chef.followers') : t('chef.following_count')}
+        users={listUsers}
+        loading={listLoading}
+        emptyText={listType === 'followers' ? t('chef.no_followers') : t('chef.no_following')}
+        onClose={() => setListOpen(false)}
       />
     </div>
   );
