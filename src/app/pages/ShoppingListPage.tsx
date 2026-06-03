@@ -4,10 +4,12 @@ import { PanLoader } from '../components/PanLoader';
 import { ShoppingListItem } from '../types/kitchen';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { getShoppingList, addShoppingItem, updateShoppingItem, deleteShoppingItem } from '../api/shoppingApi';
 
 export function ShoppingListPage() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<ShoppingListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +28,8 @@ export function ShoppingListPage() {
       const data = await getShoppingList();
       setItems(data);
     } catch (e: any) {
-      setError(e.message || 'Failed to load shopping list');
-      toast.error('Failed to load shopping list');
+      setError(e.message || t('shopping.load_failed'));
+      toast.error(t('shopping.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -38,7 +40,7 @@ export function ShoppingListPage() {
 
   const handleAddItem = async () => {
     if (!newItemName) {
-      toast.error('Please enter an item name');
+      toast.error(t('shopping.enter_name'));
       return;
     }
     try {
@@ -50,9 +52,9 @@ export function ShoppingListPage() {
       setNewItemName('');
       setNewItemQuantity('');
       setIsAddingItem(false);
-      toast.success('Item added to shopping list');
+      toast.success(t('shopping.item_added'));
     } catch (e: any) {
-      toast.error(e.message || 'Failed to add item');
+      toast.error(e.message || t('shopping.add_failed'));
     }
   };
 
@@ -67,7 +69,7 @@ export function ShoppingListPage() {
       setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
     } catch (e: any) {
       setItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked: item.checked } : i)));
-      toast.error(e.message || 'Failed to update item');
+      toast.error(e.message || t('shopping.add_failed'));
     }
   };
 
@@ -79,7 +81,7 @@ export function ShoppingListPage() {
       await deleteShoppingItem(id);
     } catch (e: any) {
       setItems(prev);
-      toast.error(e.message || `Failed to remove ${name}`);
+      toast.error(e.message || t('shopping.remove_failed', { name }));
     }
   };
 
@@ -90,10 +92,10 @@ export function ShoppingListPage() {
     setItems((curr) => curr.filter((i) => !i.checked));
     try {
       await Promise.all(toRemove.map((id) => deleteShoppingItem(id)));
-      toast.success('Cleared completed items');
+      toast.success(t('shopping.cleared'));
     } catch (e: any) {
       setItems(prev);
-      toast.error('Failed to clear completed items');
+      toast.error(t('shopping.clear_failed'));
     }
   };
 
@@ -105,10 +107,10 @@ export function ShoppingListPage() {
     navigator.clipboard
       .writeText(listText)
       .then(() => {
-        toast.success('Shopping list copied to clipboard!');
+        toast.success(t('shopping.copied_success'));
       })
       .catch(() => {
-        toast.error('Failed to copy list');
+        toast.error(t('shopping.copy_failed'));
       });
   };
 
@@ -137,9 +139,9 @@ export function ShoppingListPage() {
         <div className="mb-8 animate-fade-up">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl sm:text-4xl text-gray-900 mb-3">Shopping List</h1>
+              <h1 className="text-3xl sm:text-4xl text-gray-900 mb-3">{t('shopping.title')}</h1>
               <p className="text-gray-600">
-                {activeItems.length} {activeItems.length === 1 ? 'item' : 'items'} to buy
+                {activeItems.length} {activeItems.length === 1 ? t('shopping.item_to_buy') : t('shopping.items_to_buy')}
               </p>
             </div>
             <button
@@ -147,7 +149,7 @@ export function ShoppingListPage() {
               className="flex items-center gap-2 px-6 py-3 rounded-[20px] bg-gradient-to-r from-primary to-primary/80 text-white hover:shadow-lg transition-all"
             >
               <Plus className="w-5 h-5" />
-              <span className="hidden sm:inline">Add Item</span>
+              <span className="hidden sm:inline">{t('shopping.add_item')}</span>
             </button>
           </div>
 
@@ -155,7 +157,7 @@ export function ShoppingListPage() {
           {totalCount > 0 && (
             <div>
               <div className="flex items-center justify-between text-xs font-medium text-gray-500 mb-1.5">
-                <span>{boughtCount} of {totalCount} bought</span>
+                <span>{t('shopping.bought', { bought: boughtCount, total: totalCount })}</span>
                 <span>{progress}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-primary/10 overflow-hidden">
@@ -181,7 +183,7 @@ export function ShoppingListPage() {
           >
             <div className="flex items-center gap-2 mb-3">
               <ShoppingBag className="w-4 h-4 text-primary" />
-              <p className="text-sm font-semibold text-gray-800">Don't want to shop? Order your ingredients</p>
+              <p className="text-sm font-semibold text-gray-800">{t('shopping.order_ingredients')}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {DELIVERY_PLATFORMS.map((p) => (
@@ -194,7 +196,7 @@ export function ShoppingListPage() {
                   style={{ background: p.color, color: p.textColor, boxShadow: `0 2px 8px ${p.color}40` }}
                 >
                   <ShoppingBag className="w-3.5 h-3.5" />
-                  Order on {p.name}
+                  {t('shopping.order_on', { platform: p.name })}
                   <ExternalLink className="w-3 h-3 opacity-70" />
                 </a>
               ))}
@@ -212,11 +214,11 @@ export function ShoppingListPage() {
               className="mb-8"
             >
               <div className="p-6 rounded-[24px] bg-white border border-primary/20">
-                <h3 className="text-lg text-gray-900 mb-4">Add New Item</h3>
+                <h3 className="text-lg text-gray-900 mb-4">{t('shopping.add_new_item')}</h3>
                 <div className="grid sm:grid-cols-2 gap-4 mb-4">
                   <input
                     type="text"
-                    placeholder="Item name"
+                    placeholder={t('shopping.item_name')}
                     value={newItemName}
                     onChange={(e) => setNewItemName(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
@@ -224,7 +226,7 @@ export function ShoppingListPage() {
                   />
                   <input
                     type="text"
-                    placeholder="Quantity (e.g., 2 kg)"
+                    placeholder={t('shopping.quantity')}
                     value={newItemQuantity}
                     onChange={(e) => setNewItemQuantity(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
@@ -236,13 +238,13 @@ export function ShoppingListPage() {
                     onClick={handleAddItem}
                     className="px-6 py-2 rounded-[16px] bg-primary text-white hover:bg-primary/90 transition-colors"
                   >
-                    Add
+                    {t('shopping.add')}
                   </button>
                   <button
                     onClick={() => setIsAddingItem(false)}
                     className="px-6 py-2 rounded-[16px] bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
                   >
-                    Cancel
+                    {t('shopping.cancel')}
                   </button>
                 </div>
               </div>
@@ -258,7 +260,7 @@ export function ShoppingListPage() {
               className="flex items-center gap-2 px-6 py-3 rounded-[20px] bg-white border border-primary/20 text-gray-700 hover:bg-primary/5 transition-all"
             >
               <Download className="w-5 h-5" />
-              Copy List
+              {t('shopping.copy_list')}
             </button>
           </div>
         )}
@@ -272,7 +274,7 @@ export function ShoppingListPage() {
                 <div key={groupName}>
                   <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
                     {groupName !== 'Other items' && <ChefHat className="w-4 h-4 text-primary" />}
-                    {groupName}
+                    {groupName === 'Other items' ? t('shopping.other_items') : groupName}
                     <span className="text-gray-400 font-normal normal-case">({groupItems.length})</span>
                   </h2>
                   <div className="space-y-3">
@@ -321,13 +323,13 @@ export function ShoppingListPage() {
           {completedItems.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl text-gray-900">Completed ({completedItems.length})</h2>
+                <h2 className="text-xl text-gray-900">{t('shopping.completed')} ({completedItems.length})</h2>
                 <button
                   onClick={handleClearCompleted}
                   className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Clear completed
+                  {t('shopping.clear_completed')}
                 </button>
               </div>
               <div className="space-y-3">
@@ -378,16 +380,16 @@ export function ShoppingListPage() {
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
               <ShoppingCart className="w-10 h-10 text-primary" />
             </div>
-            <h3 className="text-2xl text-gray-900 mb-3">Your shopping list is empty</h3>
+            <h3 className="text-2xl text-gray-900 mb-3">{t('shopping.empty_title')}</h3>
             <p className="text-gray-600 mb-6">
-              Add items manually or browse recipes to get started
+              {t('shopping.empty_subtitle')}
             </p>
             <button
               onClick={() => setIsAddingItem(true)}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-[20px] bg-gradient-to-r from-primary to-primary/80 text-white hover:shadow-lg transition-all"
             >
               <Plus className="w-5 h-5" />
-              Add Your First Item
+              {t('shopping.add_first_item')}
             </button>
           </div>
         )}

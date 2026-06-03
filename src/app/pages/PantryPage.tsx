@@ -4,8 +4,10 @@ import { PantryItem, IngredientStatus } from '../types/kitchen';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getPantry, addPantryItem, updatePantryItem, deletePantryItem } from '../api/pantryApi';
+import { useTranslation } from 'react-i18next';
 
 export function PantryPage() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<PantryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,8 +29,8 @@ export function PantryPage() {
       const data = await getPantry();
       setItems(data);
     } catch (e: any) {
-      setError(e.message || 'Failed to load pantry');
-      toast.error('Failed to load pantry');
+      setError(e.message || t('pantry.load_failed'));
+      toast.error(t('pantry.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -56,7 +58,7 @@ export function PantryPage() {
 
   const handleAddItem = async () => {
     if (!newItemName || !newItemCategory) {
-      toast.error('Please fill in name and category');
+      toast.error(t('pantry.fill_required'));
       return;
     }
     try {
@@ -71,9 +73,9 @@ export function PantryPage() {
       setNewItemCategory('');
       setNewItemQuantity('');
       setIsAddingItem(false);
-      toast.success(`${newItemName} added to pantry`);
+      toast.success(t('pantry.added', { name: newItemName }));
     } catch (e: any) {
-      toast.error(e.message || 'Failed to add item');
+      toast.error(e.message || t('pantry.add_failed'));
     }
   };
 
@@ -81,9 +83,9 @@ export function PantryPage() {
     try {
       const updated = await updatePantryItem(id, { status });
       setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
-      toast.success('Status updated');
+      toast.success(t('pantry.status_updated'));
     } catch (e: any) {
-      toast.error(e.message || 'Failed to update status');
+      toast.error(e.message || t('pantry.update_failed'));
     }
   };
 
@@ -91,9 +93,9 @@ export function PantryPage() {
     try {
       await deletePantryItem(id);
       setItems((prev) => prev.filter((item) => item.id !== id));
-      toast.success(`${name} removed from pantry`);
+      toast.success(t('pantry.removed', { name }));
     } catch (e: any) {
-      toast.error(e.message || 'Failed to delete item');
+      toast.error(e.message || t('pantry.delete_failed'));
     }
   };
 
@@ -102,7 +104,7 @@ export function PantryPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full mx-auto mb-4" />
-          <p className="text-gray-600">Loading pantry...</p>
+          <p className="text-gray-600">{t('pantry.loading')}</p>
         </div>
       </div>
     );
@@ -115,15 +117,15 @@ export function PantryPage() {
         <div className="mb-8 animate-fade-up">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl sm:text-4xl text-gray-900 mb-3">My Pantry</h1>
-              <p className="text-gray-600">Manage your kitchen inventory</p>
+              <h1 className="text-3xl sm:text-4xl text-gray-900 mb-3">{t('pantry.title')}</h1>
+              <p className="text-gray-600">{t('pantry.subtitle')}</p>
             </div>
             <button
               onClick={() => setIsAddingItem(!isAddingItem)}
               className="flex items-center gap-2 px-6 py-3 rounded-[20px] bg-gradient-to-r from-primary to-primary/80 text-white hover:shadow-lg transition-all"
             >
               <Plus className="w-5 h-5" />
-              <span className="hidden sm:inline">Add Item</span>
+              <span className="hidden sm:inline">{t('pantry.add_item')}</span>
             </button>
           </div>
         </div>
@@ -138,25 +140,25 @@ export function PantryPage() {
               className="mb-8"
             >
               <div className="p-6 rounded-[24px] bg-white border border-primary/20">
-                <h3 className="text-lg text-gray-900 mb-4">Add New Item</h3>
+                <h3 className="text-lg text-gray-900 mb-4">{t('pantry.add_new_item')}</h3>
                 <div className="grid sm:grid-cols-3 gap-4 mb-4">
                   <input
                     type="text"
-                    placeholder="Item name"
+                    placeholder={t('pantry.item_name')}
                     value={newItemName}
                     onChange={(e) => setNewItemName(e.target.value)}
                     className="px-4 py-3 rounded-[16px] bg-background border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <input
                     type="text"
-                    placeholder="Category (e.g., vegetables)"
+                    placeholder={t('pantry.category_ph')}
                     value={newItemCategory}
                     onChange={(e) => setNewItemCategory(e.target.value)}
                     className="px-4 py-3 rounded-[16px] bg-background border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <input
                     type="text"
-                    placeholder="Quantity (optional)"
+                    placeholder={t('pantry.quantity_ph')}
                     value={newItemQuantity}
                     onChange={(e) => setNewItemQuantity(e.target.value)}
                     className="px-4 py-3 rounded-[16px] bg-background border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -167,13 +169,13 @@ export function PantryPage() {
                     onClick={handleAddItem}
                     className="px-6 py-2 rounded-[16px] bg-primary text-white hover:bg-primary/90 transition-colors"
                   >
-                    Add
+                    {t('pantry.add')}
                   </button>
                   <button
                     onClick={() => setIsAddingItem(false)}
                     className="px-6 py-2 rounded-[16px] bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
                   >
-                    Cancel
+                    {t('pantry.cancel')}
                   </button>
                 </div>
               </div>
@@ -185,21 +187,21 @@ export function PantryPage() {
         <div className="grid sm:grid-cols-3 gap-4 mb-8 animate-fade-up stagger-2">
           <div className="p-6 rounded-[24px] bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-green-700">In Stock</span>
+              <span className="text-sm text-green-700">{t('pantry.in_stock')}</span>
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
             <div className="text-3xl text-green-900">{statusStats['in-stock']}</div>
           </div>
           <div className="p-6 rounded-[24px] bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-yellow-700">Running Low</span>
+              <span className="text-sm text-yellow-700">{t('pantry.running_low')}</span>
               <TrendingDown className="w-5 h-5 text-yellow-600" />
             </div>
             <div className="text-3xl text-yellow-900">{statusStats.low}</div>
           </div>
           <div className="p-6 rounded-[24px] bg-gradient-to-br from-red-50 to-rose-50 border border-red-200">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-red-700">Out of Stock</span>
+              <span className="text-sm text-red-700">{t('pantry.out')}</span>
               <Package className="w-5 h-5 text-red-600" />
             </div>
             <div className="text-3xl text-red-900">{statusStats.out}</div>
@@ -212,7 +214,7 @@ export function PantryPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search pantry items..."
+              placeholder={t('pantry.search_ph')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 rounded-[20px] bg-white border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -229,7 +231,7 @@ export function PantryPage() {
                   : 'bg-white border border-primary/20 text-gray-700 hover:bg-primary/5'
                   }`}
               >
-                {status === 'all' ? 'All Items' : status.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                {status === 'all' ? t('pantry.all_items') : status === 'in-stock' ? t('pantry.in_stock') : status === 'low' ? t('pantry.low') : t('pantry.out')}
               </button>
             ))}
           </div>
@@ -268,7 +270,7 @@ export function PantryPage() {
                           <p className="text-sm text-gray-600 mb-2">{item.quantity}</p>
                         )}
                         <div className={`inline-flex px-3 py-1 rounded-full text-xs ${statusColors[item.status].bg} ${statusColors[item.status].text} border ${statusColors[item.status].border}`}>
-                          {item.status === 'in-stock' ? 'In Stock' : item.status === 'low' ? 'Low Stock' : 'Out of Stock'}
+                          {item.status === 'in-stock' ? t('pantry.in_stock') : item.status === 'low' ? t('pantry.low') : t('pantry.out')}
                         </div>
                       </div>
                       <button
@@ -288,8 +290,8 @@ export function PantryPage() {
         {filteredItems.length === 0 && (
           <div className="text-center py-16">
             <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl text-gray-900 mb-2">No items found</h3>
-            <p className="text-gray-600">Try adjusting your search or add new items</p>
+            <h3 className="text-xl text-gray-900 mb-2">{t('pantry.no_items')}</h3>
+            <p className="text-gray-600">{t('pantry.no_items_sub')}</p>
           </div>
         )}
 
@@ -302,7 +304,7 @@ export function PantryPage() {
         {/* Tip */}
         <div className="mt-12 p-6 rounded-[24px] bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
           <p className="text-sm text-blue-900">
-            💡 <strong>Tip:</strong> Click on any item to cycle through status: In Stock → Low → Out of Stock
+            💡 {t('pantry.tip')}
           </p>
         </div>
       </div>
