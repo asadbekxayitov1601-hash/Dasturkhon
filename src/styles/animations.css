@@ -59,6 +59,17 @@ a, button {
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Hide the up/down spinner buttons on number inputs. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Shimmer skeleton background (works regardless of motion preference). */
 .dx-skeleton {
   background: linear-gradient(90deg, rgba(74,124,126,0.06) 25%, rgba(74,124,126,0.14) 37%, rgba(74,124,126,0.06) 63%);
