@@ -46,13 +46,13 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
   const sendTip = async (amount: number) => {
     if (!recipe) return;
-    if (!user) { toast.error('Please sign in to tip the chef'); return; }
+    if (!user) { toast.error(t('earnings.sign_in_tip')); return; }
     setTipping(true);
     try {
       await tipRecipe(recipe.id, amount);
-      toast.success(`You tipped the chef ${formatSom(amount)} — thank you!`);
+      toast.success(t('earnings.tip_sent', { amount: formatSom(amount) }));
     } catch (e: any) {
-      toast.error(e.message || 'Failed to send tip');
+      toast.error(e.message || t('earnings.tip_failed'));
     } finally {
       setTipping(false);
     }
@@ -128,7 +128,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
               <div className="flex items-center gap-2 mb-3">
                 <Heart className="w-4 h-4" style={{ color: '#D17A52' }} />
                 <p className="text-sm font-semibold" style={{ color: '#2C3E50' }}>
-                  Enjoyed this recipe? Tip the chef
+                  {t('earnings.tip_prompt')}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -143,17 +143,6 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                     {formatSom(amt)}
                   </button>
                 ))}
-                <button
-                  onClick={() => {
-                    const v = Math.round(Number(prompt('Enter a tip amount in so\'m:') || 0));
-                    if (v > 0) sendTip(v);
-                  }}
-                  disabled={tipping}
-                  className="px-4 py-2 rounded-full text-sm font-medium border transition-all hover:bg-white active:scale-95 disabled:opacity-60"
-                  style={{ borderColor: 'rgba(209,122,82,0.4)', color: '#D17A52' }}
-                >
-                  Other amount
-                </button>
               </div>
             </div>
           )}

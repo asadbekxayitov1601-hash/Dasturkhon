@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { createRecipe } from '../api/recipesApi';
 import { X, Plus, Loader2, Upload } from 'lucide-react';
@@ -12,6 +13,7 @@ interface SubmitRecipeModalProps {
 }
 
 export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeModalProps) {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -216,7 +218,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Price (so'm)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipes.price_label')}</label>
                                 <input
                                     type="number"
                                     min="0"
@@ -226,7 +228,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                     onChange={e => setFormData({ ...formData, price: Math.max(0, Number(e.target.value) || 0) })}
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
                                 />
-                                <p className="text-[11px] text-gray-400 mt-1">Leave 0 to keep it free. Paid recipes earn you money.</p>
+                                <p className="text-[11px] text-gray-400 mt-1">{t('recipes.price_hint')}</p>
                             </div>
                         </div>
                         <div>
