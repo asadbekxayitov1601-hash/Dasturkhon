@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Globe, User, LogOut } from 'lucide-react';
+import { Menu, X, ChevronDown, User, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import logo from '../assets/dasturkhon_logo.png';
 export function Header() {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { t, i18n } = useTranslation();
   const auth = useAuth();
@@ -29,14 +30,16 @@ export function Header() {
   }
 
   const languages = [
-    { code: 'uz', name: "O'zbek", short: 'UZ', flag: '🇺🇿' },
-    { code: 'ru', name: 'Русский', short: 'RU', flag: '🇷🇺' },
-    { code: 'en', name: 'English', short: 'EN', flag: '🇬🇧' },
+    { code: 'uz', name: "O'zbek", short: 'UZ', flag: 'https://flagcdn.com/w40/uz.png' },
+    { code: 'ru', name: 'Русский', short: 'RU', flag: 'https://flagcdn.com/w40/ru.png' },
+    { code: 'en', name: 'English', short: 'EN', flag: 'https://flagcdn.com/w40/gb.png' },
   ];
+  const currentLang = languages.find((l) => l.code === i18n.language) || languages[0];
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
     localStorage.setItem('dasturxon-language', lng);
+    setIsLangMenuOpen(false);
   };
 
   const isActive = (path: string) => {
@@ -94,31 +97,48 @@ export function Header() {
           <div className="flex items-center gap-3 relative z-10">
             {/* Desktop Actions Group */}
             <div className="hidden lg:flex items-center gap-3">
-              {/* Language Switcher — segmented toggle */}
-              <div className="flex items-center gap-1 p-1 rounded-full bg-white border border-primary/20 shadow-sm">
-                <Globe className="w-4 h-4 text-primary ml-1.5 mr-0.5" />
-                {languages.map((lang) => {
-                  const active = i18n.language === lang.code;
-                  return (
-                    <button
-                      key={lang.code}
-                      onClick={() => changeLanguage(lang.code)}
-                      title={lang.name}
-                      aria-pressed={active}
-                      className={`relative px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${active ? 'text-white' : 'text-gray-500 hover:text-primary'}`}
-                    >
-                      {active && (
-                        <motion.span
-                          layoutId="lang-pill"
-                          className="absolute inset-0 rounded-full bg-primary"
-                          transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
-                          style={{ zIndex: 0 }}
-                        />
-                      )}
-                      <span className="relative z-10">{lang.short}</span>
-                    </button>
-                  );
-                })}
+              {/* Language Switcher — frosted-glass dropdown */}
+              <div className="relative">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setIsLangMenuOpen((o) => !o)}
+                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-2xl bg-white/40 backdrop-blur-md border border-white/50 shadow-sm hover:bg-white/60 transition-colors"
+                >
+                  <img src={currentLang.flag} alt="" className="w-6 h-[18px] rounded-[3px] object-cover shadow-sm" />
+                  <span className="text-sm font-medium text-gray-800">{currentLang.name}</span>
+                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
+                </motion.button>
+
+                <AnimatePresence>
+                  {isLangMenuOpen && (
+                    <>
+                      {/* click-catcher */}
+                      <div className="fixed inset-0 z-40" onClick={() => setIsLangMenuOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                        transition={{ duration: 0.18 }}
+                        className="absolute right-0 mt-2 w-48 p-1.5 rounded-2xl bg-white/50 backdrop-blur-2xl border border-white/60 shadow-xl z-50"
+                      >
+                        {languages.map((lang) => {
+                          const active = i18n.language === lang.code;
+                          return (
+                            <button
+                              key={lang.code}
+                              onClick={() => changeLanguage(lang.code)}
+                              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${active ? 'bg-white/70 text-primary font-semibold' : 'text-gray-700 hover:bg-white/50'}`}
+                            >
+                              <img src={lang.flag} alt="" className="w-6 h-[18px] rounded-[3px] object-cover shadow-sm" />
+                              <span className="text-sm">{lang.name}</span>
+                              {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Auth actions */}
@@ -264,7 +284,7 @@ export function Header() {
                           : 'bg-white border-gray-100 hover:border-gray-200'
                           }`}
                       >
-                        <span className="text-2xl">{lang.flag}</span>
+                        <img src={lang.flag} alt="" className="w-8 h-6 rounded-[3px] object-cover shadow-sm" />
                         <span className="text-xs font-medium">{lang.name.split(' ')[0]}</span>
                       </button>
                     ))}
