@@ -54,7 +54,11 @@
     "sign_in_unlock": "Retseptni ochish uchun tizimga kiring",
     "price_label": "Narxi (so'm)",
     "price_hint": "Bepul qoldirish uchun 0 yozing. Pullik retseptlar daromad keltiradi.",
-    "free": "Bepul"
+    "free": "Bepul",
+    "delete": "O'chirish",
+    "delete_confirm": "\"{{title}}\" o'chirilsinmi?",
+    "deleted": "Retsept o'chirildi",
+    "delete_failed": "Retseptni o'chirib bo'lmadi"
   },
   "categories": {
     "all": "Hammasi",

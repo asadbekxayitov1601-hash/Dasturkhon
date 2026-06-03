@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Filter, Plus, Clock, ChefHat } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Recipe } from '../types/kitchen';
-import { getRecipes, getFavorites, addFavorite, removeFavorite } from '../api/recipesApi';
+import { getRecipes, getFavorites, addFavorite, removeFavorite, deleteRecipe } from '../api/recipesApi';
 import { RecipeCard } from '../components/RecipeCard';
 import { RecipeDetailModal } from '../components/RecipeDetailModal';
 import { SubmitRecipeModal } from '../components/SubmitRecipeModal';
@@ -75,6 +75,18 @@ export function RecipesPage() {
         return next;
       });
       toast.error('Failed to update favorite');
+    }
+  };
+
+  const handleDeleteRecipe = async (recipe: Recipe) => {
+    const prev = recipes;
+    setRecipes((curr) => curr.filter((r) => r.id !== recipe.id));
+    try {
+      await deleteRecipe(recipe.id);
+      toast.success(t('recipes.deleted'));
+    } catch (e) {
+      setRecipes(prev);
+      toast.error(t('recipes.delete_failed'));
     }
   };
 
@@ -157,6 +169,7 @@ export function RecipesPage() {
                         onViewRecipe={handleViewRecipe}
                         onToggleFavorite={handleToggleFavorite}
                         onUnlocked={(r) => setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, ...r } : x)))}
+                        onDelete={handleDeleteRecipe}
                       />
                     </motion.div>
                   ))}
@@ -219,6 +232,7 @@ export function RecipesPage() {
                     onViewRecipe={handleViewRecipe}
                     onToggleFavorite={handleToggleFavorite}
                     onUnlocked={(r) => setRecipes((prev) => prev.map((x) => (x.id === r.id ? r : x)))}
+                    onDelete={handleDeleteRecipe}
                   />
                 ))}
               </div>
