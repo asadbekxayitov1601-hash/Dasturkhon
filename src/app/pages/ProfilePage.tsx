@@ -3,16 +3,29 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { toast } from 'sonner';
-import { LogOut, Settings, Camera } from 'lucide-react';
+import { LogOut, Settings, Camera, Star } from 'lucide-react';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { EarningsDashboard } from '../components/EarningsDashboard';
-import { updateProfile } from '../api/chefApi';
+import { RecipeDetailModal } from '../components/RecipeDetailModal';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { updateProfile, getChefProfile, ChefRecipe } from '../api/chefApi';
+import { Recipe } from '../types/kitchen';
 
 export function ProfilePage() {
+  const { t } = useTranslation();
   const { user, refresh, logout } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [myRecipes, setMyRecipes] = useState<ChefRecipe[]>([]);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      getChefProfile(user.id).then((p) => setMyRecipes(p.recipes)).catch(() => {});
+    }
+  }, [user]);
 
   // Edit profile fields
   const [editing, setEditing] = useState(false);
@@ -158,6 +171,33 @@ export function ProfilePage() {
           </button>
         </motion.div>
 
+        {/* My Recipes (Instagram-style grid) */}
+        {myRecipes.length > 0 && (
+          <div className="animate-fade-up">
+            <h2 className="text-lg font-semibold mb-3" style={{ color: '#2C3E50' }}>{t('chef.my_recipes')}</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {myRecipes.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => setSelectedRecipe(r as unknown as Recipe)}
+                  className="group relative rounded-2xl overflow-hidden aspect-square bg-gray-100"
+                >
+                  <ImageWithFallback src={r.image} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-2 text-left">
+                    <p className="text-white text-xs font-semibold line-clamp-2 capitalize">{r.title}</p>
+                    {r.avgRating !== null && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-white/90 mt-0.5">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> {r.avgRating.toFixed(1)}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Earnings (cards animate individually) */}
         <EarningsDashboard />
 
@@ -165,6 +205,12 @@ export function ProfilePage() {
         <AnalyticsDashboard />
 
       </div>
+
+      <RecipeDetailModal
+        recipe={selectedRecipe}
+        isOpen={!!selectedRecipe}
+        onClose={() => setSelectedRecipe(null)}
+      />
     </div>
   );
 }

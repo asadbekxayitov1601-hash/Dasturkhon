@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
 import logo from '../assets/dasturkhon_logo.png';
+import { NotificationBell } from './NotificationBell';
 
 export function Header() {
   const location = useLocation();
@@ -147,6 +148,7 @@ export function Header() {
                   <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
                 ) : auth.user ? (
                   <div className="flex items-center gap-3">
+                    <NotificationBell />
                     <Link to="/profile" className="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-primary transition-colors">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary relative">
                         {auth.user.photoURL ? (
@@ -191,6 +193,13 @@ export function Header() {
                 )}
               </div>
             </div>
+
+            {/* Mobile notification bell */}
+            {auth.user && (
+              <div className="lg:hidden">
+                <NotificationBell />
+              </div>
+            )}
 
             {/* Mobile Menu Button */}
             <motion.button

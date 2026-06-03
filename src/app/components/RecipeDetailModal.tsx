@@ -1,11 +1,12 @@
 // src/app/components/RecipeDetailModal.tsx
 // Updated: added DeliveryLinks section between instructions and reviews
 
-import { X, Clock, ChefHat, PlayCircle, Heart } from 'lucide-react';
+import { X, Clock, ChefHat, PlayCircle, Heart, User as UserIcon } from 'lucide-react';
 import { Star } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ReviewSection } from './ReviewSection';
@@ -14,6 +15,7 @@ import { getRecipeReviews, averageRating } from '../api/reviewsApi';
 import { recordView } from '../api/analyticsApi';
 import { useAuth } from '../auth/AuthProvider';
 import { tipRecipe, formatSom } from '../api/earningsApi';
+import { getFollowStatus, followChef, unfollowChef } from '../api/chefApi';
 
 const TIP_PRESETS = [5000, 10000, 25000];
 
@@ -26,9 +28,15 @@ interface RecipeDetailModalProps {
 export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModalProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
   const [tipping, setTipping] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
+
+  const authorId = recipe?.user?.id ?? recipe?.userId;
+  const isOwnRecipe = !!user && Number(user.id) === Number(authorId);
 
   useEffect(() => {
     if (recipe) {
@@ -41,8 +49,32 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
           setReviewCount(reviews.length);
         })
         .catch(() => {});
+
+      // Follow status for the publisher
+      setIsFollowing(false);
+      if (user && authorId && !isOwnRecipe) {
+        getFollowStatus(authorId).then(setIsFollowing).catch(() => {});
+      }
     }
   }, [recipe]);
+
+  const toggleFollow = async () => {
+    if (!authorId) return;
+    if (!user) { toast.error(t('earnings.sign_in_tip')); return; }
+    const cur = isFollowing;
+    setIsFollowing(!cur);
+    setFollowBusy(true);
+    try {
+      if (cur) await unfollowChef(authorId);
+      else await followChef(authorId);
+    } catch {
+      setIsFollowing(cur);
+    } finally {
+      setFollowBusy(false);
+    }
+  };
+
+  const goToChef = () => { if (authorId) { onClose(); navigate(`/chef/${authorId}`); } };
 
   const sendTip = async (amount: number) => {
     if (!recipe) return;
@@ -115,6 +147,38 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
         {/* Content */}
         <div className="p-6 sm:p-8">
+
+          {/* Publisher (Instagram-style author row) */}
+          {recipe.user && authorId && (
+            <div className="flex items-center gap-3 mb-6">
+              <button onClick={goToChef} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                {recipe.user.avatarUrl ? (
+                  <img src={recipe.user.avatarUrl} alt="" className="w-11 h-11 rounded-full object-cover ring-2 ring-white shadow" />
+                ) : (
+                  <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold ring-2 ring-white shadow" style={{ background: 'linear-gradient(135deg, #4A7C7E, #5A9FA3)' }}>
+                    {(recipe.user.name || recipe.user.email || 'C').slice(0, 2).toUpperCase() || <UserIcon className="w-5 h-5" />}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: '#2C3E50' }}>
+                    {recipe.user.name || recipe.user.email?.split('@')[0] || t('chef.anonymous')}
+                  </p>
+                  <p className="text-xs" style={{ color: '#7A8B99' }}>{t('chef.view_profile')}</p>
+                </div>
+              </button>
+              {!isOwnRecipe && (
+                <button
+                  onClick={toggleFollow}
+                  disabled={followBusy}
+                  className={`shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-colors disabled:opacity-60 ${
+                    isFollowing ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-primary text-white hover:bg-primary/90'
+                  }`}
+                >
+                  {isFollowing ? t('chef.following') : t('chef.follow')}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Tip the chef */}
           {canTip && (

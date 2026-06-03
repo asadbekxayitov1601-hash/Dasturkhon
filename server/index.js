@@ -291,7 +291,10 @@ app.get('/api/recipes', optionalAuth, async (req, res) => {
     const recipes = await prisma.recipe.findMany({
       where: { status: 'approved' },
       orderBy: { createdAt: 'desc' },
-      include: { reviews: { select: { rating: true } } },
+      include: {
+        reviews: { select: { rating: true } },
+        user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+      },
     });
 
     // Which paid recipes has the viewer already unlocked?
@@ -374,6 +377,9 @@ app.post('/api/recipes', requireAuth, async (req, res) => {
       }
     });
 
+    // If it's published immediately (admin), notify the author's followers.
+    if (recipe.status === 'approved') notifyFollowers(req.user.id, recipe);
+
     res.json({
       ...recipe,
       ingredients: JSON.parse(recipe.ingredients),
@@ -391,6 +397,8 @@ app.put('/api/recipes/:id/status', requireAuth, requireAdmin, async (req, res) =
     const id = Number(req.params.id);
     const { status, isPro } = req.body; // 'approved' or 'rejected'
 
+    const existing = await prisma.recipe.findUnique({ where: { id } });
+
     const data = { status };
     if (typeof isPro === 'boolean') data.isPro = isPro;
 
@@ -398,6 +406,11 @@ app.put('/api/recipes/:id/status', requireAuth, requireAdmin, async (req, res) =
       where: { id },
       data
     });
+
+    // Notify the author's followers the first time a recipe is approved.
+    if (status === 'approved' && existing && existing.status !== 'approved') {
+      notifyFollowers(updated.userId, updated);
+    }
 
     res.json(updated);
   } catch (e) {
@@ -1235,6 +1248,63 @@ app.post('/api/admin/payouts/:id/:action', requireAuth, requireAdmin, async (req
     res.json(updated);
   } catch (e) {
     console.error('admin payout update error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+// Create a "new recipe" notification for every follower of the author.
+async function notifyFollowers(authorId, recipe) {
+  try {
+    const [author, followers] = await Promise.all([
+      prisma.user.findUnique({ where: { id: authorId }, select: { name: true } }),
+      prisma.follow.findMany({ where: { followingId: authorId }, select: { followerId: true } }),
+    ]);
+    if (followers.length === 0) return;
+    await Promise.all(
+      followers.map(f =>
+        prisma.notification.create({
+          data: {
+            userId: f.followerId,
+            type: 'new_recipe',
+            actorId: authorId,
+            actorName: author?.name || null,
+            recipeId: recipe.id,
+            recipeTitle: recipe.title,
+          },
+        })
+      )
+    );
+  } catch (e) {
+    console.error('notifyFollowers error:', e);
+  }
+}
+
+app.get('/api/notifications', requireAuth, async (req, res) => {
+  try {
+    const items = await prisma.notification.findMany({
+      where: { userId: req.user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+    });
+    const unread = await prisma.notification.count({ where: { userId: req.user.id, read: false } });
+    res.json({ items, unread });
+  } catch (e) {
+    console.error('notifications error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/api/notifications/read', requireAuth, async (req, res) => {
+  try {
+    await prisma.notification.updateMany({
+      where: { userId: req.user.id, read: false },
+      data: { read: true },
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('notifications read error:', e);
     res.status(500).json({ message: 'Server error' });
   }
 });

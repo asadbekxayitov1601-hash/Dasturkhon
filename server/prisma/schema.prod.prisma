@@ -32,6 +32,7 @@ model User {
   ordersBought  Order[]        @relation("buyer")
   ordersEarned  Order[]        @relation("creator")
   payouts       Payout[]
+  notifications Notification[]
   // Follow relations
   following     Follow[]       @relation("follower")  // people this user follows
   followers     Follow[]       @relation("following") // people following this user
@@ -115,6 +116,23 @@ model Order {
 
   @@index([creatorId])
   @@index([buyerId])
+}
+
+// In-app notification (e.g. a followed author published a new recipe).
+// Actor/recipe info is denormalized so it survives deletes and needs no joins.
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int      // recipient
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   @default("new_recipe")
+  actorId     Int
+  actorName   String?
+  recipeId    Int?
+  recipeTitle String?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
 }
 
 // A creator's request to be paid out their balance. The admin sends the money

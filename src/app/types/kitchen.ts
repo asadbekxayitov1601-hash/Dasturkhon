@@ -25,7 +25,7 @@ export interface Recipe {
   locked?: boolean; // true when paid and the current viewer hasn't unlocked it
   rating?: number;       // average review rating (0 if none)
   reviewCount?: number;  // number of reviews
-  user?: { name?: string | null; email?: string };
+  user?: { id?: number; name?: string | null; email?: string; avatarUrl?: string | null };
   createdAt?: string;
 }
 
