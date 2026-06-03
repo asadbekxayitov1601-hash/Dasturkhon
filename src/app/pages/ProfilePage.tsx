@@ -2,6 +2,7 @@
 // Updated: added bio/avatar editing + AnalyticsDashboard tab
 
 import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { useAuth } from '../auth/AuthProvider';
 import { toast } from 'sonner';
 import { LogOut, Settings, Camera } from 'lucide-react';
@@ -51,7 +52,10 @@ export function ProfilePage() {
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* Profile Header */}
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="rounded-[28px] p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left"
           style={{ background: '#fff', border: '1px solid rgba(74,124,126,0.12)', boxShadow: '0 2px 16px rgba(74,124,126,0.06)' }}
         >
@@ -151,13 +155,25 @@ export function ProfilePage() {
           >
             <LogOut className="w-5 h-5" />
           </button>
-        </div>
+        </motion.div>
 
         {/* Earnings */}
-        <EarningsDashboard />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <EarningsDashboard />
+        </motion.div>
 
         {/* Analytics */}
-        <AnalyticsDashboard />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <AnalyticsDashboard />
+        </motion.div>
 
       </div>
     </div>
