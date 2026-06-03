@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
 import logo from '../assets/dasturkhon_logo.png';
 import { NotificationBell } from './NotificationBell';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Header() {
   const location = useLocation();
@@ -98,6 +99,7 @@ export function Header() {
           <div className="flex items-center gap-3 relative z-10">
             {/* Desktop Actions Group */}
             <div className="hidden lg:flex items-center gap-3">
+              <ThemeToggle />
               {/* Language Switcher — frosted-glass dropdown */}
               <div className="relative">
                 <motion.button
@@ -192,6 +194,11 @@ export function Header() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Mobile theme toggle */}
+            <div className="lg:hidden">
+              <ThemeToggle />
             </div>
 
             {/* Mobile notification bell */}
