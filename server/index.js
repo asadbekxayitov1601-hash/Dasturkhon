@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
-import { sendMail } from './services/email.js';
+import { sendMail, getEmailStatus } from './services/email.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -235,6 +235,11 @@ app.post('/api/auth/reset', async (req, res) => {
     console.error('reset error:', e);
     res.status(500).json({ message: 'Server error' });
   }
+});
+
+// Diagnostic: admin can check whether email sending is configured/working.
+app.get('/api/admin/email-status', requireAuth, requireAdmin, (req, res) => {
+  res.json(getEmailStatus());
 });
 
 app.get('/api/me', (req, res) => {

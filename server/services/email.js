@@ -17,16 +17,28 @@ if (GMAIL_USER && GMAIL_APP_PASSWORD) {
 
 export const emailEnabled = () => !!transporter;
 
+let lastError = null;
+// Diagnostic: is email configured, and did the last send fail?
+export function getEmailStatus() {
+  return {
+    enabled: !!transporter,
+    hasUser: !!GMAIL_USER,
+    hasPassword: !!GMAIL_APP_PASSWORD,
+    lastError,
+  };
+}
+
 export async function sendMail({ to, subject, text, html }) {
   if (!transporter) {
+    lastError = 'Not configured: GMAIL_USER / GMAIL_APP_PASSWORD missing';
     console.log(`[email disabled] to=${to} | ${subject} | ${text}`);
     return;
   }
-  await transporter.sendMail({
-    from: `Dasturkhon <${GMAIL_USER}>`,
-    to,
-    subject,
-    text,
-    html,
-  });
+  try {
+    await transporter.sendMail({ from: `Dasturkhon <${GMAIL_USER}>`, to, subject, text, html });
+    lastError = null;
+  } catch (e) {
+    lastError = String((e && e.message) || e);
+    throw e;
+  }
 }
