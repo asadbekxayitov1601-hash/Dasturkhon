@@ -23,18 +23,31 @@
     100% { background-position: 200% 0; }
   }
 
-  .animate-fade-up  { animation: dx-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
   .animate-fade-in  { animation: dx-fade-in 0.6s ease both; }
   .animate-scale-in { animation: dx-scale-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
   .animate-float    { animation: dx-float 5s ease-in-out infinite; }
 
-  /* Stagger helpers — add alongside an animate-* class on list items. */
-  .stagger-1 { animation-delay: 0.05s; }
-  .stagger-2 { animation-delay: 0.10s; }
-  .stagger-3 { animation-delay: 0.15s; }
-  .stagger-4 { animation-delay: 0.20s; }
-  .stagger-5 { animation-delay: 0.25s; }
-  .stagger-6 { animation-delay: 0.30s; }
+  /* Scroll-triggered reveal: elements start hidden and fade up only once they
+     enter the viewport (a global IntersectionObserver adds .is-visible). */
+  .animate-fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--reveal-delay, 0s);
+    will-change: opacity, transform;
+  }
+  .animate-fade-up.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Stagger helpers — delay the reveal of items in the same group. */
+  .stagger-1 { --reveal-delay: 0.05s; }
+  .stagger-2 { --reveal-delay: 0.10s; }
+  .stagger-3 { --reveal-delay: 0.15s; }
+  .stagger-4 { --reveal-delay: 0.20s; }
+  .stagger-5 { --reveal-delay: 0.25s; }
+  .stagger-6 { --reveal-delay: 0.30s; }
 
   /* Generic gentle lift for interactive cards/buttons using plain CSS. */
   .hover-lift { transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease; }

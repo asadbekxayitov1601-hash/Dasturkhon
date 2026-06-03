@@ -20,6 +20,7 @@ import { ProtectedRoute } from './auth/ProtectedRoute';
 import '../i18n/config';
 
 import { useAuth } from './auth/AuthProvider';
+import { useScrollReveal } from './hooks/useScrollReveal';
 import { PanLoader } from './components/PanLoader';
 
 // Wraps the routed pages so each navigation fades/slides in for a modern feel.
@@ -53,6 +54,7 @@ function AnimatedRoutes({ dailyCalories }: { dailyCalories: number }) {
 
 function App() {
   const { loading } = useAuth();
+  useScrollReveal();
   const [dailyCalories, setDailyCalories] = useState<number>(() => {
     const saved = localStorage.getItem('dasturxon-daily-calories');
     const savedDate = localStorage.getItem('dasturxon-calories-date');
