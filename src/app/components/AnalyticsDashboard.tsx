@@ -6,6 +6,10 @@ import { useEffect, useState } from 'react';
 import { Eye, Heart, Star, BookOpen, Users, TrendingUp, ChefHat } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
+import {
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis,
+  CartesianGrid, Tooltip, Legend,
+} from 'recharts';
 import { getMyAnalytics, AnalyticsData, RecipeStat } from '../api/analyticsApi';
 
 const cardVariants = {
@@ -13,40 +17,60 @@ const cardVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
 };
 
-// ── Tiny bar chart (pure CSS — no recharts dependency) ───────────────────────
-function MiniBarChart({ data }: { data: { date: string; views: number }[] }) {
-  const max = Math.max(...data.map(d => d.views), 1);
-  // Show last 14 days only (less crowded)
-  const slice = data.slice(-14);
+const chartTooltipStyle = {
+  borderRadius: 12,
+  border: '1px solid rgba(74,124,126,0.15)',
+  boxShadow: '0 6px 20px rgba(74,124,126,0.15)',
+  fontSize: 12,
+};
 
+// ── Views over time (area chart) ─────────────────────────────────────────────
+function ViewsAreaChart({ data }: { data: { date: string; views: number }[] }) {
+  const slice = data.slice(-14).map(d => ({
+    views: d.views,
+    label: new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+  }));
   return (
-    <div className="flex items-end gap-[3px] h-20 w-full">
-      {slice.map((d, i) => {
-        const height = Math.max((d.views / max) * 100, 2);
-        const isToday = i === slice.length - 1;
-        return (
-          <div key={d.date} className="flex-1 flex flex-col items-center gap-1 group relative">
-            {/* Tooltip */}
-            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-              {d.views} views
-              <br />
-              {new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-            </div>
-            <div
-              className="w-full rounded-t-sm transition-all duration-300"
-              style={{
-                height: `${height}%`,
-                background: isToday
-                  ? 'linear-gradient(to top, #4A7C7E, #5A9FA3)'
-                  : d.views > 0
-                  ? 'rgba(74,124,126,0.5)'
-                  : 'rgba(74,124,126,0.12)',
-              }}
-            />
-          </div>
-        );
-      })}
-    </div>
+    <ResponsiveContainer width="100%" height={200}>
+      <AreaChart data={slice} margin={{ top: 5, right: 8, left: -18, bottom: 0 }}>
+        <defs>
+          <linearGradient id="viewsGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#4A7C7E" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="#4A7C7E" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(74,124,126,0.1)" vertical={false} />
+        <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#7A8B99' }} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={20} />
+        <YAxis tick={{ fontSize: 10, fill: '#7A8B99' }} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
+        <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: '#2C3E50', fontWeight: 600 }} />
+        <Area type="monotone" dataKey="views" name="Views" stroke="#4A7C7E" strokeWidth={2.5} fill="url(#viewsGrad)" dot={false} activeDot={{ r: 4 }} />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
+// ── Views & saves by recipe (bar chart) ──────────────────────────────────────
+function RecipesBarChart({ recipes }: { recipes: RecipeStat[] }) {
+  const data = [...recipes]
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 6)
+    .map(r => ({
+      name: r.title.length > 14 ? r.title.slice(0, 14) + '…' : r.title,
+      views: r.views,
+      saves: r.saves,
+    }));
+  return (
+    <ResponsiveContainer width="100%" height={240}>
+      <BarChart data={data} margin={{ top: 5, right: 8, left: -18, bottom: 0 }} barGap={2}>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(74,124,126,0.1)" vertical={false} />
+        <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#7A8B99' }} tickLine={false} axisLine={false} interval={0} angle={-15} textAnchor="end" height={50} />
+        <YAxis tick={{ fontSize: 10, fill: '#7A8B99' }} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
+        <Tooltip contentStyle={chartTooltipStyle} cursor={{ fill: 'rgba(74,124,126,0.05)' }} />
+        <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
+        <Bar dataKey="views" name="Views" fill="#4A7C7E" radius={[4, 4, 0, 0]} maxBarSize={28} />
+        <Bar dataKey="saves" name="Saves" fill="#D17A52" radius={[4, 4, 0, 0]} maxBarSize={28} />
+      </BarChart>
+    </ResponsiveContainer>
   );
 }
 
@@ -258,17 +282,7 @@ export function AnalyticsDashboard() {
                 {summary.totalViews} total
               </span>
             </div>
-            <MiniBarChart data={viewsChart} />
-            {/* X axis labels */}
-            <div className="flex justify-between mt-1">
-              {[viewsChart[viewsChart.length - 14], viewsChart[viewsChart.length - 7], viewsChart[viewsChart.length - 1]]
-                .filter(Boolean)
-                .map(d => (
-                  <span key={d.date} className="text-[10px]" style={{ color: '#7A8B99' }}>
-                    {new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </span>
-                ))}
-            </div>
+            <ViewsAreaChart data={viewsChart} />
           </motion.div>
 
           {/* Top recipe highlight */}
@@ -333,6 +347,11 @@ export function AnalyticsDashboard() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Comparison bar chart */}
+            <div className="px-4 pt-4">
+              <RecipesBarChart recipes={recipeStats} />
             </div>
 
             <div className="p-3 space-y-1">
