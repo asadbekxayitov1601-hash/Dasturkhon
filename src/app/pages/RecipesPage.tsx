@@ -110,7 +110,7 @@ export function RecipesPage() {
     <div className="min-h-screen bg-background pb-20">
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 animate-fade-up">
           <div>
             <h1 className="text-3xl sm:text-4xl text-gray-900 mb-2">{t('recipes.title')}</h1>
             <p className="text-gray-600">
@@ -165,7 +165,7 @@ export function RecipesPage() {
             )}
 
             {/* Search and Filters */}
-            <div className="mb-8 space-y-4">
+            <div className="mb-8 space-y-4 animate-fade-up stagger-2">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

@@ -112,7 +112,7 @@ export function PantryPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
-        <div className="mb-8">
+        <div className="mb-8 animate-fade-up">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl sm:text-4xl text-gray-900 mb-3">My Pantry</h1>
@@ -182,7 +182,7 @@ export function PantryPage() {
         </AnimatePresence>
 
         {/* Stats Cards */}
-        <div className="grid sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid sm:grid-cols-3 gap-4 mb-8 animate-fade-up stagger-2">
           <div className="p-6 rounded-[24px] bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-green-700">In Stock</span>
@@ -207,7 +207,7 @@ export function PantryPage() {
         </div>
 
         {/* Search and Filter */}
-        <div className="mb-6 space-y-4">
+        <div className="mb-6 space-y-4 animate-fade-up stagger-3">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input

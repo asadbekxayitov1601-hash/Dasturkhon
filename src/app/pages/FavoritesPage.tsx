@@ -80,7 +80,7 @@ export function FavoritesPage() {
         <div className="min-h-screen bg-background">
             <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Page Header */}
-                <div className="mb-8">
+                <div className="mb-8 animate-fade-up">
                     <h1 className="text-3xl sm:text-4xl text-gray-900 mb-3 flex items-center gap-3">
                         <Heart className="w-8 h-8 text-red-500 fill-red-500" />
                         {t('nav.favorites') || 'My Favorites'}

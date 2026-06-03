@@ -201,7 +201,7 @@ export function ChefProfilePage() {
 
         {/* Profile header */}
         <div
-          className="rounded-[28px] p-6 sm:p-8"
+          className="rounded-[28px] p-6 sm:p-8 animate-fade-up"
           style={{
             background: 'linear-gradient(135deg, rgba(74,124,126,0.08), rgba(230,181,102,0.08))',
             border: '1px solid rgba(74,124,126,0.15)'
@@ -282,7 +282,7 @@ export function ChefProfilePage() {
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3 animate-fade-up stagger-2">
           <StatCard
             icon={<BookOpen className="w-5 h-5" />}
             value={chef.recipeCount}
@@ -301,7 +301,7 @@ export function ChefProfilePage() {
         </div>
 
         {/* Recipes grid */}
-        <div>
+        <div className="animate-fade-up stagger-3">
           <h2 className="text-xl font-semibold mb-4" style={{ color: '#2C3E50' }}>
             {t('chef.recipes_by', { name: chef.name || t('chef.this_chef') })}
           </h2>
