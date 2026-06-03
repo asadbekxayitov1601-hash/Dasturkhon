@@ -58,7 +58,9 @@
     "delete": "O'chirish",
     "delete_confirm": "\"{{title}}\" o'chirilsinmi?",
     "deleted": "Retsept o'chirildi",
-    "delete_failed": "Retseptni o'chirib bo'lmadi"
+    "delete_failed": "Retseptni o'chirib bo'lmadi",
+    "delete_message": "Buni qaytarib bo'lmaydi.",
+    "cancel": "Bekor qilish"
   },
   "categories": {
     "all": "Hammasi",

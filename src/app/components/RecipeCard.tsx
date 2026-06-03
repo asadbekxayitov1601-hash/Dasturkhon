@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { buyRecipe, formatSom } from '../api/earningsApi';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -28,15 +29,13 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
   const { t } = useTranslation();
   const { user } = useAuth();
   const [buying, setBuying] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const isLocked = !!recipe.locked;
   const canDelete = !!onDelete && !!user && (user.isAdmin || Number(user.id) === Number(recipe.userId));
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Non-blocking confirm via a toast action (no browser dialog).
-    toast(t('recipes.delete_confirm', { title: recipe.title }), {
-      action: { label: t('recipes.delete'), onClick: () => onDelete?.(recipe) },
-    });
+    setConfirmDelete(true);
   };
 
   const handleUnlock = async () => {
@@ -71,6 +70,7 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
   };
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -200,5 +200,16 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
         </div>
       </div>
     </motion.div>
+
+    <ConfirmDialog
+      open={confirmDelete}
+      title={t('recipes.delete_confirm', { title: recipe.title })}
+      message={t('recipes.delete_message')}
+      confirmLabel={t('recipes.delete')}
+      cancelLabel={t('recipes.cancel')}
+      onConfirm={() => { setConfirmDelete(false); onDelete?.(recipe); }}
+      onCancel={() => setConfirmDelete(false)}
+    />
+    </>
   );
 }
