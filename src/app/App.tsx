@@ -7,6 +7,7 @@ import { Toaster } from 'sonner';
 import { Header } from './components/Header';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { Footer } from './components/Footer';
 import { HomePage } from './pages/HomePage';
 import { RecipesPage } from './pages/RecipesPage';
@@ -39,6 +40,7 @@ function AnimatedRoutes({ dailyCalories }: { dailyCalories: number }) {
           <Route path="/" element={<HomePage dailyCalories={dailyCalories} />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot" element={<ForgotPasswordPage />} />
           <Route path="/chef/:id" element={<ChefProfilePage />} />
           <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

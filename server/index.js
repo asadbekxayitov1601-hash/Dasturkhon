@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
+import { sendMail } from './services/email.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -164,6 +165,74 @@ app.post('/api/login', async (req, res) => {
     res.json({ token, user: publicUser(user) });
   } catch (e) {
     console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ── Password reset via emailed code ──────────────────────────────────────────
+// Codes are short-lived and kept in memory (single instance, 10-min expiry).
+const resetCodes = new Map(); // email -> { code, expiresAt, attempts }
+const genCode = () => String(Math.floor(100000 + Math.random() * 900000));
+
+// Request a reset code by email.
+app.post('/api/auth/forgot', async (req, res) => {
+  try {
+    const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    // Only send if the account exists, but always respond ok (no enumeration).
+    if (user) {
+      const code = genCode();
+      resetCodes.set(email, { code, expiresAt: Date.now() + 10 * 60 * 1000, attempts: 0 });
+      try {
+        await sendMail({
+          to: email,
+          subject: 'Your Dasturkhon password reset code',
+          text: `Your password reset code is ${code}. It expires in 10 minutes. If you didn't request this, ignore this email.`,
+          html: `<div style="font-family:sans-serif"><p>Your Dasturkhon password reset code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:4px;color:#4A7C7E">${code}</p><p>It expires in 10 minutes. If you didn't request this, ignore this email.</p></div>`,
+        });
+      } catch (e) {
+        console.error('reset email error:', e);
+      }
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('forgot error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Verify the code and set a new password.
+app.post('/api/auth/reset', async (req, res) => {
+  try {
+    const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    const code = String(req.body.code || '').trim();
+    const password = req.body.password;
+    if (!email || !code) return res.status(400).json({ message: 'Email and code are required' });
+    if (typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const entry = resetCodes.get(email);
+    if (!entry || entry.expiresAt < Date.now()) {
+      return res.status(400).json({ message: 'Code expired or not found. Request a new one.' });
+    }
+    if (entry.attempts >= 5) {
+      resetCodes.delete(email);
+      return res.status(400).json({ message: 'Too many attempts. Request a new code.' });
+    }
+    if (entry.code !== code) {
+      entry.attempts += 1;
+      return res.status(400).json({ message: 'Incorrect code' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    await prisma.user.update({ where: { email }, data: { passwordHash } });
+    resetCodes.delete(email);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('reset error:', e);
     res.status(500).json({ message: 'Server error' });
   }
 });
