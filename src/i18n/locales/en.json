@@ -58,7 +58,9 @@
     "delete": "Delete",
     "delete_confirm": "Delete \"{{title}}\"?",
     "deleted": "Recipe deleted",
-    "delete_failed": "Failed to delete recipe"
+    "delete_failed": "Failed to delete recipe",
+    "delete_message": "This can't be undone.",
+    "cancel": "Cancel"
   },
   "categories": {
     "all": "All",

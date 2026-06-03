@@ -57,7 +57,9 @@
     "delete": "Удалить",
     "delete_confirm": "Удалить \"{{title}}\"?",
     "deleted": "Рецепт удалён",
-    "delete_failed": "Не удалось удалить рецепт"
+    "delete_failed": "Не удалось удалить рецепт",
+    "delete_message": "Это действие необратимо.",
+    "cancel": "Отмена"
   },
   "categories": {
     "all": "Все",

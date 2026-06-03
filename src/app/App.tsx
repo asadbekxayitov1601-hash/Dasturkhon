@@ -99,7 +99,7 @@ function App() {
           <Footer />
 
           {/* QR sync removed */}
-          <Toaster position="top-right" richColors />
+          <Toaster position="top-right" richColors duration={3000} />
         </div>
       </DndProvider>
     </BrowserRouter>
