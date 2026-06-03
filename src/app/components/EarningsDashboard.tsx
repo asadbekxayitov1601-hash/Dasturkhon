@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Wallet, Gift, ShoppingBag, Clock, CheckCircle, XCircle, ArrowDownToLine } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'motion/react';
 import { getEarnings, requestPayout, formatSom, EarningsSummary } from '../api/earningsApi';
 
 export function EarningsDashboard() {
@@ -52,8 +53,12 @@ export function EarningsDashboard() {
   return (
     <div className="space-y-6">
       {/* Balance card */}
-      <div
-        className="rounded-[28px] p-6 sm:p-8 animate-fade-up stagger-1"
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="rounded-[28px] p-6 sm:p-8"
         style={{ background: 'linear-gradient(135deg, #4A7C7E, #5A9FA3)', boxShadow: '0 10px 30px rgba(74,124,126,0.25)' }}
       >
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -77,10 +82,16 @@ export function EarningsDashboard() {
           </button>
         </div>
         <p className="text-white/60 text-[11px] mt-4">{t('earnings.payout_note')}</p>
-      </div>
+      </motion.div>
 
       {/* Earnings history */}
-      <div className="rounded-[28px] bg-white border border-primary/10 overflow-hidden animate-fade-up stagger-2">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+        className="rounded-[28px] bg-white border border-primary/10 overflow-hidden"
+      >
         <div className="p-5 border-b border-primary/10">
           <h3 className="font-semibold text-gray-900">{t('earnings.title')}</h3>
         </div>
@@ -104,11 +115,17 @@ export function EarningsDashboard() {
             ))}
           </ul>
         )}
-      </div>
+      </motion.div>
 
       {/* Payout history */}
       {data.payouts.length > 0 && (
-        <div className="rounded-[28px] bg-white border border-primary/10 overflow-hidden animate-fade-up stagger-3">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="rounded-[28px] bg-white border border-primary/10 overflow-hidden"
+        >
           <div className="p-5 border-b border-primary/10">
             <h3 className="font-semibold text-gray-900">{t('earnings.payout_requests')}</h3>
           </div>
@@ -123,7 +140,7 @@ export function EarningsDashboard() {
               </li>
             ))}
           </ul>
-        </div>
+        </motion.div>
       )}
     </div>
   );

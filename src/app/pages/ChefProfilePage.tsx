@@ -6,6 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChefHat, Users, BookOpen, Star, UserPlus, UserCheck, ArrowLeft, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'motion/react';
 import { useAuth } from '../auth/AuthProvider';
 import { RecipeDetailModal } from '../components/RecipeDetailModal';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
@@ -19,15 +20,23 @@ import {
 } from '../api/chefApi';
 import { Recipe } from '../types/kitchen';
 
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } }
+};
+
 // ─── Stat card ────────────────────────────────────────────────────────────────
 function StatCard({ icon, value, label }: { icon: React.ReactNode; value: number | string; label: string }) {
   return (
-    <div className="flex flex-col items-center gap-1 px-6 py-4 rounded-[20px] bg-white"
-      style={{ border: '1px solid rgba(74,124,126,0.12)' }}>
+    <motion.div
+      variants={itemVariants}
+      className="flex flex-col items-center gap-1 px-6 py-4 rounded-[20px] bg-white"
+      style={{ border: '1px solid rgba(74,124,126,0.12)' }}
+    >
       <div style={{ color: '#4A7C7E' }}>{icon}</div>
       <div className="text-2xl font-bold" style={{ color: '#2C3E50' }}>{value}</div>
       <div className="text-xs" style={{ color: '#7A8B99' }}>{label}</div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -42,8 +51,9 @@ function MiniRecipeCard({
   const stars = recipe.avgRating ? Math.round(recipe.avgRating) : 0;
 
   return (
-    <div
+    <motion.div
       onClick={onClick}
+      variants={itemVariants}
       className="group cursor-pointer rounded-[20px] overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-300"
       style={{ border: '1px solid rgba(74,124,126,0.1)' }}
     >
@@ -74,7 +84,7 @@ function MiniRecipeCard({
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -200,8 +210,12 @@ export function ChefProfilePage() {
         </button>
 
         {/* Profile header */}
-        <div
-          className="rounded-[28px] p-6 sm:p-8 animate-fade-up"
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="rounded-[28px] p-6 sm:p-8"
           style={{
             background: 'linear-gradient(135deg, rgba(74,124,126,0.08), rgba(230,181,102,0.08))',
             border: '1px solid rgba(74,124,126,0.15)'
@@ -279,10 +293,23 @@ export function ChefProfilePage() {
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3 animate-fade-up stagger-2">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.08
+              }
+            }
+          }}
+          className="grid grid-cols-3 gap-3"
+        >
           <StatCard
             icon={<BookOpen className="w-5 h-5" />}
             value={chef.recipeCount}
@@ -298,10 +325,15 @@ export function ChefProfilePage() {
             value={chef.followingCount}
             label={t('chef.following_count')}
           />
-        </div>
+        </motion.div>
 
         {/* Recipes grid */}
-        <div className="animate-fade-up stagger-3">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
           <h2 className="text-xl font-semibold mb-4" style={{ color: '#2C3E50' }}>
             {t('chef.recipes_by', { name: chef.name || t('chef.this_chef') })}
           </h2>
@@ -312,7 +344,20 @@ export function ChefProfilePage() {
               <p className="text-sm">{t('chef.no_recipes_yet')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: 0.08
+                  }
+                }
+              }}
+              className="grid grid-cols-2 sm:grid-cols-3 gap-4"
+            >
               {chef.recipes.map(recipe => (
                 <MiniRecipeCard
                   key={recipe.id}
@@ -320,9 +365,9 @@ export function ChefProfilePage() {
                   onClick={() => setSelectedRecipe(toRecipe(recipe))}
                 />
               ))}
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       </div>
 
       {/* Recipe detail modal */}

@@ -54,7 +54,8 @@ export function ProfilePage() {
         {/* Profile Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="rounded-[28px] p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left"
           style={{ background: '#fff', border: '1px solid rgba(74,124,126,0.12)', boxShadow: '0 2px 16px rgba(74,124,126,0.06)' }}

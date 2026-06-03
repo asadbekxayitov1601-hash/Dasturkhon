@@ -5,7 +5,13 @@
 import { useEffect, useState } from 'react';
 import { Eye, Heart, Star, BookOpen, Users, TrendingUp, ChefHat } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'motion/react';
 import { getMyAnalytics, AnalyticsData, RecipeStat } from '../api/analyticsApi';
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+};
 
 // ── Tiny bar chart (pure CSS — no recharts dependency) ───────────────────────
 function MiniBarChart({ data }: { data: { date: string; views: number }[] }) {
@@ -50,17 +56,16 @@ function SummaryCard({
   value,
   label,
   color,
-  stagger = 1,
 }: {
   icon: React.ReactNode;
   value: number;
   label: string;
   color: string;
-  stagger?: number;
 }) {
   return (
-    <div
-      className={`rounded-[20px] p-5 flex flex-col gap-2 animate-fade-up stagger-${stagger}`}
+    <motion.div
+      variants={cardVariants}
+      className="rounded-[20px] p-5 flex flex-col gap-2"
       style={{ background: `${color}10`, border: `1px solid ${color}25` }}
     >
       <div className="w-9 h-9 rounded-full flex items-center justify-center"
@@ -71,7 +76,7 @@ function SummaryCard({
         {value.toLocaleString()}
       </div>
       <div className="text-xs font-medium" style={{ color: '#7A8B99' }}>{label}</div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -204,13 +209,26 @@ export function AnalyticsDashboard() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <SummaryCard icon={<Eye className="w-4 h-4" />}    value={summary.totalViews}   label={t('analytics.total_views')}   color="#4A7C7E" stagger={1} />
-        <SummaryCard icon={<Heart className="w-4 h-4" />}   value={summary.totalSaves}   label={t('analytics.total_saves')}   color="#D17A52" stagger={2} />
-        <SummaryCard icon={<Star className="w-4 h-4" />}    value={summary.totalReviews} label={t('analytics.total_reviews')} color="#E6B566" stagger={3} />
-        <SummaryCard icon={<BookOpen className="w-4 h-4" />} value={summary.totalRecipes} label={t('analytics.total_recipes')} color="#5A9FA3" stagger={4} />
-        <SummaryCard icon={<Users className="w-4 h-4" />}   value={summary.followerCount} label={t('analytics.followers')}    color="#7A6FA3" stagger={5} />
-      </div>
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={{
+          hidden: {},
+          visible: {
+            transition: {
+              staggerChildren: 0.08
+            }
+          }
+        }}
+        className="grid grid-cols-2 sm:grid-cols-5 gap-3"
+      >
+        <SummaryCard icon={<Eye className="w-4 h-4" />}    value={summary.totalViews}   label={t('analytics.total_views')}   color="#4A7C7E" />
+        <SummaryCard icon={<Heart className="w-4 h-4" />}   value={summary.totalSaves}   label={t('analytics.total_saves')}   color="#D17A52" />
+        <SummaryCard icon={<Star className="w-4 h-4" />}    value={summary.totalReviews} label={t('analytics.total_reviews')} color="#E6B566" />
+        <SummaryCard icon={<BookOpen className="w-4 h-4" />} value={summary.totalRecipes} label={t('analytics.total_recipes')} color="#5A9FA3" />
+        <SummaryCard icon={<Users className="w-4 h-4" />}   value={summary.followerCount} label={t('analytics.followers')}    color="#7A6FA3" />
+      </motion.div>
 
       {!hasRecipes ? (
         <div
@@ -223,7 +241,11 @@ export function AnalyticsDashboard() {
       ) : (
         <>
           {/* Views chart */}
-          <div
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="rounded-[20px] p-5"
             style={{ background: '#fff', border: '1px solid rgba(74,124,126,0.12)' }}
           >
@@ -247,11 +269,15 @@ export function AnalyticsDashboard() {
                   </span>
                 ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Top recipe highlight */}
           {topRecipe && topRecipe.views > 0 && (
-            <div
+            <motion.div
+              initial={{ opacity: 0, y: 35 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="rounded-[20px] p-4 flex items-center gap-4"
               style={{
                 background: 'linear-gradient(135deg, rgba(230,181,102,0.12), rgba(209,122,82,0.08))',
@@ -272,11 +298,15 @@ export function AnalyticsDashboard() {
                   {topRecipe.views} views · {topRecipe.saves} saves · {topRecipe.reviews} reviews
                 </p>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Recipe table */}
-          <div
+          <motion.div
+            initial={{ opacity: 0, y: 35 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="rounded-[20px] overflow-hidden"
             style={{ background: '#fff', border: '1px solid rgba(74,124,126,0.12)' }}
           >
@@ -310,7 +340,7 @@ export function AnalyticsDashboard() {
                 <RecipeRow key={recipe.id} recipe={recipe} rank={i + 1} />
               ))}
             </div>
-          </div>
+          </motion.div>
         </>
       )}
     </div>
