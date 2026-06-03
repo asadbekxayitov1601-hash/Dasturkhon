@@ -223,9 +223,12 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                     type="number"
                                     min="0"
                                     step="1000"
-                                    placeholder="0 = free"
-                                    value={formData.price}
-                                    onChange={e => setFormData({ ...formData, price: Math.max(0, Number(e.target.value) || 0) })}
+                                    placeholder="0"
+                                    value={formData.price === 0 ? '' : formData.price}
+                                    onChange={e => {
+                                        const v = e.target.value;
+                                        setFormData({ ...formData, price: v === '' ? 0 : Math.max(0, Math.floor(Number(v) || 0)) });
+                                    }}
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
                                 />
                                 <p className="text-[11px] text-gray-400 mt-1">{t('recipes.price_hint')}</p>
