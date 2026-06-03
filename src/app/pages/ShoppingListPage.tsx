@@ -134,7 +134,7 @@ export function ShoppingListPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
-        <div className="mb-8">
+        <div className="mb-8 animate-fade-up">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl sm:text-4xl text-gray-900 mb-3">Shopping List</h1>
@@ -173,7 +173,7 @@ export function ShoppingListPage() {
         {/* Order ingredients (affiliate) */}
         {activeItems.length > 0 && (
           <div
-            className="mb-8 p-5 rounded-[24px]"
+            className="mb-8 p-5 rounded-[24px] animate-fade-up stagger-2"
             style={{
               background: 'linear-gradient(135deg, rgba(74,124,126,0.05), rgba(230,181,102,0.07))',
               border: '1px solid rgba(74,124,126,0.15)',
