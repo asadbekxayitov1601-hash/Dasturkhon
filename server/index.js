@@ -958,6 +958,33 @@ app.put('/api/profile', requireAuth, async (req, res) => {
   }
 });
 
+// Delete the current user's account and all of their data.
+app.delete('/api/account', requireAuth, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    await prisma.$transaction(async (tx) => {
+      // The user's own activity
+      await tx.pantryItem.deleteMany({ where: { userId: uid } });
+      await tx.shoppingItem.deleteMany({ where: { userId: uid } });
+      await tx.favorite.deleteMany({ where: { userId: uid } });
+      await tx.review.deleteMany({ where: { userId: uid } });
+      await tx.recipeLike.deleteMany({ where: { userId: uid } });
+      await tx.order.deleteMany({ where: { OR: [{ buyerId: uid }, { creatorId: uid }] } });
+      await tx.payout.deleteMany({ where: { creatorId: uid } });
+      await tx.notification.deleteMany({ where: { OR: [{ userId: uid }, { actorId: uid }] } });
+      await tx.follow.deleteMany({ where: { OR: [{ followerId: uid }, { followingId: uid }] } });
+      // The user's recipes (cascades their favorites/reviews/views/likes)
+      await tx.recipe.deleteMany({ where: { userId: uid } });
+      // Finally the account
+      await tx.user.delete({ where: { id: uid } });
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('delete account error:', e);
+    res.status(500).json({ message: 'Failed to delete account' });
+  }
+});
+
 // ── Like / Dislike ────────────────────────────────────────────────────────────
 
 // GET /api/recipes/:id/likes  — public, returns { likes, dislikes, userVote }

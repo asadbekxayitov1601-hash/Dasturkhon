@@ -3,22 +3,42 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { toast } from 'sonner';
-import { LogOut, Settings, Camera, Star, BookOpen, Users, ChefHat } from 'lucide-react';
+import { LogOut, Settings, Camera, Star, BookOpen, Users, ChefHat, Trash2 } from 'lucide-react';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { EarningsDashboard } from '../components/EarningsDashboard';
 import { RecipeDetailModal } from '../components/RecipeDetailModal';
 import { FollowListModal } from '../components/FollowListModal';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import { updateProfile, getChefProfile, getFollowers, getFollowing, ChefProfile, ChefRecipe, UserLite } from '../api/chefApi';
+import { updateProfile, getChefProfile, getFollowers, getFollowing, deleteAccount, ChefProfile, ChefRecipe, UserLite } from '../api/chefApi';
 import { Recipe } from '../types/kitchen';
 
 export function ProfilePage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user, refresh, logout } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setConfirmDeleteAccount(false);
+    setDeletingAccount(true);
+    try {
+      await deleteAccount();
+      toast.success(t('account.deleted'));
+      logout();
+      navigate('/');
+    } catch (e: any) {
+      toast.error(e.message || t('account.delete_failed'));
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
   const [profile, setProfile] = useState<ChefProfile | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
@@ -246,6 +266,18 @@ export function ProfilePage() {
         {/* Analytics (cards animate individually) */}
         <AnalyticsDashboard />
 
+        {/* Danger zone */}
+        <div className="pt-4 flex justify-center">
+          <button
+            onClick={() => setConfirmDeleteAccount(true)}
+            disabled={deletingAccount}
+            className="flex items-center gap-2 text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-xl transition-colors disabled:opacity-60"
+          >
+            <Trash2 className="w-4 h-4" />
+            {t('account.delete')}
+          </button>
+        </div>
+
       </div>
 
       <RecipeDetailModal
@@ -261,6 +293,16 @@ export function ProfilePage() {
         loading={listLoading}
         emptyText={listType === 'followers' ? t('chef.no_followers') : t('chef.no_following')}
         onClose={() => setListOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteAccount}
+        title={t('account.confirm_title')}
+        message={t('account.confirm_message')}
+        confirmLabel={t('account.delete')}
+        cancelLabel={t('recipes.cancel')}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setConfirmDeleteAccount(false)}
       />
     </div>
   );
