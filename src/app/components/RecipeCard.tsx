@@ -3,7 +3,7 @@
 // paid recipes show a price and an unlock button.
 
 import { motion } from 'motion/react';
-import { Clock, Plus, Heart, ChefHat, Lock, Star } from 'lucide-react';
+import { Clock, Plus, Heart, ChefHat, Lock, Star, Trash2 } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useNavigate } from 'react-router-dom';
@@ -20,14 +20,24 @@ interface RecipeCardProps {
   onViewRecipe: (recipe: Recipe) => void;
   onToggleFavorite?: (recipe: Recipe) => void;
   onUnlocked?: (recipe: Recipe) => void;
+  onDelete?: (recipe: Recipe) => void;
 }
 
-export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewRecipe, onToggleFavorite, onUnlocked }: RecipeCardProps) {
+export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewRecipe, onToggleFavorite, onUnlocked, onDelete }: RecipeCardProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { user } = useAuth();
   const [buying, setBuying] = useState(false);
   const isLocked = !!recipe.locked;
+  const canDelete = !!onDelete && !!user && (user.isAdmin || Number(user.id) === Number(recipe.userId));
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Non-blocking confirm via a toast action (no browser dialog).
+    toast(t('recipes.delete_confirm', { title: recipe.title }), {
+      action: { label: t('recipes.delete'), onClick: () => onDelete?.(recipe) },
+    });
+  };
 
   const handleUnlock = async () => {
     if (!user) { toast.error(t('recipes.sign_in_unlock')); navigate('/login'); return; }
@@ -177,6 +187,15 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
                   : t('recipes.add_ingredients')}
               </span>
             </button>
+            {canDelete && (
+              <button
+                onClick={handleDelete}
+                title={t('recipes.delete')}
+                className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>

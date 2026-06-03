@@ -54,7 +54,11 @@
     "sign_in_unlock": "Please sign in to unlock this recipe",
     "price_label": "Price (so'm)",
     "price_hint": "Leave 0 to keep it free. Paid recipes earn you money.",
-    "free": "Free"
+    "free": "Free",
+    "delete": "Delete",
+    "delete_confirm": "Delete \"{{title}}\"?",
+    "deleted": "Recipe deleted",
+    "delete_failed": "Failed to delete recipe"
   },
   "categories": {
     "all": "All",

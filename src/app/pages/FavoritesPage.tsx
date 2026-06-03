@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Masonry from 'react-responsive-masonry';
 import { useTranslation } from 'react-i18next';
 import { Recipe } from '../types/kitchen';
-import { getFavorites, removeFavorite } from '../api/recipesApi';
+import { getFavorites, removeFavorite, deleteRecipe } from '../api/recipesApi';
 import { RecipeCard } from '../components/RecipeCard';
 import { RecipeDetailModal } from '../components/RecipeDetailModal';
 import { toast } from 'sonner';
@@ -48,6 +48,18 @@ export function FavoritesPage() {
         } catch (e) {
             setRecipes(prev);
             toast.error(t('favorites.remove_failed'));
+        }
+    };
+
+    const handleDeleteRecipe = async (recipe: Recipe) => {
+        const prev = recipes;
+        setRecipes(curr => curr.filter(r => r.id !== recipe.id));
+        try {
+            await deleteRecipe(recipe.id);
+            toast.success(t('recipes.deleted'));
+        } catch (e) {
+            setRecipes(prev);
+            toast.error(t('recipes.delete_failed'));
         }
     };
 
@@ -107,6 +119,7 @@ export function FavoritesPage() {
                                         onAddToShoppingList={handleAddToShoppingList}
                                         onViewRecipe={handleViewRecipe}
                                         onToggleFavorite={handleToggleFavorite}
+                                        onDelete={handleDeleteRecipe}
                                     />
                                 ))}
                             </Masonry>
