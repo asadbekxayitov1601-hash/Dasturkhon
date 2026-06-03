@@ -53,7 +53,7 @@ export function EarningsDashboard() {
     <div className="space-y-6">
       {/* Balance card */}
       <div
-        className="rounded-[28px] p-6 sm:p-8"
+        className="rounded-[28px] p-6 sm:p-8 animate-fade-up stagger-1"
         style={{ background: 'linear-gradient(135deg, #4A7C7E, #5A9FA3)', boxShadow: '0 10px 30px rgba(74,124,126,0.25)' }}
       >
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -80,7 +80,7 @@ export function EarningsDashboard() {
       </div>
 
       {/* Earnings history */}
-      <div className="rounded-[28px] bg-white border border-primary/10 overflow-hidden">
+      <div className="rounded-[28px] bg-white border border-primary/10 overflow-hidden animate-fade-up stagger-2">
         <div className="p-5 border-b border-primary/10">
           <h3 className="font-semibold text-gray-900">{t('earnings.title')}</h3>
         </div>
@@ -108,7 +108,7 @@ export function EarningsDashboard() {
 
       {/* Payout history */}
       {data.payouts.length > 0 && (
-        <div className="rounded-[28px] bg-white border border-primary/10 overflow-hidden">
+        <div className="rounded-[28px] bg-white border border-primary/10 overflow-hidden animate-fade-up stagger-3">
           <div className="p-5 border-b border-primary/10">
             <h3 className="font-semibold text-gray-900">{t('earnings.payout_requests')}</h3>
           </div>

@@ -50,15 +50,17 @@ function SummaryCard({
   value,
   label,
   color,
+  stagger = 1,
 }: {
   icon: React.ReactNode;
   value: number;
   label: string;
   color: string;
+  stagger?: number;
 }) {
   return (
     <div
-      className="rounded-[20px] p-5 flex flex-col gap-2"
+      className={`rounded-[20px] p-5 flex flex-col gap-2 animate-fade-up stagger-${stagger}`}
       style={{ background: `${color}10`, border: `1px solid ${color}25` }}
     >
       <div className="w-9 h-9 rounded-full flex items-center justify-center"
@@ -203,11 +205,11 @@ export function AnalyticsDashboard() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <SummaryCard icon={<Eye className="w-4 h-4" />}    value={summary.totalViews}   label={t('analytics.total_views')}   color="#4A7C7E" />
-        <SummaryCard icon={<Heart className="w-4 h-4" />}   value={summary.totalSaves}   label={t('analytics.total_saves')}   color="#D17A52" />
-        <SummaryCard icon={<Star className="w-4 h-4" />}    value={summary.totalReviews} label={t('analytics.total_reviews')} color="#E6B566" />
-        <SummaryCard icon={<BookOpen className="w-4 h-4" />} value={summary.totalRecipes} label={t('analytics.total_recipes')} color="#5A9FA3" />
-        <SummaryCard icon={<Users className="w-4 h-4" />}   value={summary.followerCount} label={t('analytics.followers')}    color="#7A6FA3" />
+        <SummaryCard icon={<Eye className="w-4 h-4" />}    value={summary.totalViews}   label={t('analytics.total_views')}   color="#4A7C7E" stagger={1} />
+        <SummaryCard icon={<Heart className="w-4 h-4" />}   value={summary.totalSaves}   label={t('analytics.total_saves')}   color="#D17A52" stagger={2} />
+        <SummaryCard icon={<Star className="w-4 h-4" />}    value={summary.totalReviews} label={t('analytics.total_reviews')} color="#E6B566" stagger={3} />
+        <SummaryCard icon={<BookOpen className="w-4 h-4" />} value={summary.totalRecipes} label={t('analytics.total_recipes')} color="#5A9FA3" stagger={4} />
+        <SummaryCard icon={<Users className="w-4 h-4" />}   value={summary.followerCount} label={t('analytics.followers')}    color="#7A6FA3" stagger={5} />
       </div>
 
       {!hasRecipes ? (
