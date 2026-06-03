@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { createRecipe } from '../api/recipesApi';
+import { ListInput } from './ListInput';
 import { X, Plus, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,8 +25,8 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
         price: 0,
         category: 'main',
         youtubeUrl: '',
-        ingredientsStr: '',
-        instructionsStr: ''
+        ingredients: [''] as string[],
+        instructions: [''] as string[]
     });
     const [imageMode, setImageMode] = useState<'url' | 'upload'>('url');
     const [previewImage, setPreviewImage] = useState<string>('');
@@ -58,8 +59,11 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
         e.preventDefault();
         try {
             setLoading(true);
-            const ingredients = formData.ingredientsStr.split('\n').filter(s => s.trim());
-            const instructions = formData.instructionsStr.split('\n').filter(s => s.trim());
+            const ingredients = formData.ingredients.map(s => s.trim()).filter(Boolean);
+            const instructions = formData.instructions.map(s => s.trim()).filter(Boolean);
+
+            if (ingredients.length === 0) { toast.error('Add at least one ingredient'); setLoading(false); return; }
+            if (instructions.length === 0) { toast.error('Add at least one instruction'); setLoading(false); return; }
 
             await createRecipe({
                 ...formData,
@@ -81,8 +85,8 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                 price: 0,
                 category: 'main',
                 youtubeUrl: '',
-                ingredientsStr: '',
-                instructionsStr: ''
+                ingredients: [''],
+                instructions: ['']
             });
             setPreviewImage('');
             onSuccess();
@@ -262,25 +266,21 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ingredients (one per line)</label>
-                            <textarea
-                                required
-                                rows={5}
-                                value={formData.ingredientsStr}
-                                onChange={e => setFormData({ ...formData, ingredientsStr: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none font-mono text-sm"
-                                placeholder="2 cups Rice&#10;1 Onion&#10;500g Beef"
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Ingredients</label>
+                            <ListInput
+                                items={formData.ingredients}
+                                onChange={items => setFormData({ ...formData, ingredients: items })}
+                                placeholder="e.g. 2 cups rice"
+                                addLabel="Add ingredient"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Instructions (one per line)</label>
-                            <textarea
-                                required
-                                rows={5}
-                                value={formData.instructionsStr}
-                                onChange={e => setFormData({ ...formData, instructionsStr: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none font-mono text-sm"
-                                placeholder="1. Chop onions finely...&#10;2. Heat oil in kazhan..."
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Instructions</label>
+                            <ListInput
+                                items={formData.instructions}
+                                onChange={items => setFormData({ ...formData, instructions: items })}
+                                placeholder="Describe this step…"
+                                addLabel="Add step"
                             />
                         </div>
                         <div className="pt-2">
