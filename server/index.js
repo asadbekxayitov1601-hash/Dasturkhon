@@ -797,6 +797,58 @@ app.delete('/api/chefs/:id/follow', requireAuth, async (req, res) => {
   }
 });
 
+// Annotate a list of users with whether the current viewer follows each of them.
+async function annotateFollowing(users, viewer) {
+  if (!viewer || users.length === 0) {
+    return users.map(u => ({ ...u, isFollowing: false, isSelf: false }));
+  }
+  const ids = users.map(u => u.id);
+  const mine = await prisma.follow.findMany({
+    where: { followerId: viewer.id, followingId: { in: ids } },
+    select: { followingId: true },
+  });
+  const followingSet = new Set(mine.map(m => m.followingId));
+  return users.map(u => ({
+    ...u,
+    isFollowing: followingSet.has(u.id),
+    isSelf: u.id === viewer.id,
+  }));
+}
+
+const userListSelect = { id: true, name: true, email: true, avatarUrl: true, bio: true };
+
+// GET /api/chefs/:id/followers — users who follow this chef
+app.get('/api/chefs/:id/followers', optionalAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const rows = await prisma.follow.findMany({
+      where: { followingId: id },
+      orderBy: { createdAt: 'desc' },
+      select: { follower: { select: userListSelect } },
+    });
+    res.json(await annotateFollowing(rows.map(r => r.follower), req.user));
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/chefs/:id/following — users this chef follows
+app.get('/api/chefs/:id/following', optionalAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const rows = await prisma.follow.findMany({
+      where: { followerId: id },
+      orderBy: { createdAt: 'desc' },
+      select: { following: { select: userListSelect } },
+    });
+    res.json(await annotateFollowing(rows.map(r => r.following), req.user));
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // PUT /api/profile  —  update own bio and avatar
 app.put('/api/profile', requireAuth, async (req, res) => {
   try {

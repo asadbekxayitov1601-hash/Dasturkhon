@@ -205,7 +205,9 @@
     "login_to_follow": "Log in to follow this chef",
     "no_recipes_yet": "No recipes posted yet",
     "recipes_by": "Recipes by {{name}}",
-    "this_chef": "this chef"
+    "this_chef": "this chef",
+    "no_followers": "No followers yet",
+    "no_following": "Not following anyone yet"
   },
   "delivery": {
     "cant_cook": "Can't cook? Order it!",
