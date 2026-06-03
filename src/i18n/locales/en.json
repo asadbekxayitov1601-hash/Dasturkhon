@@ -216,6 +216,13 @@
     "empty": "No notifications yet",
     "new_recipe": "{{name}} published a new recipe"
   },
+  "account": {
+    "delete": "Delete account",
+    "confirm_title": "Delete your account?",
+    "confirm_message": "This permanently deletes your account, recipes and data. This can't be undone.",
+    "deleted": "Your account has been deleted.",
+    "delete_failed": "Failed to delete account"
+  },
   "delivery": {
     "cant_cook": "Can't cook? Order it!",
     "order_from_platforms": "Find it on delivery platforms",

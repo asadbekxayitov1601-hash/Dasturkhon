@@ -216,6 +216,13 @@
     "empty": "Hozircha bildirishnomalar yo'q",
     "new_recipe": "{{name}} yangi retsept e'lon qildi"
   },
+  "account": {
+    "delete": "Akkauntni o'chirish",
+    "confirm_title": "Akkauntingiz o'chirilsinmi?",
+    "confirm_message": "Bu akkauntingiz, retseptlaringiz va ma'lumotlaringizni butunlay o'chiradi. Buni qaytarib bo'lmaydi.",
+    "deleted": "Akkauntingiz o'chirildi.",
+    "delete_failed": "Akkauntni o'chirib bo'lmadi"
+  },
   "delivery": {
     "cant_cook": "Pishirolmaysizmi? Buyurtma bering!",
     "order_from_platforms": "Tayyor platformalardan topish",

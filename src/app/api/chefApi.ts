@@ -84,6 +84,14 @@ export async function unfollowChef(chefId: number | string): Promise<number> {
   return data.followerCount;
 }
 
+export async function deleteAccount(): Promise<void> {
+  const res = await authFetch('/api/account', { method: 'DELETE' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Failed to delete account');
+  }
+}
+
 export async function updateProfile(data: {
   name?: string;
   bio?: string;
