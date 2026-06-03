@@ -6,26 +6,49 @@ import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { toast } from 'sonner';
-import { LogOut, Settings, Camera, Star } from 'lucide-react';
+import { LogOut, Settings, Camera, Star, BookOpen, Users, ChefHat } from 'lucide-react';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { EarningsDashboard } from '../components/EarningsDashboard';
 import { RecipeDetailModal } from '../components/RecipeDetailModal';
+import { FollowListModal } from '../components/FollowListModal';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import { updateProfile, getChefProfile, ChefRecipe } from '../api/chefApi';
+import { updateProfile, getChefProfile, getFollowers, getFollowing, ChefProfile, ChefRecipe, UserLite } from '../api/chefApi';
 import { Recipe } from '../types/kitchen';
 
 export function ProfilePage() {
   const { t } = useTranslation();
   const { user, refresh, logout } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [myRecipes, setMyRecipes] = useState<ChefRecipe[]>([]);
+  const [profile, setProfile] = useState<ChefProfile | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+
+  // Followers / following list modal
+  const [listOpen, setListOpen] = useState(false);
+  const [listType, setListType] = useState<'followers' | 'following'>('followers');
+  const [listUsers, setListUsers] = useState<UserLite[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+
+  const myRecipes: ChefRecipe[] = profile?.recipes || [];
 
   useEffect(() => {
     if (user) {
-      getChefProfile(user.id).then((p) => setMyRecipes(p.recipes)).catch(() => {});
+      getChefProfile(user.id).then(setProfile).catch(() => {});
     }
   }, [user]);
+
+  const openList = async (type: 'followers' | 'following') => {
+    if (!user) return;
+    setListType(type);
+    setListUsers([]);
+    setListLoading(true);
+    setListOpen(true);
+    try {
+      const users = type === 'followers' ? await getFollowers(user.id) : await getFollowing(user.id);
+      setListUsers(users);
+    } catch { /* ignore */ } finally {
+      setListLoading(false);
+    }
+  };
 
   // Edit profile fields
   const [editing, setEditing] = useState(false);
@@ -171,6 +194,25 @@ export function ProfilePage() {
           </button>
         </motion.div>
 
+        {/* Stats row (like a public profile) */}
+        <div className="grid grid-cols-3 gap-3 animate-fade-up">
+          <div className="flex flex-col items-center gap-1 px-4 py-4 rounded-[20px] bg-white" style={{ border: '1px solid rgba(74,124,126,0.12)' }}>
+            <BookOpen className="w-5 h-5" style={{ color: '#4A7C7E' }} />
+            <div className="text-2xl font-bold" style={{ color: '#2C3E50' }}>{profile?.recipeCount ?? 0}</div>
+            <div className="text-xs" style={{ color: '#7A8B99' }}>{t('chef.recipes')}</div>
+          </div>
+          <button onClick={() => openList('followers')} className="flex flex-col items-center gap-1 px-4 py-4 rounded-[20px] bg-white cursor-pointer hover:shadow-md active:scale-95 transition-all" style={{ border: '1px solid rgba(74,124,126,0.12)' }}>
+            <Users className="w-5 h-5" style={{ color: '#4A7C7E' }} />
+            <div className="text-2xl font-bold" style={{ color: '#2C3E50' }}>{profile?.followerCount ?? 0}</div>
+            <div className="text-xs" style={{ color: '#7A8B99' }}>{t('chef.followers')}</div>
+          </button>
+          <button onClick={() => openList('following')} className="flex flex-col items-center gap-1 px-4 py-4 rounded-[20px] bg-white cursor-pointer hover:shadow-md active:scale-95 transition-all" style={{ border: '1px solid rgba(74,124,126,0.12)' }}>
+            <ChefHat className="w-5 h-5" style={{ color: '#4A7C7E' }} />
+            <div className="text-2xl font-bold" style={{ color: '#2C3E50' }}>{profile?.followingCount ?? 0}</div>
+            <div className="text-xs" style={{ color: '#7A8B99' }}>{t('chef.following_count')}</div>
+          </button>
+        </div>
+
         {/* My Recipes (Instagram-style grid) */}
         {myRecipes.length > 0 && (
           <div className="animate-fade-up">
@@ -210,6 +252,15 @@ export function ProfilePage() {
         recipe={selectedRecipe}
         isOpen={!!selectedRecipe}
         onClose={() => setSelectedRecipe(null)}
+      />
+
+      <FollowListModal
+        open={listOpen}
+        title={listType === 'followers' ? t('chef.followers') : t('chef.following_count')}
+        users={listUsers}
+        loading={listLoading}
+        emptyText={listType === 'followers' ? t('chef.no_followers') : t('chef.no_following')}
+        onClose={() => setListOpen(false)}
       />
     </div>
   );
