@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Globe, ChevronDown, User, LogOut } from 'lucide-react';
+import { Menu, X, Globe, User, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +9,6 @@ import logo from '../assets/dasturkhon_logo.png';
 export function Header() {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { t, i18n } = useTranslation();
   const auth = useAuth();
@@ -30,15 +29,14 @@ export function Header() {
   }
 
   const languages = [
-    { code: 'en', name: 'English', flag: 'EN' },
-    { code: 'uz', name: "O'zbek", flag: '🇺🇿' },
-    { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+    { code: 'uz', name: "O'zbek", short: 'UZ', flag: '🇺🇿' },
+    { code: 'ru', name: 'Русский', short: 'RU', flag: '🇷🇺' },
+    { code: 'en', name: 'English', short: 'EN', flag: '🇬🇧' },
   ];
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
     localStorage.setItem('dasturxon-language', lng);
-    setIsLangMenuOpen(false);
   };
 
   const isActive = (path: string) => {
@@ -96,46 +94,31 @@ export function Header() {
           <div className="flex items-center gap-3 relative z-10">
             {/* Desktop Actions Group */}
             <div className="hidden lg:flex items-center gap-3">
-              {/* Language Switcher */}
-              <div className="relative">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-full transition-colors border bg-white border-primary/20 hover:bg-primary/5"
-                >
-                  <Globe className="w-4 h-4 text-primary" />
-                  <span className="text-sm hidden sm:inline font-medium">{i18n.language.toUpperCase()}</span>
-                  <ChevronDown className={`w-3 h-3 text-gray-500 transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
-                </motion.button>
-
-                <AnimatePresence>
-                  {isLangMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute right-0 mt-2 w-48 bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-primary/10 overflow-hidden z-50 p-1.5"
+              {/* Language Switcher — segmented toggle */}
+              <div className="flex items-center gap-1 p-1 rounded-full bg-white border border-primary/20 shadow-sm">
+                <Globe className="w-4 h-4 text-primary ml-1.5 mr-0.5" />
+                {languages.map((lang) => {
+                  const active = i18n.language === lang.code;
+                  return (
+                    <button
+                      key={lang.code}
+                      onClick={() => changeLanguage(lang.code)}
+                      title={lang.name}
+                      aria-pressed={active}
+                      className={`relative px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${active ? 'text-white' : 'text-gray-500 hover:text-primary'}`}
                     >
-                      {languages.map((lang) => (
-                        <motion.button
-                          key={lang.code}
-                          whileHover={{ x: 4, backgroundColor: 'rgba(var(--primary-rgb), 0.05)' }}
-                          onClick={() => changeLanguage(lang.code)}
-                          className={`w-full px-4 py-2.5 text-left rounded-xl transition-colors flex items-center gap-3 ${i18n.language === lang.code ? 'bg-primary/5 text-primary font-medium' : 'text-gray-700'
-                            }`}
-                        >
-                          <span className="text-lg">{lang.flag}</span>
-                          <span className="text-sm">{lang.name}</span>
-                          {i18n.language === lang.code && (
-                            <motion.div layoutId="lang-active" className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
-                          )}
-                        </motion.button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      {active && (
+                        <motion.span
+                          layoutId="lang-pill"
+                          className="absolute inset-0 rounded-full bg-primary"
+                          transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                          style={{ zIndex: 0 }}
+                        />
+                      )}
+                      <span className="relative z-10">{lang.short}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Auth actions */}
