@@ -245,14 +245,14 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                 onChange={e => setFormData({ ...formData, category: e.target.value })}
                                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
                             >
-                                <option value="main">Main Course</option>
-                                <option value="breakfast">Breakfast</option>
-                                <option value="appetizer">Appetizer</option>
-                                <option value="soup">Soup</option>
-                                <option value="dessert">Dessert</option>
-                                <option value="salad">Salad</option>
-                                <option value="bread">Bread</option>
-                                <option value="drink">Drink</option>
+                                <option value="main">{t('categories.main')}</option>
+                                <option value="breakfast">{t('categories.breakfast')}</option>
+                                <option value="appetizer">{t('categories.appetizer')}</option>
+                                <option value="soup">{t('categories.soup')}</option>
+                                <option value="dessert">{t('categories.dessert')}</option>
+                                <option value="salad">{t('categories.salad')}</option>
+                                <option value="bread">{t('categories.bread')}</option>
+                                <option value="drink">{t('categories.drink')}</option>
                             </select>
                         </div>
                         <div>

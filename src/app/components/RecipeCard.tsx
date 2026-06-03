@@ -159,7 +159,7 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
           <div className="mb-6">
             {recipe.category && (
               <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-orange-50 text-orange-700 text-xs font-semibold uppercase tracking-wide border border-orange-100">
-                {recipe.category}
+                {t(`categories.${recipe.category}`, recipe.category)}
               </span>
             )}
           </div>

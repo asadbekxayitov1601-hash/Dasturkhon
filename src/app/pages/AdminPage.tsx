@@ -225,7 +225,7 @@ export function AdminPage() {
                                         <div className="h-48 overflow-hidden relative">
                                             <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" />
                                             <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-medium uppercase tracking-wider text-gray-700">
-                                                {recipe.category}
+                                                {t(`categories.${recipe.category}`, recipe.category)}
                                             </div>
                                         </div>
                                         <div className="p-4 flex-1 flex flex-col">
@@ -316,13 +316,13 @@ export function AdminPage() {
                                         onChange={e => setFormData({ ...formData, category: e.target.value })}
                                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
                                     >
-                                        <option value="main">Main</option>
-                                        <option value="breakfast">Breakfast</option>
-                                        <option value="appetizer">Appetizer</option>
-                                        <option value="soup">Soup</option>
-                                        <option value="dessert">Dessert</option>
-                                        <option value="salad">Salad</option>
-                                        <option value="bread">Bread</option>
+                                        <option value="main">{t('categories.main')}</option>
+                                        <option value="breakfast">{t('categories.breakfast')}</option>
+                                        <option value="appetizer">{t('categories.appetizer')}</option>
+                                        <option value="soup">{t('categories.soup')}</option>
+                                        <option value="dessert">{t('categories.dessert')}</option>
+                                        <option value="salad">{t('categories.salad')}</option>
+                                        <option value="bread">{t('categories.bread')}</option>
                                     </select>
                                 </div>
                                 <div>
@@ -394,7 +394,7 @@ export function AdminPage() {
                                         <div className="h-48 overflow-hidden relative">
                                             <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" />
                                             <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-medium uppercase tracking-wider">
-                                                {recipe.category}
+                                                {t(`categories.${recipe.category}`, recipe.category)}
                                             </div>
                                         </div>
                                         <div className="p-4 flex-1 flex flex-col">

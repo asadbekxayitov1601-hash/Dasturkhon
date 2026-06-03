@@ -98,7 +98,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
               )}
               {recipe.category && (
                 <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-4 py-2">
-                  <span className="text-white text-sm capitalize">{recipe.category}</span>
+                  <span className="text-white text-sm capitalize">{t(`categories.${recipe.category}`, recipe.category)}</span>
                 </div>
               )}
               {reviewCount > 0 && (

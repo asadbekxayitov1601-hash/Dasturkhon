@@ -56,6 +56,17 @@
     "price_hint": "Leave 0 to keep it free. Paid recipes earn you money.",
     "free": "Free"
   },
+  "categories": {
+    "all": "All",
+    "main": "Main Course",
+    "breakfast": "Breakfast",
+    "appetizer": "Appetizer",
+    "soup": "Soup",
+    "dessert": "Dessert",
+    "salad": "Salad",
+    "bread": "Bread",
+    "drink": "Drink"
+  },
   "pantry": {
     "title": "Pantry Inventory",
     "subtitle": "Manage your ingredients and stock levels",

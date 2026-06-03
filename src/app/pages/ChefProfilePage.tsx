@@ -48,6 +48,7 @@ function MiniRecipeCard({
   recipe: ChefRecipe;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const stars = recipe.avgRating ? Math.round(recipe.avgRating) : 0;
 
   return (
@@ -72,7 +73,7 @@ function MiniRecipeCard({
         <div className="flex items-center justify-between mt-2">
           <span className="text-xs px-2 py-0.5 rounded-md font-medium capitalize"
             style={{ background: 'rgba(74,124,126,0.08)', color: '#4A7C7E' }}>
-            {recipe.category}
+            {t(`categories.${recipe.category}`, recipe.category)}
           </span>
           {recipe.reviewCount > 0 && (
             <div className="flex items-center gap-1">

@@ -56,6 +56,17 @@
     "price_hint": "Bepul qoldirish uchun 0 yozing. Pullik retseptlar daromad keltiradi.",
     "free": "Bepul"
   },
+  "categories": {
+    "all": "Hammasi",
+    "main": "Asosiy taom",
+    "breakfast": "Nonushta",
+    "appetizer": "Gazak",
+    "soup": "Sho'rva",
+    "dessert": "Shirinlik",
+    "salad": "Salat",
+    "bread": "Non",
+    "drink": "Ichimlik"
+  },
   "pantry": {
     "title": "Oshxona Inventari",
     "subtitle": "Ingredientlaringiz va zaxiralaringizni boshqaring",
