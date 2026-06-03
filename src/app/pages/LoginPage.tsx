@@ -90,9 +90,9 @@ export function LoginPage() {
             <Link to="/signup" className="text-sm font-medium text-primary hover:text-primary/80">
               Don't have an account?
             </Link>
-            <a href="#" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+            <Link to="/forgot" className="text-sm font-medium text-gray-600 hover:text-gray-900">
               Forgot password?
-            </a>
+            </Link>
           </div>
 
           <button
