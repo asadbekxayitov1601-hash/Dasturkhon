@@ -4,8 +4,9 @@ import { PanLoader } from '../components/PanLoader';
 import { useAuth } from '../auth/AuthProvider';
 import { getRecipes, createRecipe, deleteRecipe, getPendingRecipes, updateRecipeStatus } from '../api/recipesApi';
 import { getAdminPayouts, updatePayout, formatSom, Payout } from '../api/earningsApi';
+import { getAdminStats, AdminStats } from '../api/adminApi';
 import { Recipe } from '../types/kitchen';
-import { Trash2, Plus, LogOut, Check, X as XIcon, Clock, Wallet } from 'lucide-react';
+import { Trash2, Plus, LogOut, Check, X as XIcon, Clock, Wallet, Users, Wifi, UserPlus, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +18,7 @@ export function AdminPage() {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [pendingRecipes, setPendingRecipes] = useState<Recipe[]>([]);
     const [payouts, setPayouts] = useState<Payout[]>([]);
+    const [stats, setStats] = useState<AdminStats | null>(null);
     const [loading, setLoading] = useState(true);
 
     // Form State
@@ -38,20 +40,25 @@ export function AdminPage() {
             navigate('/');
         } else {
             loadData();
+            // Refresh the online/usage stats periodically while the admin is here.
+            const id = setInterval(() => { getAdminStats().then(setStats).catch(() => {}); }, 30000);
+            return () => clearInterval(id);
         }
     }, [user]);
 
     const loadData = async () => {
         try {
             setLoading(true);
-            const [allRecipes, pending, payoutList] = await Promise.all([
+            const [allRecipes, pending, payoutList, statsData] = await Promise.all([
                 getRecipes(),
                 getPendingRecipes(),
                 getAdminPayouts().catch(() => []),
+                getAdminStats().catch(() => null),
             ]);
             setRecipes(allRecipes);
             setPendingRecipes(pending);
             setPayouts(payoutList);
+            setStats(statsData);
         } catch (e: any) {
             toast.error('Failed to load data');
         } finally {
@@ -151,6 +158,28 @@ export function AdminPage() {
                         </button>
                     </div>
                 </div>
+
+                {/* Usage statistics */}
+                {stats && (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+                        {[
+                            { icon: Wifi, label: 'Online now', value: stats.onlineUsers, hint: `last ${stats.onlineWindowMinutes} min`, accent: 'text-green-600', dot: true },
+                            { icon: Users, label: 'Total users', value: stats.totalUsers, hint: 'registered', accent: 'text-primary' },
+                            { icon: UserPlus, label: 'New signups', value: stats.newThisWeek, hint: `${stats.newToday} today · 7-day`, accent: 'text-orange-600' },
+                            { icon: BookOpen, label: 'Recipes', value: stats.totalRecipes, hint: 'approved', accent: 'text-purple-600' },
+                        ].map((s) => (
+                            <div key={s.label} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <s.icon className={`w-5 h-5 ${s.accent}`} />
+                                    <span className="text-sm font-medium text-gray-500">{s.label}</span>
+                                    {s.dot && <span className="ml-auto w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />}
+                                </div>
+                                <p className="text-3xl font-bold text-gray-900">{s.value.toLocaleString()}</p>
+                                <p className="text-xs text-gray-400 mt-1">{s.hint}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Payout Requests Section */}
                 <div className="mb-12">

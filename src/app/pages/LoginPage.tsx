@@ -23,7 +23,12 @@ export function LoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Login failed');
       await auth.login(data.token);
-      navigate('/');
+      let redirectTo = '/';
+      try {
+        redirectTo = sessionStorage.getItem('redirectAfterLogin') || '/';
+        sessionStorage.removeItem('redirectAfterLogin');
+      } catch { /* ignore */ }
+      navigate(redirectTo, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Login error');
     }

@@ -74,6 +74,20 @@ function publicUser(user) {
   };
 }
 
+// ── Presence tracking (powers the admin "online users" stat) ────────────────
+const ONLINE_WINDOW_MS = 5 * 60 * 1000;        // a user counts as "online" if seen in the last 5 min
+const PRESENCE_THROTTLE_MS = 60 * 1000;        // write lastSeen to the DB at most once/min per user
+const lastPresenceWrite = new Map();           // userId -> epoch ms of last DB write
+
+function touchPresence(userId) {
+  if (!userId) return;
+  const now = Date.now();
+  if (now - (lastPresenceWrite.get(userId) || 0) < PRESENCE_THROTTLE_MS) return;
+  lastPresenceWrite.set(userId, now);
+  // Fire-and-forget: never block the request on presence bookkeeping.
+  prisma.user.update({ where: { id: userId }, data: { lastSeen: new Date() } }).catch(() => {});
+}
+
 // auth middleware
 function requireAuth(req, res, next) {
   const auth = req.headers.authorization;
@@ -85,6 +99,7 @@ function requireAuth(req, res, next) {
     const payload = jwt.verify(token, JWT_SECRET);
     // attach user id to request
     req.user = payload;
+    touchPresence(payload.id);
     next();
   } catch (e) {
     return res.status(401).json({ message: 'Invalid token' });
@@ -253,6 +268,27 @@ app.post('/api/auth/reset', async (req, res) => {
 // Diagnostic: admin can check whether email sending is configured/working.
 app.get('/api/admin/email-status', requireAuth, requireAdmin, (req, res) => {
   res.json(getEmailStatus());
+});
+
+// Admin: user/usage statistics (total registered, currently online, new signups).
+app.get('/api/admin/stats', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const now = Date.now();
+    const onlineSince = new Date(now - ONLINE_WINDOW_MS);
+    const dayAgo = new Date(now - 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    const [totalUsers, onlineUsers, newToday, newThisWeek, totalRecipes] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.count({ where: { lastSeen: { gte: onlineSince } } }),
+      prisma.user.count({ where: { createdAt: { gte: dayAgo } } }),
+      prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
+      prisma.recipe.count({ where: { status: 'approved' } }),
+    ]);
+    res.json({ totalUsers, onlineUsers, newToday, newThisWeek, totalRecipes, onlineWindowMinutes: ONLINE_WINDOW_MS / 60000 });
+  } catch (e) {
+    console.error('admin stats error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 app.get('/api/me', (req, res) => {
