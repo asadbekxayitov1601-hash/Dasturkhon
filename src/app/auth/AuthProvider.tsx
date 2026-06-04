@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import { authFetch } from './authFetch';
+import type { SocialLinks } from '../api/chefApi';
 
 interface User {
   id: number | string;
@@ -11,6 +12,7 @@ interface User {
   photoURL?: string;
   avatarUrl?: string;
   bio?: string;
+  socialLinks?: SocialLinks;
   cardLast4?: string;
 }
 

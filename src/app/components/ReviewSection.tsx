@@ -40,8 +40,8 @@ function StarInput({
         >
           <Star
             className="w-7 h-7"
-            fill={(hovered || value) >= star ? '#E6B566' : 'none'}
-            stroke={(hovered || value) >= star ? '#E6B566' : '#C4B49A'}
+            fill={(hovered || value) >= star ? 'var(--accent)' : 'none'}
+            stroke={(hovered || value) >= star ? 'var(--accent)' : '#C4B49A'}
           />
         </button>
       ))}
@@ -58,8 +58,8 @@ function StarDisplay({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'm
         <Star
           key={star}
           className={cls}
-          fill={rating >= star ? '#E6B566' : 'none'}
-          stroke={rating >= star ? '#E6B566' : '#C4B49A'}
+          fill={rating >= star ? 'var(--accent)' : 'none'}
+          stroke={rating >= star ? 'var(--accent)' : '#C4B49A'}
         />
       ))}
     </div>
@@ -98,7 +98,7 @@ function ReviewCard({
         {/* Avatar */}
         <div 
           className="w-10 h-10 rounded-full text-white flex items-center justify-center text-sm font-semibold flex-shrink-0"
-          style={{ background: 'linear-gradient(to bottom right, #4A7C7E, rgba(74, 124, 126, 0.6))' }}
+          style={{ background: 'linear-gradient(to bottom right, var(--primary), rgba(74, 124, 126, 0.6))' }}
         >
           {initials}
         </div>
@@ -118,27 +118,27 @@ function ReviewCard({
                   onClick={onEdit}
                   className="p-1.5 rounded-full transition-colors"
                   style={{ 
-                    backgroundColor: isEditHovered ? '#F5E6D3' : 'transparent',
+                    backgroundColor: isEditHovered ? 'var(--muted)' : 'transparent',
                     cursor: 'pointer'
                   }}
                   onMouseEnter={() => setIsEditHovered(true)}
                   onMouseLeave={() => setIsEditHovered(false)}
                   title="Edit review"
                 >
-                  <Pencil className="w-3.5 h-3.5" style={{ color: '#4A7C7E' }} />
+                  <Pencil className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
                 </button>
                 <button
                   onClick={onDelete}
                   className="p-1.5 rounded-full transition-colors"
                   style={{ 
-                    backgroundColor: isDeleteHovered ? '#F5E6D3' : 'transparent',
+                    backgroundColor: isDeleteHovered ? 'var(--muted)' : 'transparent',
                     cursor: 'pointer'
                   }}
                   onMouseEnter={() => setIsDeleteHovered(true)}
                   onMouseLeave={() => setIsDeleteHovered(false)}
                   title="Delete review"
                 >
-                  <Trash2 className="w-3.5 h-3.5" style={{ color: '#D17A52' }} />
+                  <Trash2 className="w-3.5 h-3.5" style={{ color: 'var(--secondary)' }} />
                 </button>
               </div>
             )}
@@ -245,14 +245,14 @@ function ReviewForm({
               onClick={() => setPhotoPreview(undefined)}
               className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white shadow flex items-center justify-center transition-colors"
               style={{
-                backgroundColor: isPhotoCloseHovered ? '#F5E6D3' : 'white',
+                backgroundColor: isPhotoCloseHovered ? 'var(--muted)' : 'white',
                 border: 'none',
                 cursor: 'pointer'
               }}
               onMouseEnter={() => setIsPhotoCloseHovered(true)}
               onMouseLeave={() => setIsPhotoCloseHovered(false)}
             >
-              <X className="w-3 h-3" style={{ color: '#D17A52' }} />
+              <X className="w-3 h-3" style={{ color: 'var(--secondary)' }} />
             </button>
           </div>
         ) : (
@@ -261,15 +261,15 @@ function ReviewForm({
             onClick={() => fileRef.current?.click()}
             className="flex items-center gap-2 text-sm transition-colors px-3 py-2 rounded-[10px] border border-dashed"
             style={{
-              borderColor: isPhotoHovered ? '#4A7C7E' : 'rgba(74, 124, 126, 0.12)',
-              color: '#4A7C7E',
-              backgroundColor: isPhotoHovered ? '#F5E6D3' : 'transparent',
+              borderColor: isPhotoHovered ? 'var(--primary)' : 'rgba(74, 124, 126, 0.12)',
+              color: 'var(--primary)',
+              backgroundColor: isPhotoHovered ? 'var(--muted)' : 'transparent',
               cursor: 'pointer'
             }}
             onMouseEnter={() => setIsPhotoHovered(true)}
             onMouseLeave={() => setIsPhotoHovered(false)}
           >
-            <Camera className="w-4 h-4" style={{ color: '#4A7C7E' }} />
+            <Camera className="w-4 h-4" style={{ color: 'var(--primary)' }} />
             {t('reviews.add_photo')}
           </button>
         )}
@@ -288,7 +288,7 @@ function ReviewForm({
           disabled={loading}
           className="flex items-center gap-2 px-5 py-2.5 text-white rounded-full text-sm font-medium transition-all disabled:opacity-60"
           style={{
-            backgroundColor: '#4A7C7E',
+            backgroundColor: 'var(--primary)',
             opacity: isSubmitHovered ? 0.9 : 1,
             cursor: 'pointer'
           }}
@@ -309,7 +309,7 @@ function ReviewForm({
             onClick={onCancel}
             className="px-5 py-2.5 rounded-full text-sm font-medium transition-colors"
             style={{
-              backgroundColor: isCancelHovered ? '#F5E6D3' : 'transparent',
+              backgroundColor: isCancelHovered ? 'var(--muted)' : 'transparent',
               color: '#3C4849',
               cursor: 'pointer'
             }}
@@ -426,7 +426,7 @@ export function ReviewSection({ recipeId }: ReviewSectionProps) {
             onClick={() => setShowForm(true)}
             className="flex items-center gap-2 px-5 py-2.5 text-white rounded-full text-sm font-medium transition-all"
             style={{
-              backgroundColor: '#4A7C7E',
+              backgroundColor: 'var(--primary)',
               boxShadow: '0 4px 6px -1px rgba(74, 124, 126, 0.2)',
               opacity: isWriteHovered ? 0.9 : 1,
               cursor: 'pointer'
@@ -465,7 +465,7 @@ export function ReviewSection({ recipeId }: ReviewSectionProps) {
             <div 
               key={i} 
               className="rounded-[20px] animate-pulse h-20" 
-              style={{ backgroundColor: '#F5E6D3' }}
+              style={{ backgroundColor: 'var(--muted)' }}
             />
           ))}
         </div>

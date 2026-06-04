@@ -20,6 +20,7 @@ model User {
   cardLast4     String?
   bio           String?        // NEW: chef bio
   avatarUrl     String?        // NEW: chef avatar
+  socialLinks   String?        // NEW: JSON string of social media links
   createdAt     DateTime       @default(now())
   pantryItems   PantryItem[]
   shoppingItems ShoppingItem[]

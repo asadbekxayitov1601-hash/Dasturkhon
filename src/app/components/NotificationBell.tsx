@@ -92,7 +92,7 @@ export function NotificationBell() {
                     onClick={() => go(n)}
                     className={`w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors flex gap-2 ${n.read ? '' : 'bg-primary/5'}`}
                   >
-                    <span className="mt-1.5 w-2 h-2 rounded-full shrink-0" style={{ background: n.read ? 'transparent' : '#4A7C7E' }} />
+                    <span className="mt-1.5 w-2 h-2 rounded-full shrink-0" style={{ background: n.read ? 'transparent' : 'var(--primary)' }} />
                     <span className="text-sm text-gray-700 leading-snug">
                       <span className="font-medium">{t('notif.new_recipe', { name: n.actorName || t('chef.anonymous') })}</span>
                       {n.recipeTitle && <span className="text-gray-500">: {n.recipeTitle}</span>}

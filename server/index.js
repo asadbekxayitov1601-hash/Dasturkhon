@@ -46,6 +46,18 @@ app.get('/api/health', (req, res) => {
 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Parse the stored socialLinks JSON string into an object. Always returns an
+// object so the client never has to null-check.
+function parseSocial(str) {
+  if (!str) return {};
+  try {
+    const v = JSON.parse(str);
+    return v && typeof v === 'object' ? v : {};
+  } catch {
+    return {};
+  }
+}
+
 // Shape a Prisma user into the object sent to the client. Keep this in one
 // place so every endpoint returns the same fields (incl. avatarUrl/bio).
 function publicUser(user) {
@@ -57,6 +69,7 @@ function publicUser(user) {
     isPro: user.isPro,
     avatarUrl: user.avatarUrl,
     bio: user.bio,
+    socialLinks: parseSocial(user.socialLinks),
     cardLast4: user.cardLast4,
   };
 }
@@ -773,6 +786,7 @@ app.get('/api/chefs/:id', async (req, res) => {
         email: true,
         bio: true,
         avatarUrl: true,
+        socialLinks: true,
         isPro: true,
         createdAt: true,
         recipes: {
@@ -819,6 +833,7 @@ app.get('/api/chefs/:id', async (req, res) => {
       email: chef.email,
       bio: chef.bio,
       avatarUrl: chef.avatarUrl,
+      socialLinks: parseSocial(chef.socialLinks),
       isPro: chef.isPro,
       createdAt: chef.createdAt,
       recipes,
@@ -936,21 +951,37 @@ app.get('/api/chefs/:id/following', optionalAuth, async (req, res) => {
   }
 });
 
-// PUT /api/profile  —  update own bio and avatar
+// Allowed social platforms and a light sanitizer for their values.
+const SOCIAL_PLATFORMS = ['instagram', 'telegram', 'youtube', 'tiktok', 'facebook', 'website'];
+function sanitizeSocial(input) {
+  if (!input || typeof input !== 'object') return {};
+  const out = {};
+  for (const key of SOCIAL_PLATFORMS) {
+    let v = input[key];
+    if (typeof v !== 'string') continue;
+    v = v.trim().slice(0, 300);
+    if (v) out[key] = v;
+  }
+  return out;
+}
+
+// PUT /api/profile  —  update own bio, avatar, name and social links
 app.put('/api/profile', requireAuth, async (req, res) => {
   try {
-    const { bio, avatarUrl, name } = req.body;
+    const { bio, avatarUrl, name, socialLinks } = req.body;
     const updated = await prisma.user.update({
       where: { id: req.user.id },
       data: {
         ...(name !== undefined && { name }),
         ...(bio !== undefined && { bio }),
-        ...(avatarUrl !== undefined && { avatarUrl })
+        ...(avatarUrl !== undefined && { avatarUrl }),
+        ...(socialLinks !== undefined && { socialLinks: JSON.stringify(sanitizeSocial(socialLinks)) })
       }
     });
     res.json({
       id: updated.id, name: updated.name, email: updated.email,
-      bio: updated.bio, avatarUrl: updated.avatarUrl, isPro: updated.isPro
+      bio: updated.bio, avatarUrl: updated.avatarUrl,
+      socialLinks: parseSocial(updated.socialLinks), isPro: updated.isPro
     });
   } catch (e) {
     console.error(e);
@@ -1358,16 +1389,22 @@ app.post('/api/admin/payouts/:id/:action', requireAuth, requireAdmin, async (req
 // Create a "new recipe" notification for every follower of the author.
 async function notifyFollowers(authorId, recipe) {
   try {
-    const [author, followers] = await Promise.all([
+    const [author, follows] = await Promise.all([
       prisma.user.findUnique({ where: { id: authorId }, select: { name: true } }),
-      prisma.follow.findMany({ where: { followingId: authorId }, select: { followerId: true } }),
+      prisma.follow.findMany({
+        where: { followingId: authorId },
+        select: { follower: { select: { id: true, email: true } } },
+      }),
     ]);
-    if (followers.length === 0) return;
+    if (follows.length === 0) return;
+    const authorName = author?.name || 'A chef you follow';
+
+    // In-app notifications
     await Promise.all(
-      followers.map(f =>
+      follows.map(f =>
         prisma.notification.create({
           data: {
-            userId: f.followerId,
+            userId: f.follower.id,
             type: 'new_recipe',
             actorId: authorId,
             actorName: author?.name || null,
@@ -1377,6 +1414,23 @@ async function notifyFollowers(authorId, recipe) {
         })
       )
     );
+
+    // Best-effort email notifications (never block or throw the request).
+    const appUrl = process.env.APP_URL || 'https://dasturkhon.vercel.app';
+    for (const f of follows) {
+      if (!f.follower.email) continue;
+      sendMail({
+        to: f.follower.email,
+        subject: `${authorName} published a new recipe: ${recipe.title}`,
+        text: `${authorName} just published "${recipe.title}" on Dasturkhon. Open the app to see it: ${appUrl}`,
+        html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:8px">
+          <h2 style="color:#4A7C7E;margin:0 0 12px">New recipe from ${authorName}</h2>
+          <p style="font-size:16px;color:#2C3E50;margin:0 0 16px"><strong>${recipe.title}</strong> was just published.</p>
+          <p style="margin:0 0 20px"><a href="${appUrl}" style="display:inline-block;background:#4A7C7E;color:#fff;padding:11px 22px;border-radius:12px;text-decoration:none;font-weight:600">View on Dasturkhon</a></p>
+          <p style="color:#7A8B99;font-size:12px;margin:0">You receive this because you follow ${authorName} on Dasturkhon.</p>
+        </div>`,
+      }).catch(err => console.error('follower email failed:', err?.message || err));
+    }
   } catch (e) {
     console.error('notifyFollowers error:', e);
   }

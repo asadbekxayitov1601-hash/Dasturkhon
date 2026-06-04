@@ -13,7 +13,7 @@ function DiagnosticApp() {
   }, []);
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial', backgroundColor: '#FFFDF5', minHeight: '100vh' }}>
+    <div style={{ padding: '20px', fontFamily: 'Arial', backgroundColor: 'var(--background)', minHeight: '100vh' }}>
       <h1>Diagnostic Mode</h1>
       <p>Status: {status}</p>
       <p>This means React is rendering!</p>

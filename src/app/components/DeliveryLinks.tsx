@@ -29,13 +29,13 @@ export function DeliveryLinks({ recipeName }: DeliveryLinksProps) {
           className="w-8 h-8 rounded-full flex items-center justify-center"
           style={{ background: 'rgba(74,124,126,0.12)' }}
         >
-          <Bike className="w-4 h-4" style={{ color: '#4A7C7E' }} />
+          <Bike className="w-4 h-4" style={{ color: 'var(--primary)' }} />
         </div>
         <div>
-          <p className="text-sm font-semibold" style={{ color: '#2C3E50' }}>
+          <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
             {t('delivery.cant_cook')}
           </p>
-          <p className="text-xs" style={{ color: '#7A8B99' }}>
+          <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
             {t('delivery.order_from_platforms')}
           </p>
         </div>
@@ -64,7 +64,7 @@ export function DeliveryLinks({ recipeName }: DeliveryLinksProps) {
       </div>
 
       {/* Disclaimer */}
-      <p className="text-xs mt-3" style={{ color: '#7A8B99' }}>
+      <p className="text-xs mt-3" style={{ color: 'var(--muted-foreground)' }}>
         {t('delivery.disclaimer', { dish: searchQuery })}
       </p>
     </div>

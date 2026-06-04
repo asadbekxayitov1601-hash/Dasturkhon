@@ -80,7 +80,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#FFFDF5]">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-6">
           <PanLoader />
           <p className="text-gray-500 font-medium animate-pulse">Loading Dasturkhon...</p>
@@ -92,7 +92,7 @@ function App() {
   return (
     <BrowserRouter>
       <DndProvider backend={HTML5Backend}>
-        <div className="min-h-screen" style={{ backgroundColor: '#FFFDF5' }}>
+        <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
           <Header />
           {/* NewsTicker removed per request */}
 

@@ -135,7 +135,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
               )}
               {reviewCount > 0 && (
                 <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-sm rounded-full px-4 py-2">
-                  <Star className="w-4 h-4" fill="#E6B566" stroke="#E6B566" />
+                  <Star className="w-4 h-4" fill="var(--accent)" stroke="var(--accent)" />
                   <span className="text-white text-sm">
                     {avgRating.toFixed(1)} ({reviewCount})
                   </span>
@@ -155,15 +155,15 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                 {recipe.user.avatarUrl ? (
                   <img src={recipe.user.avatarUrl} alt="" className="w-11 h-11 rounded-full object-cover ring-2 ring-white shadow" />
                 ) : (
-                  <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold ring-2 ring-white shadow" style={{ background: 'linear-gradient(135deg, #4A7C7E, #5A9FA3)' }}>
+                  <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold ring-2 ring-white shadow" style={{ background: 'linear-gradient(135deg, var(--primary), #5A9FA3)' }}>
                     {(recipe.user.name || recipe.user.email || 'C').slice(0, 2).toUpperCase() || <UserIcon className="w-5 h-5" />}
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: '#2C3E50' }}>
+                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--foreground)' }}>
                     {recipe.user.name || recipe.user.email?.split('@')[0] || t('chef.anonymous')}
                   </p>
-                  <p className="text-xs" style={{ color: '#7A8B99' }}>{t('chef.view_profile')}</p>
+                  <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{t('chef.view_profile')}</p>
                 </div>
               </button>
               {!isOwnRecipe && (
@@ -190,8 +190,8 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
               }}
             >
               <div className="flex items-center gap-2 mb-3">
-                <Heart className="w-4 h-4" style={{ color: '#D17A52' }} />
-                <p className="text-sm font-semibold" style={{ color: '#2C3E50' }}>
+                <Heart className="w-4 h-4" style={{ color: 'var(--secondary)' }} />
+                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
                   {t('earnings.tip_prompt')}
                 </p>
               </div>
@@ -202,7 +202,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                     onClick={() => sendTip(amt)}
                     disabled={tipping}
                     className="px-4 py-2 rounded-full text-sm font-medium text-white shadow-sm transition-all hover:shadow-md active:scale-95 disabled:opacity-60"
-                    style={{ background: 'linear-gradient(135deg, #D17A52, #E6B566)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--secondary), var(--accent))' }}
                   >
                     {formatSom(amt)}
                   </button>
@@ -237,9 +237,9 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
           <div className="mb-8">
             <h3
               className="flex items-center gap-2 text-xl mb-4"
-              style={{ color: '#2C3E50' }}
+              style={{ color: 'var(--foreground)' }}
             >
-              <ChefHat className="w-5 h-5" style={{ color: '#4A7C7E' }} />
+              <ChefHat className="w-5 h-5" style={{ color: 'var(--primary)' }} />
               {t('recipes.key_ingredients')}
             </h3>
             <div className="grid sm:grid-cols-2 gap-3">
@@ -251,9 +251,9 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                 >
                   <div
                     className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ background: '#4A7C7E' }}
+                    style={{ background: 'var(--primary)' }}
                   />
-                  <span style={{ color: '#2C3E50' }}>{ingredient}</span>
+                  <span style={{ color: 'var(--foreground)' }}>{ingredient}</span>
                 </div>
               ))}
             </div>
@@ -261,7 +261,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
           {/* Instructions */}
           <div className="mb-8">
-            <h3 className="text-xl mb-4" style={{ color: '#2C3E50' }}>
+            <h3 className="text-xl mb-4" style={{ color: 'var(--foreground)' }}>
               {t('recipes.instructions')}
             </h3>
             <div className="space-y-4">
@@ -269,11 +269,11 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                 <div key={index} className="flex gap-4">
                   <div
                     className="flex-shrink-0 w-8 h-8 rounded-full text-white flex items-center justify-center text-sm font-medium"
-                    style={{ background: 'linear-gradient(135deg, #4A7C7E, #5A9FA3)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--primary), #5A9FA3)' }}
                   >
                     {index + 1}
                   </div>
-                  <p className="flex-1 pt-1" style={{ color: '#2C3E50' }}>{instruction}</p>
+                  <p className="flex-1 pt-1" style={{ color: 'var(--foreground)' }}>{instruction}</p>
                 </div>
               ))}
             </div>

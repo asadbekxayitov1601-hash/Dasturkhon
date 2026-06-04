@@ -5,12 +5,22 @@ import { config } from '../config';
 
 const API = config.apiBaseUrl;
 
+export interface SocialLinks {
+  instagram?: string;
+  telegram?: string;
+  youtube?: string;
+  tiktok?: string;
+  facebook?: string;
+  website?: string;
+}
+
 export interface ChefProfile {
   id: number;
   name: string | null;
   email: string;
   bio: string | null;
   avatarUrl: string | null;
+  socialLinks?: SocialLinks;
   isPro: boolean;
   createdAt: string;
   recipes: ChefRecipe[];
@@ -96,6 +106,7 @@ export async function updateProfile(data: {
   name?: string;
   bio?: string;
   avatarUrl?: string;
+  socialLinks?: SocialLinks;
 }): Promise<void> {
   const res = await authFetch('/api/profile', {
     method: 'PUT',

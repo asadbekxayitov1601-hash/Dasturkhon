@@ -76,7 +76,7 @@ export function FollowListModal({ open, title, users, emptyText, loading, onClos
                         {u.avatarUrl ? (
                           <img src={u.avatarUrl} alt="" className="w-11 h-11 rounded-full object-cover" />
                         ) : (
-                          <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ background: 'linear-gradient(135deg, #4A7C7E, #5A9FA3)' }}>
+                          <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ background: 'linear-gradient(135deg, var(--primary), #5A9FA3)' }}>
                             {initials || <User className="w-5 h-5" />}
                           </div>
                         )}
