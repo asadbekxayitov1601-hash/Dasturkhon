@@ -5,12 +5,26 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
+import { OAuth2Client } from 'google-auth-library';
 import { sendMail, getEmailStatus } from './services/email.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+
+// Google sign-in: only enabled when GOOGLE_CLIENT_ID is configured.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
+
+// Standard 7-day session token for a user.
+function makeToken(user) {
+  return jwt.sign(
+    { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, isPro: user.isPro },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+}
 
 // Normalize an origin/URL for comparison: trim whitespace and drop any
 // trailing slash so "https://site.app/" and "https://site.app" are equal.
@@ -142,9 +156,14 @@ async function confirmOrderPaid(orderId) {
   });
 }
 
-app.post('/api/signup', async (req, res) => {
+// ── Signup with email verification code ─────────────────────────────────────
+// Step 1 (signup-request) validates input, stores the pending account in memory
+// and emails a 6-digit code. Step 2 (signup-verify) checks the code and creates
+// the real account. Pending entries expire in 10 minutes.
+const pendingSignups = new Map(); // email -> { code, name, passwordHash, expiresAt, attempts }
+
+app.post('/api/auth/signup-request', async (req, res) => {
   const { name, email, password } = req.body;
-  // Basic input validation.
   if (typeof email !== 'string' || typeof password !== 'string') {
     return res.status(400).json({ message: 'Invalid email or password' });
   }
@@ -159,24 +178,78 @@ app.post('/api/signup', async (req, res) => {
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) return res.status(409).json({ message: 'Email already registered' });
     const passwordHash = await bcrypt.hash(password, 10);
-    // NOTE: isAdmin is intentionally NOT taken from the request body — that
-    // would let anyone self-promote to admin. New users are always non-admin;
-    // admins are created via server/scripts/create-admin.js.
-    const user = await prisma.user.create({
-      data: {
-        name: typeof name === 'string' ? name.trim() : '',
-        email: normalizedEmail,
-        passwordHash,
-        isAdmin: false
-      }
+    const code = genCode();
+    pendingSignups.set(normalizedEmail, {
+      code,
+      name: typeof name === 'string' ? name.trim() : '',
+      passwordHash,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+      attempts: 0,
     });
-    const token = jwt.sign({ id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, isPro: user.isPro }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: publicUser(user) });
+    try {
+      await sendMail({
+        to: normalizedEmail,
+        subject: 'Your Dasturkhon verification code',
+        text: `Your Dasturkhon sign-up verification code is ${code}. It expires in 10 minutes.`,
+        html: `<div style="font-family:sans-serif"><p>Welcome to Dasturkhon! Your verification code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:4px;color:#4A7C7E">${code}</p><p>It expires in 10 minutes.</p></div>`,
+      });
+    } catch (e) {
+      console.error('signup email error:', e);
+      return res.status(502).json({ message: 'Could not send verification email. Please try again.' });
+    }
+    res.json({ ok: true });
   } catch (e) {
-    console.error(e);
+    console.error('signup-request error:', e);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+app.post('/api/auth/signup-verify', async (req, res) => {
+  const { email, code } = req.body;
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  const entry = pendingSignups.get(normalizedEmail);
+  if (!entry) return res.status(400).json({ message: 'No pending signup. Please start again.' });
+  if (Date.now() > entry.expiresAt) {
+    pendingSignups.delete(normalizedEmail);
+    return res.status(400).json({ message: 'Code expired. Please start again.' });
+  }
+  if (entry.attempts >= 5) {
+    pendingSignups.delete(normalizedEmail);
+    return res.status(429).json({ message: 'Too many attempts. Please start again.' });
+  }
+  if (String(code).trim() !== entry.code) {
+    entry.attempts += 1;
+    return res.status(400).json({ message: 'Invalid code' });
+  }
+  try {
+    // Guard against the email being registered between step 1 and step 2.
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (existing) {
+      pendingSignups.delete(normalizedEmail);
+      return res.status(409).json({ message: 'Email already registered' });
+    }
+    // isAdmin is never taken from the request — new users are always non-admin.
+    const user = await prisma.user.create({
+      data: {
+        name: entry.name,
+        email: normalizedEmail,
+        passwordHash: entry.passwordHash,
+        emailVerified: true,
+        isAdmin: false,
+      },
+    });
+    pendingSignups.delete(normalizedEmail);
+    res.json({ token: makeToken(user), user: publicUser(user) });
+  } catch (e) {
+    console.error('signup-verify error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ── Login with email 2FA code ───────────────────────────────────────────────
+// Step 1 verifies the password then emails a one-time code; step 2 (login-verify)
+// checks the code and returns the session token.
+const loginChallenges = new Map(); // email -> { code, userId, expiresAt, attempts }
 
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
@@ -186,14 +259,100 @@ app.post('/api/login', async (req, res) => {
   const normalizedEmail = email.trim().toLowerCase();
   try {
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+    // Google-only accounts have no passwordHash — reject password login for them.
+    if (!user || !user.passwordHash) return res.status(401).json({ message: 'Invalid credentials' });
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
-    const token = jwt.sign({ id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin, isPro: user.isPro }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: publicUser(user) });
+    const code = genCode();
+    loginChallenges.set(normalizedEmail, {
+      code,
+      userId: user.id,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+      attempts: 0,
+    });
+    try {
+      await sendMail({
+        to: normalizedEmail,
+        subject: 'Your Dasturkhon login code',
+        text: `Your Dasturkhon login code is ${code}. It expires in 10 minutes.`,
+        html: `<div style="font-family:sans-serif"><p>Your Dasturkhon login code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:4px;color:#4A7C7E">${code}</p><p>It expires in 10 minutes. If this wasn't you, change your password.</p></div>`,
+      });
+    } catch (e) {
+      console.error('login email error:', e);
+      return res.status(502).json({ message: 'Could not send login code. Please try again.' });
+    }
+    res.json({ needsCode: true, email: normalizedEmail });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/api/auth/login-verify', async (req, res) => {
+  const { email, code } = req.body;
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  const entry = loginChallenges.get(normalizedEmail);
+  if (!entry) return res.status(400).json({ message: 'No pending login. Please sign in again.' });
+  if (Date.now() > entry.expiresAt) {
+    loginChallenges.delete(normalizedEmail);
+    return res.status(400).json({ message: 'Code expired. Please sign in again.' });
+  }
+  if (entry.attempts >= 5) {
+    loginChallenges.delete(normalizedEmail);
+    return res.status(429).json({ message: 'Too many attempts. Please sign in again.' });
+  }
+  if (String(code).trim() !== entry.code) {
+    entry.attempts += 1;
+    return res.status(400).json({ message: 'Invalid code' });
+  }
+  try {
+    const user = await prisma.user.findUnique({ where: { id: entry.userId } });
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+    loginChallenges.delete(normalizedEmail);
+    res.json({ token: makeToken(user), user: publicUser(user) });
+  } catch (e) {
+    console.error('login-verify error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ── Google sign-in ──────────────────────────────────────────────────────────
+// Frontend obtains a Google ID token (credential) via Google Identity Services
+// and posts it here. We verify it, then find-or-create the matching user.
+app.post('/api/auth/google', async (req, res) => {
+  if (!googleClient) return res.status(503).json({ message: 'Google sign-in is not configured' });
+  const { credential } = req.body;
+  if (typeof credential !== 'string') return res.status(400).json({ message: 'Missing Google credential' });
+  try {
+    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
+    const payload = ticket.getPayload();
+    const email = (payload?.email || '').toLowerCase();
+    if (!email || payload.email_verified === false) {
+      return res.status(401).json({ message: 'Google account email not available' });
+    }
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          name: payload.name || payload.given_name || '',
+          googleId: payload.sub,
+          avatarUrl: payload.picture || null,
+          emailVerified: true,
+          isAdmin: false,
+        },
+      });
+    } else if (!user.googleId) {
+      // Link Google to an existing email/password account.
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { googleId: payload.sub, emailVerified: true },
+      });
+    }
+    res.json({ token: makeToken(user), user: publicUser(user) });
+  } catch (e) {
+    console.error('google auth error:', e);
+    res.status(401).json({ message: 'Invalid Google sign-in' });
   }
 });
 
