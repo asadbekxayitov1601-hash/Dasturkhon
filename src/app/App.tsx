@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -25,8 +25,23 @@ import { useScrollReveal } from './hooks/useScrollReveal';
 import { PanLoader } from './components/PanLoader';
 
 // Wraps the routed pages so each navigation fades/slides in for a modern feel.
+// Routes that require a logged-in user. Everything else (notably "/") is public.
+const PROTECTED_PREFIXES = ['/recipes', '/pantry', '/shopping', '/favorites', '/profile', '/admin', '/chef'];
+
 function AnimatedRoutes({ dailyCalories }: { dailyCalories: number }) {
   const location = useLocation();
+  const { user } = useAuth();
+
+  // Gate protected routes here, OUTSIDE the AnimatePresence. Redirecting from
+  // inside the keyed/animated subtree deadlocks framer-motion's mode="wait".
+  const requiresAuth = PROTECTED_PREFIXES.some(
+    (p) => location.pathname === p || location.pathname.startsWith(p + '/')
+  );
+  if (!user && requiresAuth) {
+    try { sessionStorage.setItem('redirectAfterLogin', location.pathname); } catch { /* ignore */ }
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -41,10 +56,10 @@ function AnimatedRoutes({ dailyCalories }: { dailyCalories: number }) {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot" element={<ForgotPasswordPage />} />
-          <Route path="/chef/:id" element={<ChefProfilePage />} />
+          <Route path="/chef/:id" element={<ProtectedRoute><ChefProfilePage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          <Route path="/recipes" element={<RecipesPage />} />
+          <Route path="/recipes" element={<ProtectedRoute><RecipesPage /></ProtectedRoute>} />
           <Route path="/pantry" element={<ProtectedRoute><PantryPage /></ProtectedRoute>} />
           <Route path="/shopping" element={<ProtectedRoute><ShoppingListPage /></ProtectedRoute>} />
           <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />

@@ -22,6 +22,7 @@ model User {
   bio           String?        // NEW: chef bio
   avatarUrl     String?        // NEW: chef avatar
   socialLinks   String?        // NEW: JSON string of social media links
+  lastSeen      DateTime?      // NEW: presence tracking for admin online count
   createdAt     DateTime       @default(now())
   pantryItems   PantryItem[]
   shoppingItems ShoppingItem[]

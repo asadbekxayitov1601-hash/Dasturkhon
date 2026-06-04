@@ -15,7 +15,7 @@ export function Footer() {
           </div>
 
           <div className="flex flex-col items-center md:items-end gap-1 text-sm text-gray-600">
-            <p>Email: <a href="mailto:asadbekxayitov2010@gmail.com" className="hover:text-primary transition-colors font-medium">asadbekxayitov2010@gmail.com</a></p>
+            <p>Email: <a href="mailto:dasturkhon.uz@gmail.com" className="hover:text-primary transition-colors font-medium">asadbekxayitov2010@gmail.com</a></p>
             <p>Phone: <a href="tel:+998917220044" className="hover:text-primary transition-colors font-medium">+998917220044</a></p>
           </div>
         </div>
