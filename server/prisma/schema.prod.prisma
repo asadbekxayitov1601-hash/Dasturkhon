@@ -12,7 +12,9 @@ model User {
   id            Int            @id @default(autoincrement())
   name          String?
   email         String         @unique
-  passwordHash  String
+  passwordHash  String?        // optional: Google-only accounts have no password
+  googleId      String?        @unique // NEW: linked Google account id
+  emailVerified Boolean        @default(false) // NEW: email confirmed via code/Google
   isAdmin       Boolean        @default(false)
   isPro         Boolean        @default(false)
   subType       String?

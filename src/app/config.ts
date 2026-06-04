@@ -16,4 +16,8 @@ export const config = {
   //    (same-origin, no CORS).
   apiBaseUrl:
     import.meta.env.VITE_API_URL || (isLocalhost ? 'http://localhost:4000' : ''),
+
+  // Google Identity client ID (public). Set VITE_GOOGLE_CLIENT_ID at build time
+  // to enable the "Continue with Google" button. Empty = button hidden.
+  googleClientId: (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || '',
 };
