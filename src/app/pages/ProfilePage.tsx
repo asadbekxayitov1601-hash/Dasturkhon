@@ -14,7 +14,8 @@ import { RecipeDetailModal } from '../components/RecipeDetailModal';
 import { FollowListModal } from '../components/FollowListModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import { updateProfile, getChefProfile, getFollowers, getFollowing, deleteAccount, ChefProfile, ChefRecipe, UserLite } from '../api/chefApi';
+import { updateProfile, getChefProfile, getFollowers, getFollowing, deleteAccount, ChefProfile, ChefRecipe, UserLite, SocialLinks } from '../api/chefApi';
+import { SocialLinksDisplay, SocialLinksEditor } from '../components/SocialLinks';
 import { Recipe } from '../types/kitchen';
 
 export function ProfilePage() {
@@ -74,6 +75,7 @@ export function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [bio, setBio] = useState('');
+  const [social, setSocial] = useState<SocialLinks>({});
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>();
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,7 +90,7 @@ export function ProfilePage() {
   const handleSaveProfile = async () => {
     setLoading(true);
     try {
-      await updateProfile({ name, bio, avatarUrl: avatarPreview });
+      await updateProfile({ name, bio, avatarUrl: avatarPreview, socialLinks: social });
       await refresh();
       setEditing(false);
       toast.success('Profile updated!');
@@ -104,7 +106,7 @@ export function ProfilePage() {
   const initials = user.name ? user.name.slice(0, 2).toUpperCase() : user.email.slice(0, 2).toUpperCase();
 
   return (
-    <div className="min-h-screen py-12 px-4" style={{ background: '#FFFDF5' }}>
+    <div className="min-h-screen py-12 px-4" style={{ background: 'var(--background)' }}>
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* Profile Header */}
@@ -114,7 +116,7 @@ export function ProfilePage() {
           viewport={{ once: true }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="rounded-[28px] p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left"
-          style={{ background: '#fff', border: '1px solid rgba(74,124,126,0.12)', boxShadow: '0 2px 16px rgba(74,124,126,0.06)' }}
+          style={{ background: 'var(--card)', border: '1px solid rgba(74,124,126,0.12)', boxShadow: '0 2px 16px rgba(74,124,126,0.06)' }}
         >
           {/* Avatar */}
           <div className="relative flex-shrink-0">
@@ -127,7 +129,7 @@ export function ProfilePage() {
             ) : (
               <div
                 className="w-24 h-24 rounded-full flex items-center justify-center text-white text-2xl font-bold ring-4 ring-white shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #4A7C7E, #5A9FA3)' }}
+                style={{ background: 'linear-gradient(135deg, var(--primary), #5A9FA3)' }}
               >
                 {initials}
               </div>
@@ -137,7 +139,7 @@ export function ProfilePage() {
                 className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-white shadow-md flex items-center justify-center cursor-pointer"
                 style={{ border: '1.5px solid rgba(74,124,126,0.3)' }}
               >
-                <Camera className="w-3.5 h-3.5" style={{ color: '#4A7C7E' }} />
+                <Camera className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
                 <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
               </label>
             )}
@@ -151,29 +153,33 @@ export function ProfilePage() {
                   onChange={e => setName(e.target.value)}
                   placeholder="Your name"
                   className="w-full px-3 py-2 rounded-[10px] text-sm border focus:outline-none"
-                  style={{ borderColor: 'rgba(74,124,126,0.3)', color: '#2C3E50' }}
+                  style={{ borderColor: 'rgba(74,124,126,0.3)', color: 'var(--foreground)' }}
                 />
                 <textarea
                   value={bio}
                   onChange={e => setBio(e.target.value)}
                   placeholder="Tell people about yourself as a cook..."
                   className="w-full px-3 py-2 rounded-[10px] text-sm border focus:outline-none resize-none"
-                  style={{ borderColor: 'rgba(74,124,126,0.3)', color: '#2C3E50' }}
+                  style={{ borderColor: 'rgba(74,124,126,0.3)', color: 'var(--foreground)' }}
                   rows={2}
                 />
+                <div>
+                  <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--muted-foreground)' }}>Social media</p>
+                  <SocialLinksEditor value={social} onChange={setSocial} />
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handleSaveProfile}
                     disabled={loading}
                     className="px-4 py-2 rounded-full text-sm font-medium text-white disabled:opacity-60"
-                    style={{ background: '#4A7C7E' }}
+                    style={{ background: 'var(--primary)' }}
                   >
                     {loading ? 'Saving...' : 'Save'}
                   </button>
                   <button
                     onClick={() => setEditing(false)}
                     className="px-4 py-2 rounded-full text-sm"
-                    style={{ color: '#7A8B99' }}
+                    style={{ color: 'var(--muted-foreground)' }}
                   >
                     Cancel
                   </button>
@@ -181,20 +187,25 @@ export function ProfilePage() {
               </div>
             ) : (
               <>
-                <h1 className="text-2xl font-bold mb-1" style={{ color: '#2C3E50' }}>{user.name || 'Your Name'}</h1>
-                <p className="text-sm mb-1" style={{ color: '#7A8B99' }}>{user.email}</p>
-                {user.bio && <p className="text-sm mb-3" style={{ color: '#2C3E50' }}>{user.bio}</p>}
+                <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>{user.name || 'Your Name'}</h1>
+                <p className="text-sm mb-1" style={{ color: 'var(--muted-foreground)' }}>{user.email}</p>
+                {user.bio && <p className="text-sm mb-3" style={{ color: 'var(--foreground)' }}>{user.bio}</p>}
+                {user.socialLinks && (
+                  <div className="flex justify-center sm:justify-start mb-3">
+                    <SocialLinksDisplay links={user.socialLinks} />
+                  </div>
+                )}
                 {user.isAdmin && (
                   <div className="flex flex-wrap gap-2 justify-center sm:justify-start mb-3">
                     <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Admin</span>
                   </div>
                 )}
                 <button
-                  onClick={() => { setEditing(true); setName(user.name || ''); setBio(user.bio || ''); }}
+                  onClick={() => { setEditing(true); setName(user.name || ''); setBio(user.bio || ''); setSocial(user.socialLinks || {}); }}
                   className="text-xs flex items-center gap-1.5 transition-colors"
-                  style={{ color: '#7A8B99' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#4A7C7E')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#7A8B99')}
+                  style={{ color: 'var(--muted-foreground)' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--primary)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted-foreground)')}
                 >
                   <Settings className="w-3.5 h-3.5" /> Edit profile
                 </button>
@@ -206,7 +217,7 @@ export function ProfilePage() {
             onClick={logout}
             className="p-2 transition-colors flex-shrink-0"
             style={{ color: '#C4B49A' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#D17A52')}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--secondary)')}
             onMouseLeave={e => (e.currentTarget.style.color = '#C4B49A')}
             title="Logout"
           >
@@ -217,26 +228,26 @@ export function ProfilePage() {
         {/* Stats row (like a public profile) */}
         <div className="grid grid-cols-3 gap-3 animate-fade-up">
           <div className="flex flex-col items-center gap-1 px-4 py-4 rounded-[20px] bg-white" style={{ border: '1px solid rgba(74,124,126,0.12)' }}>
-            <BookOpen className="w-5 h-5" style={{ color: '#4A7C7E' }} />
-            <div className="text-2xl font-bold" style={{ color: '#2C3E50' }}>{profile?.recipeCount ?? 0}</div>
-            <div className="text-xs" style={{ color: '#7A8B99' }}>{t('chef.recipes')}</div>
+            <BookOpen className="w-5 h-5" style={{ color: 'var(--primary)' }} />
+            <div className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>{profile?.recipeCount ?? 0}</div>
+            <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{t('chef.recipes')}</div>
           </div>
           <button onClick={() => openList('followers')} className="flex flex-col items-center gap-1 px-4 py-4 rounded-[20px] bg-white cursor-pointer hover:shadow-md active:scale-95 transition-all" style={{ border: '1px solid rgba(74,124,126,0.12)' }}>
-            <Users className="w-5 h-5" style={{ color: '#4A7C7E' }} />
-            <div className="text-2xl font-bold" style={{ color: '#2C3E50' }}>{profile?.followerCount ?? 0}</div>
-            <div className="text-xs" style={{ color: '#7A8B99' }}>{t('chef.followers')}</div>
+            <Users className="w-5 h-5" style={{ color: 'var(--primary)' }} />
+            <div className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>{profile?.followerCount ?? 0}</div>
+            <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{t('chef.followers')}</div>
           </button>
           <button onClick={() => openList('following')} className="flex flex-col items-center gap-1 px-4 py-4 rounded-[20px] bg-white cursor-pointer hover:shadow-md active:scale-95 transition-all" style={{ border: '1px solid rgba(74,124,126,0.12)' }}>
-            <ChefHat className="w-5 h-5" style={{ color: '#4A7C7E' }} />
-            <div className="text-2xl font-bold" style={{ color: '#2C3E50' }}>{profile?.followingCount ?? 0}</div>
-            <div className="text-xs" style={{ color: '#7A8B99' }}>{t('chef.following_count')}</div>
+            <ChefHat className="w-5 h-5" style={{ color: 'var(--primary)' }} />
+            <div className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>{profile?.followingCount ?? 0}</div>
+            <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{t('chef.following_count')}</div>
           </button>
         </div>
 
         {/* My Recipes (Instagram-style grid) */}
         {myRecipes.length > 0 && (
           <div className="animate-fade-up">
-            <h2 className="text-lg font-semibold mb-3" style={{ color: '#2C3E50' }}>{t('chef.my_recipes')}</h2>
+            <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--foreground)' }}>{t('chef.my_recipes')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {myRecipes.map((r) => (
                 <button

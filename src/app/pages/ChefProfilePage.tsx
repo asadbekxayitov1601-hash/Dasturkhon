@@ -10,6 +10,7 @@ import { motion } from 'motion/react';
 import { useAuth } from '../auth/AuthProvider';
 import { RecipeDetailModal } from '../components/RecipeDetailModal';
 import { FollowListModal } from '../components/FollowListModal';
+import { SocialLinksDisplay } from '../components/SocialLinks';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import {
   ChefProfile,
@@ -38,9 +39,9 @@ function StatCard({ icon, value, label, onClick }: { icon: React.ReactNode; valu
       className={`flex flex-col items-center gap-1 px-6 py-4 rounded-[20px] bg-white ${onClick ? 'cursor-pointer hover:shadow-md active:scale-95 transition-all' : ''}`}
       style={{ border: '1px solid rgba(74,124,126,0.12)' }}
     >
-      <div style={{ color: '#4A7C7E' }}>{icon}</div>
-      <div className="text-2xl font-bold" style={{ color: '#2C3E50' }}>{value}</div>
-      <div className="text-xs" style={{ color: '#7A8B99' }}>{label}</div>
+      <div style={{ color: 'var(--primary)' }}>{icon}</div>
+      <div className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>{value}</div>
+      <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{label}</div>
     </motion.div>
   );
 }
@@ -71,19 +72,19 @@ function MiniRecipeCard({
         />
       </div>
       <div className="p-4">
-        <h4 className="font-semibold text-sm leading-tight mb-1 group-hover:text-[#4A7C7E] transition-colors line-clamp-2"
-          style={{ color: '#2C3E50' }}>
+        <h4 className="font-semibold text-sm leading-tight mb-1 group-hover:text-[var(--primary)] transition-colors line-clamp-2"
+          style={{ color: 'var(--foreground)' }}>
           {recipe.title}
         </h4>
         <div className="flex items-center justify-between mt-2">
           <span className="text-xs px-2 py-0.5 rounded-md font-medium capitalize"
-            style={{ background: 'rgba(74,124,126,0.08)', color: '#4A7C7E' }}>
+            style={{ background: 'rgba(74,124,126,0.08)', color: 'var(--primary)' }}>
             {t(`categories.${recipe.category}`, recipe.category)}
           </span>
           {recipe.reviewCount > 0 && (
             <div className="flex items-center gap-1">
-              <Star className="w-3 h-3" fill="#E6B566" stroke="#E6B566" />
-              <span className="text-xs" style={{ color: '#7A8B99' }}>
+              <Star className="w-3 h-3" fill="var(--accent)" stroke="var(--accent)" />
+              <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
                 {recipe.avgRating?.toFixed(1)} ({recipe.reviewCount})
               </span>
             </div>
@@ -204,15 +205,15 @@ export function ChefProfilePage() {
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen py-12 px-4" style={{ background: '#FFFDF5' }}>
+      <div className="min-h-screen py-12 px-4" style={{ background: 'var(--background)' }}>
         <div className="max-w-4xl mx-auto space-y-6 animate-pulse">
-          <div className="h-10 w-24 rounded-full" style={{ background: '#F5E6D3' }} />
-          <div className="rounded-[28px] p-8" style={{ background: '#F5E6D3', height: 200 }} />
+          <div className="h-10 w-24 rounded-full" style={{ background: 'var(--muted)' }} />
+          <div className="rounded-[28px] p-8" style={{ background: 'var(--muted)', height: 200 }} />
           <div className="grid grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => <div key={i} className="rounded-[20px] h-24" style={{ background: '#F5E6D3' }} />)}
+            {[1, 2, 3].map(i => <div key={i} className="rounded-[20px] h-24" style={{ background: 'var(--muted)' }} />)}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="rounded-[20px] h-48" style={{ background: '#F5E6D3' }} />)}
+            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="rounded-[20px] h-48" style={{ background: 'var(--muted)' }} />)}
           </div>
         </div>
       </div>
@@ -222,16 +223,16 @@ export function ChefProfilePage() {
   if (!chef) return null;
 
   return (
-    <div className="min-h-screen py-8 px-4" style={{ background: '#FFFDF5' }}>
+    <div className="min-h-screen py-8 px-4" style={{ background: 'var(--background)' }}>
       <div className="max-w-4xl mx-auto space-y-6">
 
         {/* Back button */}
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-sm transition-colors"
-          style={{ color: '#7A8B99' }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#4A7C7E')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#7A8B99')}
+          style={{ color: 'var(--muted-foreground)' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--primary)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted-foreground)')}
         >
           <ArrowLeft className="w-4 h-4" />
           {t('common.back')}
@@ -261,7 +262,7 @@ export function ChefProfilePage() {
               ) : (
                 <div
                   className="w-24 h-24 rounded-full flex items-center justify-center text-white text-2xl font-bold ring-4 ring-white shadow-lg"
-                  style={{ background: 'linear-gradient(135deg, #4A7C7E, #5A9FA3)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--primary), #5A9FA3)' }}
                 >
                   {initials}
                 </div>
@@ -270,24 +271,29 @@ export function ChefProfilePage() {
 
             {/* Info */}
             <div className="flex-1 text-center sm:text-left">
-              <h1 className="text-2xl font-bold mb-1" style={{ color: '#2C3E50' }}>
+              <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>
                 {chef.name || t('chef.anonymous')}
               </h1>
               <div className="flex items-center justify-center sm:justify-start gap-1.5 mb-3"
-                style={{ color: '#7A8B99' }}>
+                style={{ color: 'var(--muted-foreground)' }}>
                 <Calendar className="w-3.5 h-3.5" />
                 <span className="text-sm">{t('chef.joined')} {joinDate}</span>
               </div>
               {chef.bio ? (
-                <p className="text-sm leading-relaxed max-w-md" style={{ color: '#2C3E50' }}>
+                <p className="text-sm leading-relaxed max-w-md" style={{ color: 'var(--foreground)' }}>
                   {chef.bio}
                 </p>
               ) : (
                 isOwnProfile && (
-                  <p className="text-sm italic" style={{ color: '#7A8B99' }}>
+                  <p className="text-sm italic" style={{ color: 'var(--muted-foreground)' }}>
                     {t('chef.no_bio')}
                   </p>
                 )
+              )}
+              {chef.socialLinks && (
+                <div className="mt-3 flex justify-center sm:justify-start">
+                  <SocialLinksDisplay links={chef.socialLinks} />
+                </div>
               )}
             </div>
 
@@ -297,7 +303,7 @@ export function ChefProfilePage() {
                 <button
                   onClick={() => navigate('/profile')}
                   className="px-5 py-2.5 rounded-full text-sm font-medium transition-colors"
-                  style={{ border: '1.5px solid #4A7C7E', color: '#4A7C7E' }}
+                  style={{ border: '1.5px solid var(--primary)', color: 'var(--primary)' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'rgba(74,124,126,0.08)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
@@ -308,9 +314,9 @@ export function ChefProfilePage() {
                   onClick={handleFollow}
                   disabled={followLoading}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium text-white transition-colors disabled:opacity-60"
-                  style={{ background: isFollowing ? '#5A9FA3' : '#4A7C7E' }}
+                  style={{ background: isFollowing ? '#5A9FA3' : 'var(--primary)' }}
                   onMouseEnter={e => (e.currentTarget.style.background = '#3d696b')}
-                  onMouseLeave={e => (e.currentTarget.style.background = isFollowing ? '#5A9FA3' : '#4A7C7E')}
+                  onMouseLeave={e => (e.currentTarget.style.background = isFollowing ? '#5A9FA3' : 'var(--primary)')}
                 >
                   {isFollowing ? (
                     <><UserCheck className="w-4 h-4" />{t('chef.following')}</>
@@ -364,12 +370,12 @@ export function ChefProfilePage() {
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
-          <h2 className="text-xl font-semibold mb-4" style={{ color: '#2C3E50' }}>
+          <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--foreground)' }}>
             {t('chef.recipes_by', { name: chef.name || t('chef.this_chef') })}
           </h2>
 
           {chef.recipes.length === 0 ? (
-            <div className="text-center py-16" style={{ color: '#7A8B99' }}>
+            <div className="text-center py-16" style={{ color: 'var(--muted-foreground)' }}>
               <ChefHat className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p className="text-sm">{t('chef.no_recipes_yet')}</p>
             </div>

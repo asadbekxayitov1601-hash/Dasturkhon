@@ -38,7 +38,7 @@ export function ConfirmDialog({
               className="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center"
               style={{ background: danger ? 'rgba(239,68,68,0.1)' : 'rgba(74,124,126,0.1)' }}
             >
-              <AlertTriangle className="w-7 h-7" style={{ color: danger ? '#ef4444' : '#4A7C7E' }} />
+              <AlertTriangle className="w-7 h-7" style={{ color: danger ? '#ef4444' : 'var(--primary)' }} />
             </div>
             <h3 className="text-xl font-bold text-gray-900">{title}</h3>
             {message && <p className="text-sm text-gray-500 mt-2">{message}</p>}

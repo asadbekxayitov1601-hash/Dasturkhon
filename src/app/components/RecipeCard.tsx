@@ -135,7 +135,7 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
             )}
             {(recipe.reviewCount ?? 0) > 0 && (
               <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-md rounded-full px-3 py-1 text-gray-700 text-xs font-medium border border-white/20 shadow-sm">
-                <Star className="w-3.5 h-3.5 fill-current" style={{ color: '#E6B566' }} />
+                <Star className="w-3.5 h-3.5 fill-current" style={{ color: 'var(--accent)' }} />
                 <span>{recipe.rating?.toFixed(1)}</span>
                 <span className="text-gray-400">({recipe.reviewCount})</span>
               </div>
@@ -155,9 +155,9 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
             <button
               onClick={handleChefClick}
               className="flex items-center gap-1.5 mb-3 w-fit"
-              style={{ color: '#7A8B99' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#4A7C7E')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#7A8B99')}
+              style={{ color: 'var(--muted-foreground)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted-foreground)')}
             >
               <ChefHat className="w-3.5 h-3.5" />
               <span className="text-xs font-medium">
