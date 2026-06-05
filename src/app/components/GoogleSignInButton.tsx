@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { config } from '../config';
 
@@ -39,6 +40,9 @@ export function GoogleSignInButton({ onError }: { onError?: (msg: string) => voi
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const auth = useAuth();
+  const { i18n } = useTranslation();
+  const lang = i18n.language || 'en';
+  const initializedRef = useRef(false);
 
   // Keep the latest callback in a ref so the init effect can run exactly once
   // (avoids "google.accounts.id.initialize() is called multiple times").
@@ -71,24 +75,31 @@ export function GoogleSignInButton({ onError }: { onError?: (msg: string) => voi
     loadGis()
       .then(() => {
         if (cancelled || !ref.current || !window.google?.accounts?.id) return;
-        window.google.accounts.id.initialize({
-          client_id: config.googleClientId,
-          callback: (resp: { credential?: string }) => handlerRef.current(resp),
-        });
+        // initialize() only once; re-render the button when the language changes.
+        if (!initializedRef.current) {
+          window.google.accounts.id.initialize({
+            client_id: config.googleClientId,
+            callback: (resp: { credential?: string }) => handlerRef.current(resp),
+          });
+          initializedRef.current = true;
+        }
+        ref.current.innerHTML = ''; // clear any previously rendered button
         window.google.accounts.id.renderButton(ref.current, {
           theme: 'outline',
           size: 'large',
           width: ref.current.offsetWidth || 320,
           text: 'continue_with',
           shape: 'pill',
+          locale: lang,
         });
       })
       .catch(() => onError?.('Could not load Google sign-in'));
 
     return () => { cancelled = true; };
-    // Run once on mount — handler is read via ref so it stays fresh.
+    // Re-render the Google button when the app language changes; handler is read
+    // via ref so it stays fresh.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [lang]);
 
   if (!config.googleClientId) return null;
 
