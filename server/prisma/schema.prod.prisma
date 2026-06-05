@@ -201,3 +201,20 @@ model RecipeLike {
   @@unique([userId, recipeId])
   @@index([recipeId])
 }
+
+// Short-lived verification codes for signup / login 2FA / password reset.
+// Stored in the DB (not memory) so they survive restarts and work across
+// multiple server instances. type: "signup" | "login" | "reset".
+model VerificationCode {
+  id        Int      @id @default(autoincrement())
+  email     String
+  type      String
+  code      String
+  data      String?  // JSON payload (e.g. pending signup: name + passwordHash)
+  userId    Int?     // for login/reset: the target user id
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email, type])
+}
