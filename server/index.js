@@ -7,6 +7,10 @@ import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import { OAuth2Client } from 'google-auth-library';
 import { sendMail, getEmailStatus } from './services/email.js';
+import { installLogging, logError, getRecentLogs } from './services/logger.js';
+
+// Capture console.error output + uncaught errors to server/logs/error.log.
+installLogging();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -1645,6 +1649,21 @@ app.post('/api/notifications/read', requireAuth, async (req, res) => {
     console.error('notifications read error:', e);
     res.status(500).json({ message: 'Server error' });
   }
+});
+
+// Admin: view the most recent errors from the log file.
+app.get('/api/admin/logs', requireAuth, requireAdmin, (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 200, 1000);
+  res.json({ lines: getRecentLogs(limit) });
+});
+
+// Global error handler — catches anything thrown in a route and logs it.
+// (Express 4 identifies error handlers by the 4-arg signature.)
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  logError(`express ${req.method} ${req.originalUrl}`, err);
+  if (res.headersSent) return;
+  res.status(500).json({ message: 'Server error' });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
