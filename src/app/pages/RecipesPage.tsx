@@ -93,10 +93,13 @@ export function RecipesPage() {
   const categories = ['all', ...Array.from(new Set(recipes.map((r) => r.category).filter((c): c is string => !!c)))];
 
   const filteredRecipes = recipes.filter((recipe) => {
+    const q = searchQuery.toLowerCase().trim();
     const matchesSearch =
-      recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (recipe.category?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-      (recipe.ingredients || []).some((ing) => ing.toLowerCase().includes(searchQuery.toLowerCase()));
+      q === '' ||
+      recipe.title.toLowerCase().includes(q) ||
+      (recipe.category?.toLowerCase() || '').includes(q) ||
+      (recipe.user?.name?.toLowerCase() || '').includes(q) ||
+      (recipe.ingredients || []).some((ing) => ing.toLowerCase().includes(q));
 
     const matchesCategory = selectedCategory === 'all' || recipe.category === selectedCategory;
 
