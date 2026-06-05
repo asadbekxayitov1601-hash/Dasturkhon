@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { ChefHat, Mail, Lock, AlertCircle, KeyRound } from 'lucide-react';
 import { config } from '../config';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'creds' | 'code'>('creds');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,11 +39,11 @@ export function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Login failed');
+      if (!res.ok) throw new Error(data.message || t('auth.login_failed'));
       if (data.token) { await finish(data.token); return; } // backward-compat
       setStep('code');
     } catch (err: any) {
-      setError(err.message || 'Login error');
+      setError(err.message || t('auth.login_error'));
     } finally {
       setLoading(false);
     }
@@ -59,10 +61,10 @@ export function LoginPage() {
         body: JSON.stringify({ email, code }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Verification failed');
+      if (!res.ok) throw new Error(data.message || t('auth.verification_failed'));
       await finish(data.token);
     } catch (err: any) {
-      setError(err.message || 'Verification error');
+      setError(err.message || t('auth.verification_error'));
     } finally {
       setLoading(false);
     }
@@ -77,10 +79,10 @@ export function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Could not resend code');
-      setError('A new code has been sent to your email.');
+      if (!res.ok) throw new Error(data.message || t('auth.resend_failed'));
+      setError(t('auth.code_resent'));
     } catch (err: any) {
-      setError(err.message || 'Could not resend code');
+      setError(err.message || t('auth.resend_failed'));
     }
   };
 
@@ -92,12 +94,12 @@ export function LoginPage() {
             <ChefHat className="h-6 w-6 text-primary" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900">
-            {step === 'creds' ? 'Welcome Back' : 'Enter your code'}
+            {step === 'creds' ? t('auth.welcome_back') : t('auth.enter_code')}
           </h2>
           <p className="mt-2 text-sm text-gray-600 mb-8">
             {step === 'creds'
-              ? 'Sign in to access your kitchen'
-              : `We sent a 6-digit code to ${email}`}
+              ? t('auth.signin_subtitle')
+              : t('auth.code_sent_to', { email })}
           </p>
         </div>
 
@@ -106,7 +108,7 @@ export function LoginPage() {
             <form className="space-y-6" onSubmit={handleCredsSubmit}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.email')}</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Mail className="h-5 w-5 text-gray-400" />
@@ -117,13 +119,13 @@ export function LoginPage() {
                       type="email"
                       required
                       className="block w-full pl-10 h-12 rounded-xl border-gray-300 shadow-sm focus:ring-primary focus:border-primary sm:text-sm border outline-none transition-all"
-                      placeholder="you@example.com"
+                      placeholder={t('auth.email_ph')}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.password')}</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Lock className="h-5 w-5 text-gray-400" />
@@ -134,7 +136,7 @@ export function LoginPage() {
                       type="password"
                       required
                       className="block w-full pl-10 h-12 rounded-xl border-gray-300 shadow-sm focus:ring-primary focus:border-primary sm:text-sm border outline-none transition-all"
-                      placeholder="••••••••"
+                      placeholder={t('auth.password_ph')}
                     />
                   </div>
                 </div>
@@ -149,10 +151,10 @@ export function LoginPage() {
 
               <div className="flex items-center justify-between">
                 <Link to="/signup" className="text-sm font-medium text-primary hover:text-primary/80">
-                  Don't have an account?
+                  {t('auth.no_account')}
                 </Link>
                 <Link to="/forgot" className="text-sm font-medium text-gray-600 hover:text-gray-900">
-                  Forgot password?
+                  {t('auth.forgot_password')}
                 </Link>
               </div>
 
@@ -161,7 +163,7 @@ export function LoginPage() {
                 disabled={loading}
                 className="w-full flex justify-center items-center h-12 rounded-xl text-white bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 font-medium disabled:opacity-60"
               >
-                {loading ? 'Sending code…' : 'Continue'}
+                {loading ? t('auth.sending_code') : t('auth.continue')}
               </button>
             </form>
 
@@ -169,7 +171,7 @@ export function LoginPage() {
               <>
                 <div className="my-6 flex items-center gap-3">
                   <div className="h-px flex-1 bg-gray-200" />
-                  <span className="text-xs text-gray-400">or</span>
+                  <span className="text-xs text-gray-400">{t('auth.or')}</span>
                   <div className="h-px flex-1 bg-gray-200" />
                 </div>
                 <GoogleSignInButton onError={setError} />
@@ -179,7 +181,7 @@ export function LoginPage() {
         ) : (
           <form className="space-y-6" onSubmit={handleCodeSubmit}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Verification code</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.verification_code')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <KeyRound className="h-5 w-5 text-gray-400" />
@@ -191,7 +193,7 @@ export function LoginPage() {
                   autoFocus
                   required
                   className="block w-full pl-10 h-12 rounded-xl border-gray-300 shadow-sm focus:ring-primary focus:border-primary border outline-none transition-all tracking-[0.4em] text-lg"
-                  placeholder="123456"
+                  placeholder={t('auth.code_ph')}
                 />
               </div>
             </div>
@@ -208,15 +210,15 @@ export function LoginPage() {
               disabled={loading || code.length < 6}
               className="w-full flex justify-center items-center h-12 rounded-xl text-white bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 font-medium disabled:opacity-60"
             >
-              {loading ? 'Verifying…' : 'Sign In'}
+              {loading ? t('auth.verifying') : t('auth.sign_in')}
             </button>
 
             <div className="flex items-center justify-between text-sm">
               <button type="button" onClick={() => { setStep('creds'); setCode(''); setError(null); }} className="text-gray-600 hover:text-gray-900">
-                ← Back
+                {t('auth.back')}
               </button>
               <button type="button" onClick={resend} className="font-medium text-primary hover:text-primary/80">
-                Resend code
+                {t('auth.resend_code')}
               </button>
             </div>
           </form>
