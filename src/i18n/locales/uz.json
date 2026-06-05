@@ -244,6 +244,7 @@
     "photo_too_large": "Rasm 3MB dan kichik bo'lishi kerak"
   },
   "common": {
+    "back": "Orqaga",
     "sync": "Sinxronlash",
     "close": "Yopish"
   },

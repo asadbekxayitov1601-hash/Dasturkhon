@@ -244,6 +244,7 @@
     "photo_too_large": "Photo must be under 3 MB"
   },
   "common": {
+    "back": "Back",
     "sync": "Sync",
     "close": "Close"
   },
