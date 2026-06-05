@@ -40,37 +40,40 @@ export function GoogleSignInButton({ onError }: { onError?: (msg: string) => voi
   const navigate = useNavigate();
   const auth = useAuth();
 
+  // Keep the latest callback in a ref so the init effect can run exactly once
+  // (avoids "google.accounts.id.initialize() is called multiple times").
+  const handlerRef = useRef<(resp: { credential?: string }) => void>(() => {});
+  handlerRef.current = async (response: { credential?: string }) => {
+    try {
+      const res = await fetch(`${config.apiBaseUrl}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Google sign-in failed');
+      await auth.login(data.token);
+      let redirectTo = '/';
+      try {
+        redirectTo = sessionStorage.getItem('redirectAfterLogin') || '/';
+        sessionStorage.removeItem('redirectAfterLogin');
+      } catch { /* ignore */ }
+      navigate(redirectTo, { replace: true });
+    } catch (e: any) {
+      onError?.(e.message || 'Google sign-in failed');
+    }
+  };
+
   useEffect(() => {
     if (!config.googleClientId) return;
     let cancelled = false;
-
-    const handleCredential = async (response: { credential?: string }) => {
-      try {
-        const res = await fetch(`${config.apiBaseUrl}/api/auth/google`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ credential: response.credential }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Google sign-in failed');
-        await auth.login(data.token);
-        let redirectTo = '/';
-        try {
-          redirectTo = sessionStorage.getItem('redirectAfterLogin') || '/';
-          sessionStorage.removeItem('redirectAfterLogin');
-        } catch { /* ignore */ }
-        navigate(redirectTo, { replace: true });
-      } catch (e: any) {
-        onError?.(e.message || 'Google sign-in failed');
-      }
-    };
 
     loadGis()
       .then(() => {
         if (cancelled || !ref.current || !window.google?.accounts?.id) return;
         window.google.accounts.id.initialize({
           client_id: config.googleClientId,
-          callback: handleCredential,
+          callback: (resp: { credential?: string }) => handlerRef.current(resp),
         });
         window.google.accounts.id.renderButton(ref.current, {
           theme: 'outline',
@@ -83,7 +86,9 @@ export function GoogleSignInButton({ onError }: { onError?: (msg: string) => voi
       .catch(() => onError?.('Could not load Google sign-in'));
 
     return () => { cancelled = true; };
-  }, [auth, navigate, onError]);
+    // Run once on mount — handler is read via ref so it stays fresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!config.googleClientId) return null;
 
