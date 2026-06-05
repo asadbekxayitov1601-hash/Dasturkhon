@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { ChefHat, Mail, Lock, User, AlertCircle, KeyRound } from 'lucide-react';
 import { config } from '../config';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
+import { authErrorMessage } from '../lib/authError';
 
 export function SignupPage() {
   const { t } = useTranslation();
@@ -40,7 +41,7 @@ export function SignupPage() {
         body: JSON.stringify({ name, email, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || t('auth.signup_failed'));
+      if (!res.ok) throw new Error(authErrorMessage(data, t));
       setStep('code');
     } catch (err: any) {
       setError(err.message || t('auth.signup_error'));
@@ -61,7 +62,7 @@ export function SignupPage() {
         body: JSON.stringify({ email, code }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || t('auth.verification_failed'));
+      if (!res.ok) throw new Error(authErrorMessage(data, t));
       await finish(data.token);
     } catch (err: any) {
       setError(err.message || t('auth.verification_error'));
@@ -79,7 +80,7 @@ export function SignupPage() {
         body: JSON.stringify({ name, email, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || t('auth.resend_failed'));
+      if (!res.ok) throw new Error(authErrorMessage(data, t));
       setError(t('auth.code_resent'));
     } catch (err: any) {
       setError(err.message || t('auth.resend_failed'));

@@ -35,7 +35,26 @@
     "verification_error": "Tasdiqlashda xatolik",
     "signup_failed": "Ro'yxatdan o'tish amalga oshmadi",
     "signup_error": "Ro'yxatdan o'tishda xatolik",
-    "resend_failed": "Kodni qayta yuborib bo'lmadi"
+    "resend_failed": "Kodni qayta yuborib bo'lmadi",
+    "err": {
+      "invalid_input": "Email yoki parol noto'g'ri",
+      "invalid_email": "To'g'ri email manzil kiriting",
+      "weak_password": "Parol kamida 6 belgidan iborat bo'lishi kerak",
+      "email_taken": "Bu email allaqachon ro'yxatdan o'tgan",
+      "email_send_failed": "Kod yuborilmadi. Email to'g'riligini tekshiring.",
+      "missing_credentials": "Email va parolni kiriting",
+      "invalid_credentials": "Email yoki parol noto'g'ri",
+      "login_code_send_failed": "Kirish kodi yuborilmadi. Qayta urinib ko'ring.",
+      "google_not_configured": "Google orqali kirish hozircha mavjud emas",
+      "missing_google": "Google orqali kirish amalga oshmadi. Qayta urinib ko'ring.",
+      "google_email_unavailable": "Google hisobingiz emaili mavjud emas",
+      "invalid_google": "Google orqali kirish amalga oshmadi. Qayta urinib ko'ring.",
+      "no_pending": "Sessiya muddati tugadi. Qaytadan boshlang.",
+      "code_expired": "Kod muddati tugadi. Yangi kod so'rang.",
+      "too_many_attempts": "Juda ko'p urinish. Qaytadan boshlang.",
+      "invalid_code": "Kod noto'g'ri. Qayta urinib ko'ring.",
+      "generic": "Xatolik yuz berdi. Qayta urinib ko'ring."
+    }
   },
   "nav": {
     "home": "Bosh sahifa",

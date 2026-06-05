@@ -58,18 +58,18 @@ async function consumeCode({ email, type, code }) {
     where: { email, type },
     orderBy: { createdAt: 'desc' },
   });
-  if (!entry) return { error: 'No pending request. Please start again.', status: 400 };
+  if (!entry) return { error: 'No pending request. Please start again.', code: 'no_pending', status: 400 };
   if (entry.expiresAt.getTime() < Date.now()) {
     await prisma.verificationCode.delete({ where: { id: entry.id } });
-    return { error: 'Code expired. Please start again.', status: 400 };
+    return { error: 'Code expired. Please start again.', code: 'code_expired', status: 400 };
   }
   if (entry.attempts >= 5) {
     await prisma.verificationCode.delete({ where: { id: entry.id } });
-    return { error: 'Too many attempts. Please start again.', status: 429 };
+    return { error: 'Too many attempts. Please start again.', code: 'too_many_attempts', status: 429 };
   }
   if (String(code || '').trim() !== entry.code) {
     await prisma.verificationCode.update({ where: { id: entry.id }, data: { attempts: entry.attempts + 1 } });
-    return { error: 'Invalid code', status: 400 };
+    return { error: 'Invalid code', code: 'invalid_code', status: 400 };
   }
   await prisma.verificationCode.delete({ where: { id: entry.id } });
   return { entry };
@@ -212,18 +212,18 @@ async function confirmOrderPaid(orderId) {
 app.post('/api/auth/signup-request', async (req, res) => {
   const { name, email, password } = req.body;
   if (typeof email !== 'string' || typeof password !== 'string') {
-    return res.status(400).json({ message: 'Invalid email or password' });
+    return res.status(400).json({ message: 'Invalid email or password', code: 'invalid_input' });
   }
   const normalizedEmail = email.trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {
-    return res.status(400).json({ message: 'Invalid email address' });
+    return res.status(400).json({ message: 'Invalid email address', code: 'invalid_email' });
   }
   if (password.length < 6) {
-    return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    return res.status(400).json({ message: 'Password must be at least 6 characters', code: 'weak_password' });
   }
   try {
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-    if (existing) return res.status(409).json({ message: 'Email already registered' });
+    if (existing) return res.status(409).json({ message: 'Email already registered', code: 'email_taken' });
     const passwordHash = await bcrypt.hash(password, 10);
     const code = await createCode({
       email: normalizedEmail,
@@ -239,7 +239,7 @@ app.post('/api/auth/signup-request', async (req, res) => {
       });
     } catch (e) {
       console.error('signup email error:', e);
-      return res.status(502).json({ message: "Couldn't send the code. Please check your email address is correct." });
+      return res.status(502).json({ message: "Couldn't send the code. Please check your email address is correct.", code: 'email_send_failed' });
     }
     res.json({ ok: true });
   } catch (e) {
@@ -250,12 +250,12 @@ app.post('/api/auth/signup-request', async (req, res) => {
 
 app.post('/api/auth/signup-verify', async (req, res) => {
   const normalizedEmail = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-  const { entry, error, status } = await consumeCode({ email: normalizedEmail, type: 'signup', code: req.body.code });
-  if (error) return res.status(status).json({ message: error });
+  const { entry, error, status, code } = await consumeCode({ email: normalizedEmail, type: 'signup', code: req.body.code });
+  if (error) return res.status(status).json({ message: error, code });
   try {
     // Guard against the email being registered between step 1 and step 2.
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-    if (existing) return res.status(409).json({ message: 'Email already registered' });
+    if (existing) return res.status(409).json({ message: 'Email already registered', code: 'email_taken' });
     const payload = entry.data ? JSON.parse(entry.data) : {};
     // isAdmin is never taken from the request — new users are always non-admin.
     const user = await prisma.user.create({
@@ -280,15 +280,15 @@ app.post('/api/auth/signup-verify', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   if (typeof email !== 'string' || typeof password !== 'string') {
-    return res.status(400).json({ message: 'Missing email or password' });
+    return res.status(400).json({ message: 'Missing email or password', code: 'missing_credentials' });
   }
   const normalizedEmail = email.trim().toLowerCase();
   try {
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     // Google-only accounts have no passwordHash — reject password login for them.
-    if (!user || !user.passwordHash) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!user || !user.passwordHash) return res.status(401).json({ message: 'Invalid credentials', code: 'invalid_credentials' });
     const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!ok) return res.status(401).json({ message: 'Invalid credentials', code: 'invalid_credentials' });
     const code = await createCode({ email: normalizedEmail, type: 'login', userId: user.id });
     try {
       await sendMail({
@@ -299,7 +299,7 @@ app.post('/api/login', async (req, res) => {
       });
     } catch (e) {
       console.error('login email error:', e);
-      return res.status(502).json({ message: 'Could not send login code. Please try again.' });
+      return res.status(502).json({ message: 'Could not send login code. Please try again.', code: 'login_code_send_failed' });
     }
     res.json({ needsCode: true, email: normalizedEmail });
   } catch (e) {
@@ -310,11 +310,11 @@ app.post('/api/login', async (req, res) => {
 
 app.post('/api/auth/login-verify', async (req, res) => {
   const normalizedEmail = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-  const { entry, error, status } = await consumeCode({ email: normalizedEmail, type: 'login', code: req.body.code });
-  if (error) return res.status(status).json({ message: error });
+  const { entry, error, status, code } = await consumeCode({ email: normalizedEmail, type: 'login', code: req.body.code });
+  if (error) return res.status(status).json({ message: error, code });
   try {
     const user = await prisma.user.findUnique({ where: { id: entry.userId } });
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!user) return res.status(401).json({ message: 'Invalid credentials', code: 'invalid_credentials' });
     res.json({ token: makeToken(user), user: publicUser(user) });
   } catch (e) {
     console.error('login-verify error:', e);
@@ -326,15 +326,15 @@ app.post('/api/auth/login-verify', async (req, res) => {
 // Frontend obtains a Google ID token (credential) via Google Identity Services
 // and posts it here. We verify it, then find-or-create the matching user.
 app.post('/api/auth/google', async (req, res) => {
-  if (!googleClient) return res.status(503).json({ message: 'Google sign-in is not configured' });
+  if (!googleClient) return res.status(503).json({ message: 'Google sign-in is not configured', code: 'google_not_configured' });
   const { credential } = req.body;
-  if (typeof credential !== 'string') return res.status(400).json({ message: 'Missing Google credential' });
+  if (typeof credential !== 'string') return res.status(400).json({ message: 'Missing Google credential', code: 'missing_google' });
   try {
     const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
     const payload = ticket.getPayload();
     const email = (payload?.email || '').toLowerCase();
     if (!email || payload.email_verified === false) {
-      return res.status(401).json({ message: 'Google account email not available' });
+      return res.status(401).json({ message: 'Google account email not available', code: 'google_email_unavailable' });
     }
     let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
@@ -358,7 +358,7 @@ app.post('/api/auth/google', async (req, res) => {
     res.json({ token: makeToken(user), user: publicUser(user) });
   } catch (e) {
     console.error('google auth error:', e);
-    res.status(401).json({ message: 'Invalid Google sign-in' });
+    res.status(401).json({ message: 'Invalid Google sign-in', code: 'invalid_google' });
   }
 });
 
@@ -398,10 +398,10 @@ app.post('/api/auth/reset', async (req, res) => {
     const password = req.body.password;
     if (!email) return res.status(400).json({ message: 'Email and code are required' });
     if (typeof password !== 'string' || password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+      return res.status(400).json({ message: 'Password must be at least 6 characters', code: 'weak_password' });
     }
-    const { error, status } = await consumeCode({ email, type: 'reset', code: req.body.code });
-    if (error) return res.status(status).json({ message: error });
+    const { error, status, code } = await consumeCode({ email, type: 'reset', code: req.body.code });
+    if (error) return res.status(status).json({ message: error, code });
 
     const passwordHash = await bcrypt.hash(password, 10);
     await prisma.user.update({ where: { email }, data: { passwordHash } });
