@@ -35,7 +35,26 @@
     "verification_error": "Ошибка подтверждения",
     "signup_failed": "Не удалось зарегистрироваться",
     "signup_error": "Ошибка регистрации",
-    "resend_failed": "Не удалось отправить код"
+    "resend_failed": "Не удалось отправить код",
+    "err": {
+      "invalid_input": "Неверный email или пароль",
+      "invalid_email": "Введите корректный email",
+      "weak_password": "Пароль должен быть не менее 6 символов",
+      "email_taken": "Этот email уже зарегистрирован",
+      "email_send_failed": "Не удалось отправить код. Проверьте правильность email.",
+      "missing_credentials": "Введите email и пароль",
+      "invalid_credentials": "Неверный email или пароль",
+      "login_code_send_failed": "Не удалось отправить код входа. Попробуйте снова.",
+      "google_not_configured": "Вход через Google сейчас недоступен",
+      "missing_google": "Не удалось войти через Google. Попробуйте снова.",
+      "google_email_unavailable": "Email вашего аккаунта Google недоступен",
+      "invalid_google": "Не удалось войти через Google. Попробуйте снова.",
+      "no_pending": "Сессия истекла. Начните заново.",
+      "code_expired": "Срок действия кода истёк. Запросите новый.",
+      "too_many_attempts": "Слишком много попыток. Начните заново.",
+      "invalid_code": "Неверный код. Попробуйте снова.",
+      "generic": "Произошла ошибка. Попробуйте снова."
+    }
   },
   "nav": {
     "home": "Главная",

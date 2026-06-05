@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { config } from '../config';
+import { authErrorMessage } from '../lib/authError';
 
 declare global {
   interface Window {
@@ -40,7 +41,7 @@ export function GoogleSignInButton({ onError }: { onError?: (msg: string) => voi
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const auth = useAuth();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const lang = i18n.language || 'en';
   const initializedRef = useRef(false);
 
@@ -55,7 +56,7 @@ export function GoogleSignInButton({ onError }: { onError?: (msg: string) => voi
         body: JSON.stringify({ credential: response.credential }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Google sign-in failed');
+      if (!res.ok) throw new Error(authErrorMessage(data, t));
       await auth.login(data.token);
       let redirectTo = '/';
       try {
@@ -64,7 +65,7 @@ export function GoogleSignInButton({ onError }: { onError?: (msg: string) => voi
       } catch { /* ignore */ }
       navigate(redirectTo, { replace: true });
     } catch (e: any) {
-      onError?.(e.message || 'Google sign-in failed');
+      onError?.(e.message || t('auth.err.generic'));
     }
   };
 
@@ -93,7 +94,7 @@ export function GoogleSignInButton({ onError }: { onError?: (msg: string) => voi
           locale: lang,
         });
       })
-      .catch(() => onError?.('Could not load Google sign-in'));
+      .catch(() => onError?.(t('auth.err.generic')));
 
     return () => { cancelled = true; };
     // Re-render the Google button when the app language changes; handler is read

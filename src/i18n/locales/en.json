@@ -35,7 +35,26 @@
     "verification_error": "Verification error",
     "signup_failed": "Signup failed",
     "signup_error": "Signup error",
-    "resend_failed": "Could not resend code"
+    "resend_failed": "Could not resend code",
+    "err": {
+      "invalid_input": "Invalid email or password",
+      "invalid_email": "Please enter a valid email address",
+      "weak_password": "Password must be at least 6 characters",
+      "email_taken": "This email is already registered",
+      "email_send_failed": "Couldn't send the code. Please check your email is correct.",
+      "missing_credentials": "Please enter your email and password",
+      "invalid_credentials": "Incorrect email or password",
+      "login_code_send_failed": "Could not send the login code. Please try again.",
+      "google_not_configured": "Google sign-in is not available right now",
+      "missing_google": "Google sign-in failed. Please try again.",
+      "google_email_unavailable": "Your Google account email isn't available",
+      "invalid_google": "Google sign-in failed. Please try again.",
+      "no_pending": "Your session expired. Please start again.",
+      "code_expired": "The code expired. Please request a new one.",
+      "too_many_attempts": "Too many attempts. Please start again.",
+      "invalid_code": "Incorrect code. Please try again.",
+      "generic": "Something went wrong. Please try again."
+    }
   },
   "nav": {
     "home": "Home",
