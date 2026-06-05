@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
-import logo from '../assets/dasturkhon_logo.png';
+import logo from '../assets/logo.png';
 import { NotificationBell } from './NotificationBell';
 import { ThemeToggle } from './ThemeToggle';
 
