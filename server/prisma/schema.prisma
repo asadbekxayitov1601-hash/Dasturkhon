@@ -12,7 +12,7 @@ model User {
   name          String?
   email         String         @unique
   passwordHash  String?        // optional: Google-only accounts have no password
-  googleId      String?        @unique // NEW: linked Google account id
+  googleId      String?        // NEW: linked Google account id (uniqueness enforced via email)
   emailVerified Boolean        @default(false) // NEW: email confirmed via code/Google
   isAdmin       Boolean        @default(false)
   isPro         Boolean        @default(false)
