@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { ChefHat, Mail, Lock, User, AlertCircle, KeyRound } from 'lucide-react';
 import { config } from '../config';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
 
 export function SignupPage() {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'form' | 'code'>('form');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,10 +40,10 @@ export function SignupPage() {
         body: JSON.stringify({ name, email, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Signup failed');
+      if (!res.ok) throw new Error(data.message || t('auth.signup_failed'));
       setStep('code');
     } catch (err: any) {
-      setError(err.message || 'Signup error');
+      setError(err.message || t('auth.signup_error'));
     } finally {
       setLoading(false);
     }
@@ -59,10 +61,10 @@ export function SignupPage() {
         body: JSON.stringify({ email, code }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Verification failed');
+      if (!res.ok) throw new Error(data.message || t('auth.verification_failed'));
       await finish(data.token);
     } catch (err: any) {
-      setError(err.message || 'Verification error');
+      setError(err.message || t('auth.verification_error'));
     } finally {
       setLoading(false);
     }
@@ -77,10 +79,10 @@ export function SignupPage() {
         body: JSON.stringify({ name, email, password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Could not resend code');
-      setError('A new code has been sent to your email.');
+      if (!res.ok) throw new Error(data.message || t('auth.resend_failed'));
+      setError(t('auth.code_resent'));
     } catch (err: any) {
-      setError(err.message || 'Could not resend code');
+      setError(err.message || t('auth.resend_failed'));
     }
   };
 
@@ -92,12 +94,12 @@ export function SignupPage() {
             <ChefHat className="h-6 w-6 text-primary" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900">
-            {step === 'form' ? 'Create Account' : 'Verify your email'}
+            {step === 'form' ? t('auth.create_account') : t('auth.verify_email')}
           </h2>
           <p className="mt-2 text-sm text-gray-600 mb-8">
             {step === 'form'
-              ? 'Join Dasturkhon to start cooking'
-              : `We sent a 6-digit code to ${email}`}
+              ? t('auth.signup_subtitle')
+              : t('auth.code_sent_to', { email })}
           </p>
         </div>
 
@@ -106,7 +108,7 @@ export function SignupPage() {
             <form className="space-y-6" onSubmit={handleFormSubmit}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.full_name')}</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <User className="h-5 w-5 text-gray-400" />
@@ -117,13 +119,13 @@ export function SignupPage() {
                       type="text"
                       required
                       className="block w-full pl-10 h-12 rounded-xl border-gray-300 shadow-sm focus:ring-primary focus:border-primary sm:text-sm border outline-none transition-all"
-                      placeholder="John Doe"
+                      placeholder={t('auth.name_ph')}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.email')}</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Mail className="h-5 w-5 text-gray-400" />
@@ -134,13 +136,13 @@ export function SignupPage() {
                       type="email"
                       required
                       className="block w-full pl-10 h-12 rounded-xl border-gray-300 shadow-sm focus:ring-primary focus:border-primary sm:text-sm border outline-none transition-all"
-                      placeholder="you@example.com"
+                      placeholder={t('auth.email_ph')}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.password')}</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Lock className="h-5 w-5 text-gray-400" />
@@ -151,7 +153,7 @@ export function SignupPage() {
                       type="password"
                       required
                       className="block w-full pl-10 h-12 rounded-xl border-gray-300 shadow-sm focus:ring-primary focus:border-primary sm:text-sm border outline-none transition-all"
-                      placeholder="•••••••• (min 6 characters)"
+                      placeholder={t('auth.password_ph_min')}
                     />
                   </div>
                 </div>
@@ -165,9 +167,9 @@ export function SignupPage() {
               )}
 
               <div className="flex items-center justify-center">
-                <span className="text-sm text-gray-600 mr-2">Already have an account?</span>
+                <span className="text-sm text-gray-600 mr-2">{t('auth.have_account')}</span>
                 <Link to="/login" className="text-sm font-medium text-primary hover:text-primary/80">
-                  Sign in
+                  {t('auth.sign_in')}
                 </Link>
               </div>
 
@@ -176,7 +178,7 @@ export function SignupPage() {
                 disabled={loading}
                 className="w-full flex justify-center items-center h-12 rounded-xl text-white bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 font-medium disabled:opacity-60"
               >
-                {loading ? 'Sending code…' : 'Continue'}
+                {loading ? t('auth.sending_code') : t('auth.continue')}
               </button>
             </form>
 
@@ -184,7 +186,7 @@ export function SignupPage() {
               <>
                 <div className="my-6 flex items-center gap-3">
                   <div className="h-px flex-1 bg-gray-200" />
-                  <span className="text-xs text-gray-400">or</span>
+                  <span className="text-xs text-gray-400">{t('auth.or')}</span>
                   <div className="h-px flex-1 bg-gray-200" />
                 </div>
                 <GoogleSignInButton onError={setError} />
@@ -194,7 +196,7 @@ export function SignupPage() {
         ) : (
           <form className="space-y-6" onSubmit={handleCodeSubmit}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Verification code</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.verification_code')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <KeyRound className="h-5 w-5 text-gray-400" />
@@ -206,7 +208,7 @@ export function SignupPage() {
                   autoFocus
                   required
                   className="block w-full pl-10 h-12 rounded-xl border-gray-300 shadow-sm focus:ring-primary focus:border-primary border outline-none transition-all tracking-[0.4em] text-lg"
-                  placeholder="123456"
+                  placeholder={t('auth.code_ph')}
                 />
               </div>
             </div>
@@ -223,15 +225,15 @@ export function SignupPage() {
               disabled={loading || code.length < 6}
               className="w-full flex justify-center items-center h-12 rounded-xl text-white bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 font-medium disabled:opacity-60"
             >
-              {loading ? 'Creating account…' : 'Verify & Create Account'}
+              {loading ? t('auth.creating_account') : t('auth.verify_create')}
             </button>
 
             <div className="flex items-center justify-between text-sm">
               <button type="button" onClick={() => { setStep('form'); setCode(''); setError(null); }} className="text-gray-600 hover:text-gray-900">
-                ← Back
+                {t('auth.back')}
               </button>
               <button type="button" onClick={resend} className="font-medium text-primary hover:text-primary/80">
-                Resend code
+                {t('auth.resend_code')}
               </button>
             </div>
           </form>
