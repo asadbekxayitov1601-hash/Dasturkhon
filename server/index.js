@@ -26,6 +26,55 @@ function makeToken(user) {
   );
 }
 
+// ── DB-backed verification codes ────────────────────────────────────────────
+// Used for signup, login 2FA, and password reset. Stored in the database (not
+// in memory) so codes survive server restarts and work across instances.
+const genCode = () => String(Math.floor(100000 + Math.random() * 900000));
+const CODE_TTL_MS = 10 * 60 * 1000;
+
+// Create a fresh code for (email, type), replacing any previous one. Returns the code.
+async function createCode({ email, type, data = null, userId = null }) {
+  await prisma.verificationCode.deleteMany({ where: { email, type } });
+  const code = genCode();
+  await prisma.verificationCode.create({
+    data: {
+      email,
+      type,
+      code,
+      data: data ? JSON.stringify(data) : null,
+      userId: userId ?? null,
+      expiresAt: new Date(Date.now() + CODE_TTL_MS),
+      attempts: 0,
+    },
+  });
+  return code;
+}
+
+// Validate a submitted code. Returns { entry } on success, or { error, status }.
+// Deletes the code on success / expiry / attempt-exhaustion; increments attempts
+// on a wrong code.
+async function consumeCode({ email, type, code }) {
+  const entry = await prisma.verificationCode.findFirst({
+    where: { email, type },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (!entry) return { error: 'No pending request. Please start again.', status: 400 };
+  if (entry.expiresAt.getTime() < Date.now()) {
+    await prisma.verificationCode.delete({ where: { id: entry.id } });
+    return { error: 'Code expired. Please start again.', status: 400 };
+  }
+  if (entry.attempts >= 5) {
+    await prisma.verificationCode.delete({ where: { id: entry.id } });
+    return { error: 'Too many attempts. Please start again.', status: 429 };
+  }
+  if (String(code || '').trim() !== entry.code) {
+    await prisma.verificationCode.update({ where: { id: entry.id }, data: { attempts: entry.attempts + 1 } });
+    return { error: 'Invalid code', status: 400 };
+  }
+  await prisma.verificationCode.delete({ where: { id: entry.id } });
+  return { entry };
+}
+
 // Normalize an origin/URL for comparison: trim whitespace and drop any
 // trailing slash so "https://site.app/" and "https://site.app" are equal.
 const normalizeOrigin = (value) => (value || '').trim().replace(/\/+$/, '');
@@ -157,11 +206,9 @@ async function confirmOrderPaid(orderId) {
 }
 
 // ── Signup with email verification code ─────────────────────────────────────
-// Step 1 (signup-request) validates input, stores the pending account in memory
-// and emails a 6-digit code. Step 2 (signup-verify) checks the code and creates
-// the real account. Pending entries expire in 10 minutes.
-const pendingSignups = new Map(); // email -> { code, name, passwordHash, expiresAt, attempts }
-
+// Step 1 (signup-request) validates input, stores the pending account (as a DB
+// verification code with the name+passwordHash payload) and emails a 6-digit
+// code. Step 2 (signup-verify) checks the code and creates the real account.
 app.post('/api/auth/signup-request', async (req, res) => {
   const { name, email, password } = req.body;
   if (typeof email !== 'string' || typeof password !== 'string') {
@@ -178,13 +225,10 @@ app.post('/api/auth/signup-request', async (req, res) => {
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) return res.status(409).json({ message: 'Email already registered' });
     const passwordHash = await bcrypt.hash(password, 10);
-    const code = genCode();
-    pendingSignups.set(normalizedEmail, {
-      code,
-      name: typeof name === 'string' ? name.trim() : '',
-      passwordHash,
-      expiresAt: Date.now() + 10 * 60 * 1000,
-      attempts: 0,
+    const code = await createCode({
+      email: normalizedEmail,
+      type: 'signup',
+      data: { name: typeof name === 'string' ? name.trim() : '', passwordHash },
     });
     try {
       await sendMail({
@@ -195,7 +239,7 @@ app.post('/api/auth/signup-request', async (req, res) => {
       });
     } catch (e) {
       console.error('signup email error:', e);
-      return res.status(502).json({ message: 'Could not send verification email. Please try again.' });
+      return res.status(502).json({ message: "Couldn't send the code. Please check your email address is correct." });
     }
     res.json({ ok: true });
   } catch (e) {
@@ -205,40 +249,24 @@ app.post('/api/auth/signup-request', async (req, res) => {
 });
 
 app.post('/api/auth/signup-verify', async (req, res) => {
-  const { email, code } = req.body;
-  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
-  const entry = pendingSignups.get(normalizedEmail);
-  if (!entry) return res.status(400).json({ message: 'No pending signup. Please start again.' });
-  if (Date.now() > entry.expiresAt) {
-    pendingSignups.delete(normalizedEmail);
-    return res.status(400).json({ message: 'Code expired. Please start again.' });
-  }
-  if (entry.attempts >= 5) {
-    pendingSignups.delete(normalizedEmail);
-    return res.status(429).json({ message: 'Too many attempts. Please start again.' });
-  }
-  if (String(code).trim() !== entry.code) {
-    entry.attempts += 1;
-    return res.status(400).json({ message: 'Invalid code' });
-  }
+  const normalizedEmail = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const { entry, error, status } = await consumeCode({ email: normalizedEmail, type: 'signup', code: req.body.code });
+  if (error) return res.status(status).json({ message: error });
   try {
     // Guard against the email being registered between step 1 and step 2.
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-    if (existing) {
-      pendingSignups.delete(normalizedEmail);
-      return res.status(409).json({ message: 'Email already registered' });
-    }
+    if (existing) return res.status(409).json({ message: 'Email already registered' });
+    const payload = entry.data ? JSON.parse(entry.data) : {};
     // isAdmin is never taken from the request — new users are always non-admin.
     const user = await prisma.user.create({
       data: {
-        name: entry.name,
+        name: payload.name || '',
         email: normalizedEmail,
-        passwordHash: entry.passwordHash,
+        passwordHash: payload.passwordHash,
         emailVerified: true,
         isAdmin: false,
       },
     });
-    pendingSignups.delete(normalizedEmail);
     res.json({ token: makeToken(user), user: publicUser(user) });
   } catch (e) {
     console.error('signup-verify error:', e);
@@ -249,8 +277,6 @@ app.post('/api/auth/signup-verify', async (req, res) => {
 // ── Login with email 2FA code ───────────────────────────────────────────────
 // Step 1 verifies the password then emails a one-time code; step 2 (login-verify)
 // checks the code and returns the session token.
-const loginChallenges = new Map(); // email -> { code, userId, expiresAt, attempts }
-
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   if (typeof email !== 'string' || typeof password !== 'string') {
@@ -263,13 +289,7 @@ app.post('/api/login', async (req, res) => {
     if (!user || !user.passwordHash) return res.status(401).json({ message: 'Invalid credentials' });
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
-    const code = genCode();
-    loginChallenges.set(normalizedEmail, {
-      code,
-      userId: user.id,
-      expiresAt: Date.now() + 10 * 60 * 1000,
-      attempts: 0,
-    });
+    const code = await createCode({ email: normalizedEmail, type: 'login', userId: user.id });
     try {
       await sendMail({
         to: normalizedEmail,
@@ -289,26 +309,12 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.post('/api/auth/login-verify', async (req, res) => {
-  const { email, code } = req.body;
-  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
-  const entry = loginChallenges.get(normalizedEmail);
-  if (!entry) return res.status(400).json({ message: 'No pending login. Please sign in again.' });
-  if (Date.now() > entry.expiresAt) {
-    loginChallenges.delete(normalizedEmail);
-    return res.status(400).json({ message: 'Code expired. Please sign in again.' });
-  }
-  if (entry.attempts >= 5) {
-    loginChallenges.delete(normalizedEmail);
-    return res.status(429).json({ message: 'Too many attempts. Please sign in again.' });
-  }
-  if (String(code).trim() !== entry.code) {
-    entry.attempts += 1;
-    return res.status(400).json({ message: 'Invalid code' });
-  }
+  const normalizedEmail = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const { entry, error, status } = await consumeCode({ email: normalizedEmail, type: 'login', code: req.body.code });
+  if (error) return res.status(status).json({ message: error });
   try {
     const user = await prisma.user.findUnique({ where: { id: entry.userId } });
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-    loginChallenges.delete(normalizedEmail);
     res.json({ token: makeToken(user), user: publicUser(user) });
   } catch (e) {
     console.error('login-verify error:', e);
@@ -357,10 +363,6 @@ app.post('/api/auth/google', async (req, res) => {
 });
 
 // ── Password reset via emailed code ──────────────────────────────────────────
-// Codes are short-lived and kept in memory (single instance, 10-min expiry).
-const resetCodes = new Map(); // email -> { code, expiresAt, attempts }
-const genCode = () => String(Math.floor(100000 + Math.random() * 900000));
-
 // Request a reset code by email.
 app.post('/api/auth/forgot', async (req, res) => {
   try {
@@ -370,8 +372,7 @@ app.post('/api/auth/forgot', async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
     // Only send if the account exists, but always respond ok (no enumeration).
     if (user) {
-      const code = genCode();
-      resetCodes.set(email, { code, expiresAt: Date.now() + 10 * 60 * 1000, attempts: 0 });
+      const code = await createCode({ email, type: 'reset', userId: user.id });
       try {
         await sendMail({
           to: email,
@@ -394,29 +395,16 @@ app.post('/api/auth/forgot', async (req, res) => {
 app.post('/api/auth/reset', async (req, res) => {
   try {
     const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-    const code = String(req.body.code || '').trim();
     const password = req.body.password;
-    if (!email || !code) return res.status(400).json({ message: 'Email and code are required' });
+    if (!email) return res.status(400).json({ message: 'Email and code are required' });
     if (typeof password !== 'string' || password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
-
-    const entry = resetCodes.get(email);
-    if (!entry || entry.expiresAt < Date.now()) {
-      return res.status(400).json({ message: 'Code expired or not found. Request a new one.' });
-    }
-    if (entry.attempts >= 5) {
-      resetCodes.delete(email);
-      return res.status(400).json({ message: 'Too many attempts. Request a new code.' });
-    }
-    if (entry.code !== code) {
-      entry.attempts += 1;
-      return res.status(400).json({ message: 'Incorrect code' });
-    }
+    const { error, status } = await consumeCode({ email, type: 'reset', code: req.body.code });
+    if (error) return res.status(status).json({ message: error });
 
     const passwordHash = await bcrypt.hash(password, 10);
     await prisma.user.update({ where: { email }, data: { passwordHash } });
-    resetCodes.delete(email);
     res.json({ ok: true });
   } catch (e) {
     console.error('reset error:', e);
