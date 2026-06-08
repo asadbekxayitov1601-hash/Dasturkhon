@@ -12,6 +12,7 @@ interface User {
   photoURL?: string;
   avatarUrl?: string;
   bio?: string;
+  phone?: string | null;
   socialLinks?: SocialLinks;
   cardLast4?: string;
 }

@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { ChefHat, Mail, Lock, User, AlertCircle, KeyRound } from 'lucide-react';
 import { config } from '../config';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
+import { PhoneAuth } from '../components/PhoneAuth';
 import { authErrorMessage } from '../lib/authError';
 
 export function SignupPage() {
@@ -183,16 +184,17 @@ export function SignupPage() {
               </button>
             </form>
 
+            <div className="my-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs text-gray-400">{t('auth.or')}</span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
             {config.googleClientId && (
-              <>
-                <div className="my-6 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-gray-200" />
-                  <span className="text-xs text-gray-400">{t('auth.or')}</span>
-                  <div className="h-px flex-1 bg-gray-200" />
-                </div>
+              <div className="mb-3">
                 <GoogleSignInButton onError={setError} />
-              </>
+              </div>
             )}
+            <PhoneAuth />
           </>
         ) : (
           <form className="space-y-6" onSubmit={handleCodeSubmit}>

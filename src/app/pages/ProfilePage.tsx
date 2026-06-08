@@ -103,7 +103,7 @@ export function ProfilePage() {
 
   if (!user) return <div className="p-12 text-center">Please sign in to view profile.</div>;
 
-  const initials = user.name ? user.name.slice(0, 2).toUpperCase() : user.email.slice(0, 2).toUpperCase();
+  const initials = (user.name || user.email || user.phone || '?').slice(0, 2).toUpperCase();
 
   return (
     <div className="min-h-screen py-12 px-4" style={{ background: 'var(--background)' }}>
@@ -188,7 +188,7 @@ export function ProfilePage() {
             ) : (
               <>
                 <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>{user.name || 'Your Name'}</h1>
-                <p className="text-sm mb-1" style={{ color: 'var(--muted-foreground)' }}>{user.email}</p>
+                <p className="text-sm mb-1" style={{ color: 'var(--muted-foreground)' }}>{user.email || user.phone}</p>
                 {user.bio && <p className="text-sm mb-3" style={{ color: 'var(--foreground)' }}>{user.bio}</p>}
                 {user.socialLinks && (
                   <div className="flex justify-center sm:justify-start mb-3">

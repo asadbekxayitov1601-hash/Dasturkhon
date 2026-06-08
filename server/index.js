@@ -7,6 +7,7 @@ import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import { OAuth2Client } from 'google-auth-library';
 import { sendMail, getEmailStatus } from './services/email.js';
+import { sendSms, getSmsStatus } from './services/sms.js';
 import { installLogging, logError, getRecentLogs } from './services/logger.js';
 
 // Capture console.error output + uncaught errors to server/logs/error.log.
@@ -136,9 +137,19 @@ function publicUser(user) {
     isPro: user.isPro,
     avatarUrl: user.avatarUrl,
     bio: user.bio,
+    phone: user.phone,
     socialLinks: parseSocial(user.socialLinks),
     cardLast4: user.cardLast4,
   };
+}
+
+// Normalize an Uzbek phone number to canonical +998XXXXXXXXX, or null if invalid.
+function normalizePhone(input) {
+  if (typeof input !== 'string') return null;
+  let d = input.replace(/[^\d]/g, '');
+  if (d.length === 9) d = '998' + d;          // bare national number
+  if (d.startsWith('998') && d.length === 12) return '+' + d;
+  return null;
 }
 
 // ── Presence tracking (powers the admin "online users" stat) ────────────────
@@ -366,6 +377,47 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
+// ── Phone sign-in via SMS code ──────────────────────────────────────────────
+// Step 1: send a 6-digit SMS code to the phone.
+app.post('/api/auth/phone-request', async (req, res) => {
+  const phone = normalizePhone(req.body.phone);
+  if (!phone) return res.status(400).json({ message: 'Invalid phone number', code: 'invalid_phone' });
+  try {
+    const code = await createCode({ email: phone, type: 'phone' });
+    try {
+      await sendSms({ to: phone, text: `Dasturkhon: tasdiqlash kodi ${code}. 10 daqiqa amal qiladi.` });
+    } catch (e) {
+      console.error('phone sms error:', e);
+      return res.status(502).json({ message: 'Could not send the SMS code. Please try again.', code: 'sms_send_failed' });
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('phone-request error:', e);
+    res.status(500).json({ message: 'Server error', code: 'server_error' });
+  }
+});
+
+// Step 2: verify the SMS code, then find-or-create the user by phone.
+app.post('/api/auth/phone-verify', async (req, res) => {
+  const phone = normalizePhone(req.body.phone);
+  if (!phone) return res.status(400).json({ message: 'Invalid phone number', code: 'invalid_phone' });
+  const { error, status, code } = await consumeCode({ email: phone, type: 'phone', code: req.body.code });
+  if (error) return res.status(status).json({ message: error, code });
+  try {
+    let user = await prisma.user.findFirst({ where: { phone } });
+    if (!user) {
+      const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+      user = await prisma.user.create({ data: { phone, phoneVerified: true, name: name || null, isAdmin: false } });
+    } else if (!user.phoneVerified) {
+      user = await prisma.user.update({ where: { id: user.id }, data: { phoneVerified: true } });
+    }
+    res.json({ token: makeToken(user), user: publicUser(user) });
+  } catch (e) {
+    console.error('phone-verify error:', e);
+    res.status(500).json({ message: 'Server error', code: 'server_error' });
+  }
+});
+
 // ── Password reset via emailed code ──────────────────────────────────────────
 // Request a reset code by email.
 app.post('/api/auth/forgot', async (req, res) => {
@@ -418,7 +470,7 @@ app.post('/api/auth/reset', async (req, res) => {
 
 // Diagnostic: admin can check whether email sending is configured/working.
 app.get('/api/admin/email-status', requireAuth, requireAdmin, (req, res) => {
-  res.json(getEmailStatus());
+  res.json({ email: getEmailStatus(), sms: getSmsStatus() });
 });
 
 // Admin: user/usage statistics (total registered, currently online, new signups).
