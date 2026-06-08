@@ -1,0 +1,23 @@
+# Dasturkhon — Caddy reverse proxy (automatic HTTPS via Let's Encrypt).
+# Serves the built frontend (dist) and proxies /api/* to the Node backend.
+# Install: copy to /etc/caddy/Caddyfile, then `sudo systemctl reload caddy`.
+
+dasturkhon.uz, www.dasturkhon.uz {
+	encode gzip zstd
+
+	# API requests → Node backend on localhost:4000
+	handle /api/* {
+		reverse_proxy localhost:4000
+	}
+
+	# Everything else → static SPA frontend with history fallback
+	handle {
+		root * /opt/dasturkhon/dist
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Cache hashed build assets aggressively
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+}

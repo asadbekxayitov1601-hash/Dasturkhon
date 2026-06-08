@@ -1,0 +1,5 @@
+# Ensure deployment files always use LF (they run on Linux servers).
+*.sh text eol=lf
+deploy/Caddyfile text eol=lf
+deploy/dasturkhon-api.service text eol=lf
+deploy/deploy.sh text eol=lf
