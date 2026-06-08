@@ -36,7 +36,16 @@
     "signup_failed": "Ro'yxatdan o'tish amalga oshmadi",
     "signup_error": "Ro'yxatdan o'tishda xatolik",
     "resend_failed": "Kodni qayta yuborib bo'lmadi",
+    "phone": {
+      "continue_with": "Telefon raqami bilan davom etish",
+      "label": "Telefon raqami",
+      "ph": "+998 90 123 45 67",
+      "send_code": "Kod yuborish",
+      "verify": "Tasdiqlash va davom etish"
+    },
     "err": {
+      "invalid_phone": "To'g'ri telefon raqamini kiriting",
+      "sms_send_failed": "SMS kodi yuborilmadi. Qayta urinib ko'ring.",
       "invalid_input": "Email yoki parol noto'g'ri",
       "invalid_email": "To'g'ri email manzil kiriting",
       "weak_password": "Parol kamida 6 belgidan iborat bo'lishi kerak",

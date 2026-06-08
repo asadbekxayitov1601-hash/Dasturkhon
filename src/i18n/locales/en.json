@@ -36,7 +36,16 @@
     "signup_failed": "Signup failed",
     "signup_error": "Signup error",
     "resend_failed": "Could not resend code",
+    "phone": {
+      "continue_with": "Continue with phone number",
+      "label": "Phone number",
+      "ph": "+998 90 123 45 67",
+      "send_code": "Send code",
+      "verify": "Verify & continue"
+    },
     "err": {
+      "invalid_phone": "Please enter a valid phone number",
+      "sms_send_failed": "Couldn't send the SMS code. Please try again.",
       "invalid_input": "Invalid email or password",
       "invalid_email": "Please enter a valid email address",
       "weak_password": "Password must be at least 6 characters",
