@@ -216,14 +216,22 @@ export function ShoppingListPage() {
               <div className="p-6 rounded-[24px] bg-white border border-primary/20">
                 <h3 className="text-lg text-gray-900 mb-4">{t('shopping.add_new_item')}</h3>
                 <div className="grid sm:grid-cols-2 gap-4 mb-4">
-                  <input
-                    type="text"
-                    placeholder={t('shopping.item_name')}
-                    value={newItemName}
-                    onChange={(e) => setNewItemName(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-                    className="px-4 py-3 rounded-[16px] bg-background border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      maxLength={30}
+                      placeholder={t('shopping.item_name')}
+                      value={newItemName}
+                      onChange={(e) => setNewItemName(e.target.value.slice(0, 30))}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
+                      className="w-full px-4 py-3 rounded-[16px] bg-background border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    {newItemName.length > 0 && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
+                        {30 - newItemName.length}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     placeholder={t('shopping.quantity')}
@@ -297,7 +305,7 @@ export function ShoppingListPage() {
                                 {item.checked && <Check className="w-4 h-4 text-primary" />}
                               </button>
                               <div className="flex-1 min-w-0">
-                                <h3 className="text-gray-900">{item.name}</h3>
+                                <h3 className="text-gray-900 break-words">{item.name}</h3>
                                 {item.quantity && (
                                   <p className="text-sm text-gray-600 mt-0.5">{item.quantity}</p>
                                 )}
@@ -351,7 +359,7 @@ export function ShoppingListPage() {
                             <Check className="w-4 h-4 text-white" />
                           </button>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-gray-600 line-through">{item.name}</h3>
+                            <h3 className="text-gray-600 line-through break-words">{item.name}</h3>
                             {item.quantity && (
                               <p className="text-sm text-gray-500 mt-1 line-through">
                                 {item.quantity}

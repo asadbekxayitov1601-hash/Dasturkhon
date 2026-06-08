@@ -20,4 +20,8 @@ export const config = {
   // Google Identity client ID (public). Set VITE_GOOGLE_CLIENT_ID at build time
   // to enable the "Continue with Google" button. Empty = button hidden.
   googleClientId: (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || '',
+
+  // Telegram bot username (without @) for the Telegram Login Widget.
+  // Set VITE_TELEGRAM_BOT to enable "Log in with Telegram". Empty = hidden.
+  telegramBot: (import.meta.env.VITE_TELEGRAM_BOT as string) || '',
 };

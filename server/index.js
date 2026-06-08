@@ -418,6 +418,48 @@ app.post('/api/auth/phone-verify', async (req, res) => {
   }
 });
 
+// ── Telegram login ──────────────────────────────────────────────────────────
+// The frontend Telegram Login Widget returns the signed-in user's data + a hash.
+// We verify the hash with the bot token, then find-or-create the user.
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+
+app.post('/api/auth/telegram', async (req, res) => {
+  if (!TELEGRAM_BOT_TOKEN) {
+    return res.status(503).json({ message: 'Telegram login is not configured', code: 'telegram_not_configured' });
+  }
+  const { hash, ...fields } = req.body || {};
+  if (!hash || !fields.id) return res.status(400).json({ message: 'Invalid Telegram data', code: 'invalid_telegram' });
+  try {
+    // Verify the data really came from Telegram (HMAC-SHA256, key = SHA256(bot token)).
+    const checkString = Object.keys(fields).sort().map((k) => `${k}=${fields[k]}`).join('\n');
+    const secret = crypto.createHash('sha256').update(TELEGRAM_BOT_TOKEN).digest();
+    const hmac = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
+    if (hmac !== hash) return res.status(401).json({ message: 'Telegram verification failed', code: 'invalid_telegram' });
+    // Reject stale payloads (older than 1 day).
+    if (Math.abs(Date.now() / 1000 - Number(fields.auth_date || 0)) > 86400) {
+      return res.status(401).json({ message: 'Telegram data expired', code: 'invalid_telegram' });
+    }
+    const telegramId = String(fields.id);
+    let user = await prisma.user.findFirst({ where: { telegramId } });
+    if (!user) {
+      const name = [fields.first_name, fields.last_name].filter(Boolean).join(' ').trim();
+      user = await prisma.user.create({
+        data: {
+          telegramId,
+          telegramUsername: fields.username || null,
+          name: name || null,
+          avatarUrl: fields.photo_url || null,
+          isAdmin: false,
+        },
+      });
+    }
+    res.json({ token: makeToken(user), user: publicUser(user) });
+  } catch (e) {
+    console.error('telegram auth error:', e);
+    res.status(500).json({ message: 'Server error', code: 'server_error' });
+  }
+});
+
 // ── Password reset via emailed code ──────────────────────────────────────────
 // Request a reset code by email.
 app.post('/api/auth/forgot', async (req, res) => {

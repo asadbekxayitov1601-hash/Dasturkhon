@@ -160,7 +160,7 @@ export function PantryPage() {
                     type="text"
                     placeholder={t('pantry.quantity_ph')}
                     value={newItemQuantity}
-                    onChange={(e) => setNewItemQuantity(e.target.value)}
+                    onChange={(e) => setNewItemQuantity(e.target.value.replace(/-/g, ''))}
                     className="px-4 py-3 rounded-[16px] bg-background border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>

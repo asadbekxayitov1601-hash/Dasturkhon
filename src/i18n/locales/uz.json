@@ -46,6 +46,8 @@
     "err": {
       "invalid_phone": "To'g'ri telefon raqamini kiriting",
       "sms_send_failed": "SMS kodi yuborilmadi. Qayta urinib ko'ring.",
+      "telegram_not_configured": "Telegram orqali kirish hozircha mavjud emas",
+      "invalid_telegram": "Telegram orqali kirish amalga oshmadi. Qayta urinib ko'ring.",
       "invalid_input": "Email yoki parol noto'g'ri",
       "invalid_email": "To'g'ri email manzil kiriting",
       "weak_password": "Parol kamida 6 belgidan iborat bo'lishi kerak",
