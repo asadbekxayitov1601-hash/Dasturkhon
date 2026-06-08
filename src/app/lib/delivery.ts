@@ -47,17 +47,16 @@ export const DELIVERY_PLATFORMS: DeliveryPlatform[] = [
     name: 'Uzum Tezkor',
     color: '#7000FF',
     textColor: '#fff',
-    description: 'tezkor.uzum.uz',
-    // NOTE: if Uzum changes its search route, update the path here.
-    searchUrl: (q) => build('uzum', `https://tezkor.uzum.uz/search?text=${encodeURIComponent(q)}`),
+    description: 'uzumtezkor.uz',
+    searchUrl: () => build('uzum', 'https://www.uzumtezkor.uz/'),
   },
   {
     key: 'yandex',
-    name: 'Yandex Eda',
+    name: 'Yandex Eats',
     color: '#FC3F1D',
     textColor: '#fff',
-    description: 'eda.yandex.uz',
-    searchUrl: (q) => build('yandex', `https://eda.yandex.uz/search?text=${encodeURIComponent(q)}`),
+    description: 'eats.yandex.com',
+    searchUrl: () => build('yandex', 'https://eats.yandex.com/en-uz/'),
   },
   {
     key: 'korzinka',
@@ -65,6 +64,8 @@ export const DELIVERY_PLATFORMS: DeliveryPlatform[] = [
     color: '#6DBE45',
     textColor: '#fff',
     description: 'korzinka.uz',
-    searchUrl: (q) => build('korzinka', `https://korzinka.uz/search?query=${encodeURIComponent(q)}`),
+    // Link to the site root so mobile universal links open the Korzinka app
+    // (if installed); otherwise it opens the Korzinka website.
+    searchUrl: () => build('korzinka', 'https://korzinka.uz/'),
   },
 ];

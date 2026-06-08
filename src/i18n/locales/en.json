@@ -284,7 +284,7 @@
   "delivery": {
     "cant_cook": "Can't cook? Order it!",
     "order_from_platforms": "Find it on delivery platforms",
-    "disclaimer": "Opens a search for \"{{dish}}\". Availability depends on the platform."
+    "disclaimer": "Opens the delivery platform in a new tab. Prices and availability vary."
   },
   "analytics": {
     "title": "My Analytics",
