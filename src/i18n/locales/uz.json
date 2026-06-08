@@ -284,7 +284,7 @@
   "delivery": {
     "cant_cook": "Pishirolmaysizmi? Buyurtma bering!",
     "order_from_platforms": "Tayyor platformalardan topish",
-    "disclaimer": "\"{{dish}}\" bo'yicha qidiruv ochiladi. Mavjudligi platformaga bog'liq."
+    "disclaimer": "Yetkazib berish platformasi yangi oynada ochiladi. Narx va mavjudlik o'zgarishi mumkin."
   },
   "analytics": {
     "title": "Mening statistikam",
