@@ -13,6 +13,8 @@ model User {
   email         String?        @unique // optional: phone-only accounts have no email
   phone         String?        // NEW: phone number (uniqueness enforced in app logic)
   phoneVerified Boolean        @default(false) // NEW: phone confirmed via SMS code
+  telegramId       String?     // NEW: Telegram user id (uniqueness enforced in app logic)
+  telegramUsername String?     // NEW: Telegram @username
   passwordHash  String?        // optional: Google-/phone-only accounts have no password
   googleId      String?        // NEW: linked Google account id (uniqueness enforced via email)
   emailVerified Boolean        @default(false) // NEW: email confirmed via code/Google
