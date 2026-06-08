@@ -1,0 +1,24 @@
+# systemd unit for the Dasturkhon Node/Express API.
+# Install: sudo cp deploy/dasturkhon-api.service /etc/systemd/system/
+#          sudo systemctl daemon-reload && sudo systemctl enable --now dasturkhon-api
+# Logs:    journalctl -u dasturkhon-api -f
+[Unit]
+Description=Dasturkhon API (Node/Express)
+After=network.target
+
+[Service]
+Type=simple
+User=dasturkhon
+Group=dasturkhon
+WorkingDirectory=/opt/dasturkhon/server
+EnvironmentFile=/opt/dasturkhon/server/.env
+# Adjust the node path if needed: run `which node` (e.g. /usr/bin/node)
+ExecStart=/usr/bin/node index.js
+Restart=always
+RestartSec=5
+# Basic hardening
+NoNewPrivileges=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
