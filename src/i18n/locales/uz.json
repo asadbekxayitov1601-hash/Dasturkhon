@@ -97,6 +97,7 @@
   },
   "recipes": {
     "title": "Retseptlar To'plami",
+    "add": "Retsept Qo'shish",
     "subtitle": "Asl o'zbek taomlarini kashf eting va ingredientlarni xarid ro'yxatingizga qo'shing",
     "search_placeholder": "Retsept, oshpaz, ingredient yoki kategoriya qidirish...",
     "filters": "Filtrlar",
