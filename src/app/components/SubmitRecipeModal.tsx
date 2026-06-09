@@ -36,7 +36,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
         if (!file) return;
 
         if (file.size > 5 * 1024 * 1024) {
-            toast.error('Image size must be less than 5MB');
+            toast.error(t('recipe_form.image_too_large'));
             return;
         }
 
@@ -62,8 +62,8 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
             const ingredients = formData.ingredients.map(s => s.trim()).filter(Boolean);
             const instructions = formData.instructions.map(s => s.trim()).filter(Boolean);
 
-            if (ingredients.length === 0) { toast.error('Add at least one ingredient'); setLoading(false); return; }
-            if (instructions.length === 0) { toast.error('Add at least one instruction'); setLoading(false); return; }
+            if (ingredients.length === 0) { toast.error(t('recipe_form.need_ingredient')); setLoading(false); return; }
+            if (instructions.length === 0) { toast.error(t('recipe_form.need_instruction')); setLoading(false); return; }
 
             await createRecipe({
                 ...formData,
@@ -72,9 +72,9 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
             });
 
             if (user?.isAdmin) {
-                toast.success('Recipe created successfully');
+                toast.success(t('recipe_form.created'));
             } else {
-                toast.success('Recipe submitted for approval');
+                toast.success(t('recipe_form.submitted'));
             }
 
             setFormData({
@@ -92,7 +92,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
             onSuccess();
             onClose();
         } catch (e: any) {
-            toast.error(e.message || 'Failed to create recipe');
+            toast.error(e.message || t('recipe_form.create_failed'));
         } finally {
             setLoading(false);
         }
@@ -115,7 +115,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                 >
                     <div className="sticky top-0 bg-white p-4 border-b flex items-center justify-between z-10">
                         <h2 className="text-xl font-semibold flex items-center gap-2">
-                            <Plus className="w-5 h-5 text-primary" /> {user?.isAdmin ? 'Create New Recipe' : 'Submit New Recipe'}
+                            <Plus className="w-5 h-5 text-primary" /> {user?.isAdmin ? t('recipe_form.create_title') : t('recipe_form.submit_title')}
                         </h2>
                         <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                             <X className="w-5 h-5 text-gray-500" />
@@ -124,19 +124,19 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
 
                     <form onSubmit={handleSubmit} className="p-6 space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipe_form.title')}</label>
                             <input
                                 required
                                 type="text"
                                 value={formData.title}
                                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
-                                placeholder="e.g. Traditional Palov"
+                                placeholder={t('recipe_form.title_ph')}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Recipe Image</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">{t('recipe_form.image')}</label>
                             <div className="flex bg-gray-100 p-1 rounded-xl mb-3 w-fit">
                                 <button
                                     type="button"
@@ -150,7 +150,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                             transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                         />
                                     )}
-                                    Image URL
+                                    {t('recipe_form.image_url')}
                                 </button>
                                 <button
                                     type="button"
@@ -164,7 +164,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                             transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                         />
                                     )}
-                                    Upload File
+                                    {t('recipe_form.upload_file')}
                                 </button>
                             </div>
 
@@ -188,7 +188,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                     />
                                     <label htmlFor="recipe-image-upload" className="cursor-pointer flex flex-col items-center gap-2">
                                         <Upload className="w-8 h-8 text-gray-400" />
-                                        <span className="text-sm text-gray-600">Click to upload image (max 5MB)</span>
+                                        <span className="text-sm text-gray-600">{t('recipe_form.upload_hint')}</span>
                                     </label>
                                 </div>
                             )}
@@ -211,11 +211,11 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Cook Time</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipe_form.cook_time')}</label>
                                 <input
                                     required
                                     type="text"
-                                    placeholder="e.g. 45 min"
+                                    placeholder={t('recipe_form.cook_time_ph')}
                                     value={formData.cookTime}
                                     onChange={e => setFormData({ ...formData, cookTime: e.target.value })}
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
@@ -239,7 +239,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipe_form.category')}</label>
                             <select
                                 value={formData.category}
                                 onChange={e => setFormData({ ...formData, category: e.target.value })}
@@ -256,7 +256,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">YouTube URL (optional)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipe_form.youtube')}</label>
                             <input
                                 type="url"
                                 placeholder="https://youtube.com/watch?v=..."
@@ -266,21 +266,21 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Ingredients</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">{t('recipe_form.ingredients')}</label>
                             <ListInput
                                 items={formData.ingredients}
                                 onChange={items => setFormData({ ...formData, ingredients: items })}
-                                placeholder="e.g. 2 cups rice"
-                                addLabel="Add ingredient"
+                                placeholder={t('recipe_form.ingredient_ph')}
+                                addLabel={t('recipe_form.add_ingredient')}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Instructions</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">{t('recipe_form.instructions')}</label>
                             <ListInput
                                 items={formData.instructions}
                                 onChange={items => setFormData({ ...formData, instructions: items })}
-                                placeholder="Describe this step…"
-                                addLabel="Add step"
+                                placeholder={t('recipe_form.instruction_ph')}
+                                addLabel={t('recipe_form.add_step')}
                             />
                         </div>
                         <div className="pt-2">
@@ -292,7 +292,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                 className="w-full py-3 bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg hover:shadow-lg transition-all font-medium disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                             >
                                 {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-                                {user?.isAdmin ? 'Create Recipe' : 'Submit for Approval'}
+                                {user?.isAdmin ? t('recipe_form.create_btn') : t('recipe_form.submit_btn')}
                             </motion.button>
                         </div>
                     </form>
