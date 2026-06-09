@@ -88,8 +88,8 @@ export function GoogleSignInButton({ onError }: { onError?: (msg: string) => voi
         window.google.accounts.id.renderButton(ref.current, {
           theme: 'outline',
           size: 'large',
-          // Match the Telegram widget's pill size (both centered).
-          width: 240,
+          // Match the Telegram widget's measured pill size (~218px), both centered.
+          width: 218,
           text: 'continue_with',
           shape: 'pill',
           locale: lang,
