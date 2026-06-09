@@ -219,7 +219,7 @@ export function RecipesPage() {
             {/* Results Count */}
             <div className="mb-6">
               <p className="text-sm text-gray-600">
-                Showing {filteredRecipes.length} {filteredRecipes.length === 1 ? 'recipe' : 'recipes'}
+                {t('recipes.showing')} {filteredRecipes.length} {filteredRecipes.length === 1 ? t('recipes.recipe') : t('recipes.recipes')}
               </p>
             </div>
 
@@ -244,8 +244,8 @@ export function RecipesPage() {
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                   <Search className="w-10 h-10 text-gray-400" />
                 </div>
-                <h3 className="text-xl text-gray-900 mb-2">No recipes found</h3>
-                <p className="text-gray-600">Try adjusting your search or filters</p>
+                <h3 className="text-xl text-gray-900 mb-2">{t('recipes.no_recipes')}</h3>
+                <p className="text-gray-600">{t('recipes.adjust_search')}</p>
               </div>
             )}
           </>

@@ -97,6 +97,7 @@
   },
   "recipes": {
     "title": "Recipe Collection",
+    "add": "Add Recipe",
     "subtitle": "Discover authentic Uzbek dishes and add ingredients to your shopping list",
     "search_placeholder": "Search recipes, chefs, ingredients, or categories...",
     "filters": "Filters",
