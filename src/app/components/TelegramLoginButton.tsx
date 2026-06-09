@@ -20,7 +20,8 @@ export function TelegramLoginButton({ onError }: { onError?: (msg: string) => vo
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const auth = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language || 'en';
 
   // Keep the latest handler in a ref so the widget's global callback stays fresh.
   const handlerRef = useRef<(user: Record<string, unknown>) => void>(() => {});
@@ -48,6 +49,8 @@ export function TelegramLoginButton({ onError }: { onError?: (msg: string) => vo
   useEffect(() => {
     if (!config.telegramBot || !ref.current) return;
     window.onTelegramAuth = (user) => handlerRef.current(user);
+    const node = ref.current;
+    node.innerHTML = ''; // re-render when the language changes
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
     script.async = true;
@@ -55,12 +58,12 @@ export function TelegramLoginButton({ onError }: { onError?: (msg: string) => vo
     script.setAttribute('data-size', 'large');
     script.setAttribute('data-radius', '20');
     script.setAttribute('data-request-access', 'write');
+    script.setAttribute('data-lang', lang); // localize the widget's button text
     script.setAttribute('data-onauth', 'onTelegramAuth(user)');
-    ref.current.appendChild(script);
-    const node = ref.current;
-    return () => { if (node) node.innerHTML = ''; };
+    node.appendChild(script);
+    return () => { node.innerHTML = ''; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [lang]);
 
   if (!config.telegramBot) return null;
 
