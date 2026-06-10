@@ -28,7 +28,7 @@ export function Header() {
   }
 
   if (auth.user?.isAdmin) {
-    navItems.push({ path: '/admin', label: 'Admin' });
+    navItems.push({ path: '/admin', label: t('nav.admin') });
   }
 
   const languages = [
@@ -159,14 +159,15 @@ export function Header() {
                           <User className="w-4 h-4" />
                         )}
                       </div>
-                      <span>{auth.user.name?.split(' ')[0] || 'User'}</span>
+                      <span>{auth.user.name?.split(' ')[0] || t('header.user')}</span>
                     </Link>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => auth.logout()}
                       className="p-2 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors border border-transparent hover:border-red-100"
-                      title="Logout"
+                      title={t('header.logout')}
+                      aria-label={t('header.logout')}
                     >
                       <LogOut className="w-5 h-5" />
                     </motion.button>
@@ -179,7 +180,7 @@ export function Header() {
                         whileTap={{ scale: 0.95 }}
                         className="px-4 py-2 rounded-full transition-colors text-sm font-medium text-gray-700 hover:text-primary hover:bg-primary/5"
                       >
-                        Sign in
+                        {t('header.sign_in')}
                       </motion.button>
                     </Link>
                     <Link to="/signup">
@@ -188,7 +189,7 @@ export function Header() {
                         whileTap={{ scale: 0.95 }}
                         className="px-5 py-2 rounded-full bg-primary text-white text-sm font-medium shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all"
                       >
-                        Sign up
+                        {t('header.sign_up')}
                       </motion.button>
                     </Link>
                   </div>
@@ -214,7 +215,7 @@ export function Header() {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className={`lg:hidden p-2 rounded-full transition-colors relative z-50 text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 [@media(hover:hover)]:hover:bg-gray-100 ${isMobileMenuOpen ? 'bg-gray-100' : 'bg-transparent'
                 }`}
-              aria-label="Toggle menu"
+              aria-label={isMobileMenuOpen ? t('header.close_menu') : t('header.open_menu')}
             >
               <AnimatePresence mode="wait">
                 {isMobileMenuOpen ? (
@@ -286,7 +287,7 @@ export function Header() {
 
                   <div className="h-px bg-gray-100 my-2" />
 
-                  <p className="text-xs font-semibold text-gray-400 px-4 mb-2 uppercase tracking-wider">Language</p>
+                  <p className="text-xs font-semibold text-gray-400 px-4 mb-2 uppercase tracking-wider">{t('header.language')}</p>
                   <div className="grid grid-cols-3 gap-2 px-2">
                     {languages.map((lang) => (
                       <button
@@ -317,7 +318,7 @@ export function Header() {
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary relative">
                           <User className="w-4 h-4" />
                         </div>
-                        <span className="font-medium">Profile ({auth.user.name})</span>
+                        <span className="font-medium">{t('header.profile_name', { name: auth.user.name })}</span>
                       </Link>
                       <button
                         onClick={() => {
@@ -329,7 +330,7 @@ export function Header() {
                         <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600">
                           <LogOut className="w-4 h-4" />
                         </div>
-                        <span className="font-medium">Logout</span>
+                        <span className="font-medium">{t('header.logout')}</span>
                       </button>
                     </>
                   ) : (
@@ -338,12 +339,12 @@ export function Header() {
                       <div className="grid grid-cols-2 gap-3 px-2">
                         <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
                           <button className="w-full py-3 rounded-2xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors">
-                            Sign in
+                            {t('header.sign_in')}
                           </button>
                         </Link>
                         <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
                           <button className="w-full py-3 rounded-2xl bg-primary text-white font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
-                            Sign up
+                            {t('header.sign_up')}
                           </button>
                         </Link>
                       </div>
