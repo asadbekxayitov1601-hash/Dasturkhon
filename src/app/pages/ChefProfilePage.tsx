@@ -36,7 +36,7 @@ function StatCard({ icon, value, label, onClick }: { icon: React.ReactNode; valu
     <motion.div
       variants={itemVariants}
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 px-6 py-4 rounded-[20px] bg-white ${onClick ? 'cursor-pointer hover:shadow-md active:scale-95 transition-all' : ''}`}
+      className={`flex flex-col items-center gap-1 px-6 py-4 rounded-[20px] bg-card ${onClick ? 'cursor-pointer hover:shadow-md active:scale-95 transition-all' : ''}`}
       style={{ border: '1px solid rgba(74,124,126,0.12)' }}
     >
       <div style={{ color: 'var(--primary)' }}>{icon}</div>
@@ -61,10 +61,10 @@ function MiniRecipeCard({
     <motion.div
       onClick={onClick}
       variants={itemVariants}
-      className="group cursor-pointer rounded-[20px] overflow-hidden bg-white shadow-sm hover:shadow-md transition-all duration-300"
+      className="group cursor-pointer rounded-[20px] overflow-hidden bg-card shadow-sm hover:shadow-md transition-all duration-300"
       style={{ border: '1px solid rgba(74,124,126,0.1)' }}
     >
-      <div className="relative aspect-video overflow-hidden bg-gray-100">
+      <div className="relative aspect-video overflow-hidden bg-muted">
         <ImageWithFallback
           src={recipe.image}
           alt={recipe.title}

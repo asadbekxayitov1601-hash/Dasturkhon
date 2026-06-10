@@ -3,7 +3,7 @@
 // Embed inside ProfilePage for chefs
 
 import { useEffect, useState } from 'react';
-import { Eye, Heart, Star, BookOpen, Users, TrendingUp, ChefHat } from 'lucide-react';
+import { Eye, Heart, Star, BookOpen, Users, TrendingUp, ChefHat, Trophy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
 import {
@@ -26,6 +26,7 @@ const chartTooltipStyle = {
 
 // ── Views over time (area chart) ─────────────────────────────────────────────
 function ViewsAreaChart({ data }: { data: { date: string; views: number }[] }) {
+  const { t } = useTranslation();
   const slice = data.slice(-14).map(d => ({
     views: d.views,
     label: new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
@@ -43,7 +44,7 @@ function ViewsAreaChart({ data }: { data: { date: string; views: number }[] }) {
         <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={20} />
         <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
         <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: 'var(--foreground)', fontWeight: 600 }} />
-        <Area type="monotone" dataKey="views" name="Views" stroke="var(--primary)" strokeWidth={2.5} fill="url(#viewsGrad)" dot={false} activeDot={{ r: 4 }} />
+        <Area type="monotone" dataKey="views" name={t('analytics.views')} stroke="var(--primary)" strokeWidth={2.5} fill="url(#viewsGrad)" dot={false} activeDot={{ r: 4 }} />
       </AreaChart>
     </ResponsiveContainer>
   );
@@ -51,6 +52,7 @@ function ViewsAreaChart({ data }: { data: { date: string; views: number }[] }) {
 
 // ── Views & saves by recipe (bar chart) ──────────────────────────────────────
 function RecipesBarChart({ recipes }: { recipes: RecipeStat[] }) {
+  const { t } = useTranslation();
   const data = [...recipes]
     .sort((a, b) => b.views - a.views)
     .slice(0, 6)
@@ -67,8 +69,8 @@ function RecipesBarChart({ recipes }: { recipes: RecipeStat[] }) {
         <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
         <Tooltip contentStyle={chartTooltipStyle} cursor={{ fill: 'rgba(74,124,126,0.05)' }} />
         <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
-        <Bar dataKey="views" name="Views" fill="var(--primary)" radius={[4, 4, 0, 0]} maxBarSize={28} />
-        <Bar dataKey="saves" name="Saves" fill="var(--secondary)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+        <Bar dataKey="views" name={t('analytics.views')} fill="var(--primary)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+        <Bar dataKey="saves" name={t('analytics.saves')} fill="var(--secondary)" radius={[4, 4, 0, 0]} maxBarSize={28} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -106,9 +108,10 @@ function SummaryCard({
 
 // ── Recipe row in the table ───────────────────────────────────────────────────
 function RecipeRow({ recipe, rank }: { recipe: RecipeStat; rank: number }) {
+  const { t } = useTranslation();
   return (
     <div
-      className="flex items-center gap-4 p-3 rounded-[16px] transition-colors hover:bg-gray-50"
+      className="flex items-center gap-4 p-3 rounded-[16px] transition-colors hover:bg-muted"
       style={{ borderBottom: '1px solid rgba(74,124,126,0.08)' }}
     >
       {/* Rank */}
@@ -148,15 +151,15 @@ function RecipeRow({ recipe, rank }: { recipe: RecipeStat; rank: number }) {
       <div className="flex gap-4 flex-shrink-0">
         <div className="text-center">
           <div className="text-sm font-bold" style={{ color: 'var(--foreground)' }}>{recipe.views}</div>
-          <div className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>views</div>
+          <div className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>{t('analytics.views')}</div>
         </div>
         <div className="text-center hidden sm:block">
           <div className="text-sm font-bold" style={{ color: 'var(--foreground)' }}>{recipe.saves}</div>
-          <div className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>saves</div>
+          <div className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>{t('analytics.saves')}</div>
         </div>
         <div className="text-center hidden sm:block">
           <div className="text-sm font-bold" style={{ color: 'var(--foreground)' }}>{recipe.reviews}</div>
-          <div className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>reviews</div>
+          <div className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>{t('analytics.reviews')}</div>
         </div>
         {recipe.avgRating !== null && (
           <div className="text-center">
@@ -166,7 +169,7 @@ function RecipeRow({ recipe, rank }: { recipe: RecipeStat; rank: number }) {
                 {recipe.avgRating.toFixed(1)}
               </span>
             </div>
-            <div className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>rating</div>
+            <div className="text-[10px]" style={{ color: 'var(--muted-foreground)' }}>{t('analytics.rating')}</div>
           </div>
         )}
       </div>
@@ -185,7 +188,7 @@ export function AnalyticsDashboard() {
   useEffect(() => {
     getMyAnalytics()
       .then(setData)
-      .catch(() => setError('Failed to load analytics'))
+      .catch(() => setError('1'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -206,7 +209,7 @@ export function AnalyticsDashboard() {
   if (error || !data) {
     return (
       <div className="text-center py-10 text-sm" style={{ color: 'var(--muted-foreground)' }}>
-        {error || 'No analytics data available'}
+        {error ? t('analytics.load_failed') : t('analytics.no_data')}
       </div>
     );
   }
@@ -279,7 +282,7 @@ export function AnalyticsDashboard() {
               </p>
               <span className="text-xs px-2 py-1 rounded-full"
                 style={{ background: 'rgba(74,124,126,0.08)', color: 'var(--primary)' }}>
-                {summary.totalViews} total
+                {summary.totalViews} {t('analytics.total')}
               </span>
             </div>
             <ViewsAreaChart data={viewsChart} />
@@ -304,12 +307,13 @@ export function AnalyticsDashboard() {
                 className="w-14 h-14 rounded-[12px] object-cover flex-shrink-0"
               />
               <div className="flex-1">
-                <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--secondary)' }}>
-                  🏆 {t('analytics.top_recipe')}
+                <p className="flex items-center gap-1.5 text-xs font-medium mb-0.5" style={{ color: 'var(--secondary)' }}>
+                  <Trophy className="w-3.5 h-3.5" />
+                  {t('analytics.top_recipe')}
                 </p>
                 <p className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>{topRecipe.title}</p>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
-                  {topRecipe.views} views · {topRecipe.saves} saves · {topRecipe.reviews} reviews
+                  {topRecipe.views} {t('analytics.views')} · {topRecipe.saves} {t('analytics.saves')} · {topRecipe.reviews} {t('analytics.reviews')}
                 </p>
               </div>
             </motion.div>
@@ -343,7 +347,7 @@ export function AnalyticsDashboard() {
                       color: sortBy === key ? '#fff' : 'var(--primary)',
                     }}
                   >
-                    {key}
+                    {t(`analytics.${key}`)}
                   </button>
                 ))}
               </div>

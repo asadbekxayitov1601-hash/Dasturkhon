@@ -356,7 +356,14 @@
     "views_last_14": "So'nggi 14 kun ko'rishlar",
     "top_recipe": "Eng ko'p ko'rilgan retsept",
     "recipe_performance": "Retsept ko'rsatkichlari",
-    "no_recipes": "Hali tasdiqlangan retseptlaringiz yo'q"
+    "no_recipes": "Hali tasdiqlangan retseptlaringiz yo'q",
+    "load_failed": "Tahlillarni yuklab bo'lmadi",
+    "no_data": "Tahlil ma'lumotlari yo'q",
+    "views": "Ko'rishlar",
+    "saves": "Saqlanganlar",
+    "reviews": "Sharhlar",
+    "rating": "Reyting",
+    "total": "jami"
   },
   "earnings": {
     "tip_chef": "Oshpazga choychaqa",
