@@ -72,9 +72,22 @@
     "recipes": "Retseptlar",
     "pantry": "Oshxona",
     "shopping": "Xarid ro'yxati",
-    "favorites": "Sevimlilar"
+    "favorites": "Sevimlilar",
+    "admin": "Admin"
+  },
+  "header": {
+    "sign_in": "Kirish",
+    "sign_up": "Ro'yxatdan o'tish",
+    "logout": "Chiqish",
+    "profile": "Profil",
+    "profile_name": "Profil ({{name}})",
+    "language": "Til",
+    "user": "Foydalanuvchi",
+    "open_menu": "Menyuni ochish",
+    "close_menu": "Menyuni yopish"
   },
   "home": {
+    "hero_badge": "Asl o'zbek taomlari — raqamli ko'rinishda",
     "hero_title": "Raqamli",
     "hero_subtitle": "Oshxonangizni an'anaviy o'zbek dasturxoni kabi boshqaring - ko'p mehmonlarni kutib olish yoki tez taom tayyorlash uchun.",
     "explore_recipes": "Retseptlarni Ko'rish",

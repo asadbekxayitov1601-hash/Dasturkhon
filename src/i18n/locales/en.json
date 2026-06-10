@@ -72,9 +72,22 @@
     "recipes": "Recipes",
     "pantry": "Pantry",
     "shopping": "Shopping List",
-    "favorites": "Favorites"
+    "favorites": "Favorites",
+    "admin": "Admin"
+  },
+  "header": {
+    "sign_in": "Sign in",
+    "sign_up": "Sign up",
+    "logout": "Logout",
+    "profile": "Profile",
+    "profile_name": "Profile ({{name}})",
+    "language": "Language",
+    "user": "User",
+    "open_menu": "Open menu",
+    "close_menu": "Close menu"
   },
   "home": {
+    "hero_badge": "Authentic Uzbek cuisine, digitized",
     "hero_title": "Your Digital",
     "hero_subtitle": "Manage your kitchen like a traditional Uzbek feast—expanding to welcome many guests or folding neatly for a quick meal.",
     "explore_recipes": "Explore Recipes",
