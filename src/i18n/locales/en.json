@@ -255,6 +255,12 @@
     "close": "Close"
   },
   "footer": {
+    "made_with": "Made with",
+    "for_lovers": "for Uzbek cuisine lovers",
+    "rights": "© 2026 Dasturkhon. All rights reserved.",
+    "email": "Email",
+    "phone": "Phone",
+    "follow_us": "Follow us",
     "subscribe_title": "Subscribe to our newsletter",
     "subscribe_desc": "Get the latest recipes and updates delivered to your inbox.",
     "email_placeholder": "Enter your email",

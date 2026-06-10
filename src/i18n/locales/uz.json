@@ -255,6 +255,12 @@
     "close": "Yopish"
   },
   "footer": {
+    "made_with": "Mehr bilan tayyorlandi",
+    "for_lovers": "o'zbek oshxonasi ixlosmandlari uchun",
+    "rights": "© 2026 Dasturkhon. Barcha huquqlar himoyalangan.",
+    "email": "Email",
+    "phone": "Telefon",
+    "follow_us": "Bizni kuzating",
     "subscribe_title": "Bizning xabarnomamizga obuna bo'ling",
     "subscribe_desc": "Eng so'nggi retseptlar va yangiliklarni pochta orqali oling.",
     "email_placeholder": "Emailingizni kiriting",
