@@ -79,7 +79,7 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
       className="group cursor-pointer relative h-full w-full"
       onClick={handleClick}
     >
-      <div className="h-full flex flex-col rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 relative">
+      <div className="h-full flex flex-col rounded-3xl overflow-hidden bg-card border border-border shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 relative">
 
         {/* Price badge */}
         {(recipe.price ?? 0) > 0 && (
@@ -89,7 +89,7 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
           </div>
         )}
 
-        <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
+        <div className="relative aspect-video w-full overflow-hidden bg-muted">
           <ImageWithFallback
             src={recipe.image}
             alt={recipe.title}
@@ -145,7 +145,7 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
 
         <div className="p-5 flex-1 flex flex-col">
           <div className="flex items-start justify-between gap-4 mb-2">
-            <h3 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-primary transition-colors line-clamp-2 capitalize">
+            <h3 className="text-lg font-bold text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-2 capitalize">
               {recipe.title}
             </h3>
           </div>
@@ -168,13 +168,13 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
 
           <div className="mb-6">
             {recipe.category && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-orange-50 text-orange-700 text-xs font-semibold uppercase tracking-wide border border-orange-100">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-secondary/10 text-secondary text-xs font-semibold uppercase tracking-wide border border-secondary/20">
                 {t(`categories.${recipe.category}`, recipe.category)}
               </span>
             )}
           </div>
 
-          <div className="mt-auto pt-4 border-t border-gray-50 flex items-center gap-2">
+          <div className="mt-auto pt-4 border-t border-border flex items-center gap-2">
             <button
               onClick={handleAddToShopping}
               disabled={buying}
@@ -191,7 +191,7 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
               <button
                 onClick={handleDelete}
                 title={t('recipes.delete')}
-                className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
+                className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-destructive bg-destructive/10 hover:bg-destructive/20 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
