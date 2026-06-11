@@ -3,10 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { PanLoader } from '../components/PanLoader';
 import { useAuth } from '../auth/AuthProvider';
 import { getRecipes, createRecipe, deleteRecipe, getPendingRecipes, updateRecipeStatus } from '../api/recipesApi';
-import { getAdminPayouts, updatePayout, formatSom, Payout } from '../api/earningsApi';
 import { getAdminStats, AdminStats } from '../api/adminApi';
 import { Recipe } from '../types/kitchen';
-import { Trash2, Plus, LogOut, Check, X as XIcon, Clock, Wallet, Users, Wifi, UserPlus, BookOpen } from 'lucide-react';
+import { Trash2, Plus, LogOut, X as XIcon, Clock, Users, Wifi, UserPlus, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +16,6 @@ export function AdminPage() {
     const navigate = useNavigate();
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [pendingRecipes, setPendingRecipes] = useState<Recipe[]>([]);
-    const [payouts, setPayouts] = useState<Payout[]>([]);
     const [stats, setStats] = useState<AdminStats | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -49,30 +47,18 @@ export function AdminPage() {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [allRecipes, pending, payoutList, statsData] = await Promise.all([
+            const [allRecipes, pending, statsData] = await Promise.all([
                 getRecipes(),
                 getPendingRecipes(),
-                getAdminPayouts().catch(() => []),
                 getAdminStats().catch(() => null),
             ]);
             setRecipes(allRecipes);
             setPendingRecipes(pending);
-            setPayouts(payoutList);
             setStats(statsData);
         } catch (e: any) {
             toast.error('Failed to load data');
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handlePayout = async (id: number, action: 'mark-paid' | 'reject') => {
-        try {
-            await updatePayout(id, action);
-            setPayouts(prev => prev.map(p => p.id === id ? { ...p, status: action === 'mark-paid' ? 'paid' : 'rejected' } : p));
-            toast.success(action === 'mark-paid' ? t('earnings.marked_paid') : t('earnings.request_rejected'));
-        } catch (e: any) {
-            toast.error('Failed to update payout');
         }
     };
 
@@ -180,56 +166,6 @@ export function AdminPage() {
                         ))}
                     </div>
                 )}
-
-                {/* Payout Requests Section */}
-                <div className="mb-12">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-primary">
-                        <Wallet className="w-5 h-5" /> {t('earnings.payout_requests')}
-                        {payouts.filter(p => p.status === 'requested').length > 0 && (
-                            <span className="text-sm font-normal text-gray-500">
-                                ({payouts.filter(p => p.status === 'requested').length} {t('earnings.pending').toLowerCase()})
-                            </span>
-                        )}
-                    </h2>
-                    {payouts.length === 0 ? (
-                        <p className="text-gray-500 text-sm bg-white rounded-xl border border-gray-100 p-6">{t('earnings.no_payout_requests')}</p>
-                    ) : (
-                        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden divide-y divide-gray-50">
-                            {payouts.map(p => (
-                                <div key={p.id} className="flex flex-wrap items-center gap-3 p-4">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-gray-900">{formatSom(p.amount)}</p>
-                                        <p className="text-sm text-gray-500 truncate">
-                                            {p.creator?.name || p.creator?.email || `User #${p.creatorId}`}
-                                            {p.creator?.email && p.creator?.name ? ` · ${p.creator.email}` : ''}
-                                            {' · '}{new Date(p.requestedAt).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    {p.status === 'requested' ? (
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handlePayout(p.id, 'mark-paid')}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 text-sm font-medium transition-colors"
-                                            >
-                                                <Check className="w-4 h-4" /> {t('earnings.mark_paid')}
-                                            </button>
-                                            <button
-                                                onClick={() => handlePayout(p.id, 'reject')}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-sm font-medium transition-colors"
-                                            >
-                                                <XIcon className="w-4 h-4" /> {t('earnings.reject')}
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${p.status === 'paid' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                                            {p.status === 'paid' ? t('earnings.status_paid') : t('earnings.status_rejected')}
-                                        </span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
 
                 {/* Pending Approvals Section */}
                 {pendingRecipes.length > 0 && (
