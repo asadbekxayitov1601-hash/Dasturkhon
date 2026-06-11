@@ -1,7 +1,7 @@
 // src/app/components/RecipeDetailModal.tsx
 // Updated: added DeliveryLinks section between instructions and reviews
 
-import { X, Clock, ChefHat, PlayCircle, Heart, User as UserIcon } from 'lucide-react';
+import { X, Clock, ChefHat, PlayCircle, User as UserIcon } from 'lucide-react';
 import { Star } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -14,10 +14,7 @@ import { DeliveryLinks } from './DeliveryLinks'; // NEW
 import { getRecipeReviews, averageRating } from '../api/reviewsApi';
 import { recordView } from '../api/analyticsApi';
 import { useAuth } from '../auth/AuthProvider';
-import { tipRecipe, formatSom } from '../api/earningsApi';
 import { getFollowStatus, followChef, unfollowChef } from '../api/chefApi';
-
-const TIP_PRESETS = [5000, 10000, 25000];
 
 interface RecipeDetailModalProps {
   recipe: Recipe | null;
@@ -31,7 +28,6 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
   const navigate = useNavigate();
   const [avgRating, setAvgRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
-  const [tipping, setTipping] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
 
@@ -60,7 +56,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
   const toggleFollow = async () => {
     if (!authorId) return;
-    if (!user) { toast.error(t('earnings.sign_in_tip')); return; }
+    if (!user) { toast.error(t('chef.login_to_follow')); return; }
     const cur = isFollowing;
     setIsFollowing(!cur);
     setFollowBusy(true);
@@ -76,24 +72,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
   const goToChef = () => { if (authorId) { onClose(); navigate(`/chef/${authorId}`); } };
 
-  const sendTip = async (amount: number) => {
-    if (!recipe) return;
-    if (!user) { toast.error(t('earnings.sign_in_tip')); return; }
-    setTipping(true);
-    try {
-      await tipRecipe(recipe.id, amount);
-      toast.success(t('earnings.tip_sent', { amount: formatSom(amount) }));
-    } catch (e: any) {
-      toast.error(e.message || t('earnings.tip_failed'));
-    } finally {
-      setTipping(false);
-    }
-  };
-
   if (!isOpen || !recipe) return null;
-
-  // Show the tip control to logged-in users who aren't the recipe's author.
-  const canTip = !!user && Number(user.id) !== Number(recipe.userId);
 
   return (
     <div
@@ -177,37 +156,6 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                   {isFollowing ? t('chef.following') : t('chef.follow')}
                 </button>
               )}
-            </div>
-          )}
-
-          {/* Tip the chef */}
-          {canTip && (
-            <div
-              className="mb-8 p-5 rounded-[24px]"
-              style={{
-                background: 'linear-gradient(135deg, rgba(209,122,82,0.06), rgba(230,181,102,0.10))',
-                border: '1px solid rgba(209,122,82,0.18)',
-              }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <Heart className="w-4 h-4" style={{ color: 'var(--secondary)' }} />
-                <p className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
-                  {t('earnings.tip_prompt')}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {TIP_PRESETS.map((amt) => (
-                  <button
-                    key={amt}
-                    onClick={() => sendTip(amt)}
-                    disabled={tipping}
-                    className="px-4 py-2 rounded-full text-sm font-medium text-white shadow-sm transition-all hover:shadow-md active:scale-95 disabled:opacity-60"
-                    style={{ background: 'linear-gradient(135deg, var(--secondary), var(--accent))' }}
-                  >
-                    {formatSom(amt)}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 

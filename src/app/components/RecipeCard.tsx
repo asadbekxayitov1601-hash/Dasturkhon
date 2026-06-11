@@ -1,17 +1,14 @@
 // src/app/components/RecipeCard.tsx
-// Clickable chef name links to /chef/:userId. Free recipes open directly;
-// paid recipes show a price and an unlock button.
+// Clickable chef name links to /chef/:userId. All recipes are free and open directly.
 
 import { motion } from 'motion/react';
-import { Clock, Plus, Heart, ChefHat, Lock, Star, Trash2 } from 'lucide-react';
+import { Clock, Plus, Heart, ChefHat, Star, Trash2 } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
-import { buyRecipe, formatSom } from '../api/earningsApi';
 import { ConfirmDialog } from './ConfirmDialog';
 
 interface RecipeCardProps {
@@ -20,17 +17,14 @@ interface RecipeCardProps {
   onAddToShoppingList: (recipe: Recipe) => void;
   onViewRecipe: (recipe: Recipe) => void;
   onToggleFavorite?: (recipe: Recipe) => void;
-  onUnlocked?: (recipe: Recipe) => void;
   onDelete?: (recipe: Recipe) => void;
 }
 
-export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewRecipe, onToggleFavorite, onUnlocked, onDelete }: RecipeCardProps) {
+export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewRecipe, onToggleFavorite, onDelete }: RecipeCardProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [buying, setBuying] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const isLocked = !!recipe.locked;
   const canDelete = !!onDelete && !!user && (user.isAdmin || Number(user.id) === Number(recipe.userId));
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -38,30 +32,11 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
     setConfirmDelete(true);
   };
 
-  const handleUnlock = async () => {
-    if (!user) { toast.error(t('recipes.sign_in_unlock')); navigate('/login'); return; }
-    setBuying(true);
-    try {
-      const { recipe: unlocked } = await buyRecipe(recipe.id);
-      toast.success(t('recipes.unlocked'));
-      onUnlocked?.(unlocked);
-      onViewRecipe(unlocked);
-    } catch (e: any) {
-      toast.error(e.message || t('recipes.unlock_failed'));
-    } finally {
-      setBuying(false);
-    }
-  };
-
-  const handleClick = () => {
-    if (isLocked) handleUnlock();
-    else onViewRecipe(recipe);
-  };
+  const handleClick = () => onViewRecipe(recipe);
 
   const handleAddToShopping = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isLocked) handleUnlock();
-    else onAddToShoppingList(recipe);
+    onAddToShoppingList(recipe);
   };
 
   const handleChefClick = (e: React.MouseEvent) => {
@@ -81,30 +56,14 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
     >
       <div className="h-full flex flex-col rounded-3xl overflow-hidden bg-card border border-border shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 relative">
 
-        {/* Price badge */}
-        {(recipe.price ?? 0) > 0 && (
-          <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 bg-white/95 text-primary text-xs font-bold px-2.5 py-1 rounded-full shadow border border-primary/10">
-            {isLocked && <Lock className="w-3 h-3" />}
-            {formatSom(recipe.price || 0)}
-          </div>
-        )}
-
         <div className="relative aspect-video w-full overflow-hidden bg-muted">
           <ImageWithFallback
             src={recipe.image}
             alt={recipe.title}
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isLocked ? 'grayscale-[0.4]' : ''}`}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-0 transition-opacity duration-300" />
-
-          {isLocked && (
-            <div className="absolute inset-0 bg-black/20 flex items-center justify-center backdrop-blur-[1px]">
-              <div className="bg-black/60 p-3 rounded-full text-white shadow-xl border border-white/10">
-                <Lock className="w-6 h-6" />
-              </div>
-            </div>
-          )}
 
           {onToggleFavorite && (
             <motion.button
@@ -177,15 +136,10 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
           <div className="mt-auto pt-4 border-t border-border flex items-center gap-2">
             <button
               onClick={handleAddToShopping}
-              disabled={buying}
-              className={`w-full flex items-center justify-center gap-2 bg-gradient-to-r ${isLocked ? 'from-secondary to-secondary/80' : 'from-primary to-primary/80'} text-white rounded-xl px-4 py-3 hover:shadow-lg transition-all duration-300 group/add disabled:opacity-60`}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary/80 text-white rounded-xl px-4 py-3 hover:shadow-lg transition-all duration-300 group/add"
             >
-              {isLocked ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4 group-hover/add:rotate-90 transition-transform" />}
-              <span className="font-medium text-sm">
-                {isLocked
-                  ? (buying ? t('recipes.unlocking') : t('recipes.unlock_for', { price: formatSom(recipe.price || 0) }))
-                  : t('recipes.add_ingredients')}
-              </span>
+              <Plus className="w-4 h-4 group-hover/add:rotate-90 transition-transform" />
+              <span className="font-medium text-sm">{t('recipes.add_ingredients')}</span>
             </button>
             {canDelete && (
               <button

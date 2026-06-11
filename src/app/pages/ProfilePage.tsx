@@ -9,7 +9,6 @@ import { useAuth } from '../auth/AuthProvider';
 import { toast } from 'sonner';
 import { LogOut, Settings, Camera, Star, BookOpen, Users, ChefHat, Trash2 } from 'lucide-react';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
-import { EarningsDashboard } from '../components/EarningsDashboard';
 import { RecipeDetailModal } from '../components/RecipeDetailModal';
 import { FollowListModal } from '../components/FollowListModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -270,9 +269,6 @@ export function ProfilePage() {
             </div>
           </div>
         )}
-
-        {/* Earnings (cards animate individually) */}
-        <EarningsDashboard />
 
         {/* Analytics (cards animate individually) */}
         <AnalyticsDashboard />

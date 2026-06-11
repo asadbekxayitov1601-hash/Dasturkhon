@@ -36,10 +36,6 @@ model User {
   favorites     Favorite[]
   reviews       Review[]
   likes         RecipeLike[]
-  // Earnings relations
-  ordersBought  Order[]        @relation("buyer")
-  ordersEarned  Order[]        @relation("creator")
-  payouts       Payout[]
   notifications Notification[]
   // Follow relations
   following     Follow[]       @relation("follower")  // people this user follows
@@ -91,7 +87,6 @@ model Recipe {
   instructions String
   youtubeUrl   String?
   isPro        Boolean    @default(false)
-  price        Int        @default(0)  // 0 = free; otherwise price in so'm (UZS)
   status       String     @default("pending")
   userId       Int
   user         User       @relation(fields: [userId], references: [id])
@@ -99,31 +94,7 @@ model Recipe {
   reviews      Review[]
   views        RecipeView[]
   likes        RecipeLike[]
-  orders       Order[]
   createdAt    DateTime   @default(now())
-}
-
-// A paid-recipe purchase or a tip. Money is collected by a payment provider
-// (test mode for now; Uzum later); on payment confirmation status -> "paid"
-// and the amount counts toward the creator's balance.
-model Order {
-  id          Int       @id @default(autoincrement())
-  type        String    // "purchase" | "tip"
-  amount      Int       // in so'm (UZS)
-  status      String    @default("pending") // "pending" | "paid" | "canceled"
-  provider    String?   // "test" | "uzum"
-  providerRef String?
-  buyerId     Int
-  buyer       User      @relation("buyer", fields: [buyerId], references: [id])
-  creatorId   Int
-  creator     User      @relation("creator", fields: [creatorId], references: [id])
-  recipeId    Int?
-  recipe      Recipe?   @relation(fields: [recipeId], references: [id], onDelete: SetNull)
-  createdAt   DateTime  @default(now())
-  paidAt      DateTime?
-
-  @@index([creatorId])
-  @@index([buyerId])
 }
 
 // In-app notification (e.g. a followed author published a new recipe).
@@ -141,21 +112,6 @@ model Notification {
   createdAt   DateTime @default(now())
 
   @@index([userId])
-}
-
-// A creator's request to be paid out their balance. The admin sends the money
-// manually (off-platform) and marks the request "paid".
-model Payout {
-  id          Int       @id @default(autoincrement())
-  creatorId   Int
-  creator     User      @relation(fields: [creatorId], references: [id])
-  amount      Int       // in so'm (UZS)
-  status      String    @default("requested") // "requested" | "paid" | "rejected"
-  note        String?
-  requestedAt DateTime  @default(now())
-  paidAt      DateTime?
-
-  @@index([creatorId])
 }
 
 model Favorite {

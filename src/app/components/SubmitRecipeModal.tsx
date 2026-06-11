@@ -22,7 +22,6 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
         image: '',
         cookTime: '',
         servings: 4,
-        price: 0,
         category: 'main',
         youtubeUrl: '',
         ingredients: [''] as string[],
@@ -82,7 +81,6 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                 image: '',
                 cookTime: '',
                 servings: 4,
-                price: 0,
                 category: 'main',
                 youtubeUrl: '',
                 ingredients: [''],
@@ -209,7 +207,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                 </div>
                             )}
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipe_form.cook_time')}</label>
                                 <input
@@ -220,22 +218,6 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                     onChange={e => setFormData({ ...formData, cookTime: e.target.value })}
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
                                 />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipes.price_label')}</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="1000"
-                                    placeholder="0"
-                                    value={formData.price === 0 ? '' : formData.price}
-                                    onChange={e => {
-                                        const v = e.target.value;
-                                        setFormData({ ...formData, price: v === '' ? 0 : Math.max(0, Math.floor(Number(v) || 0)) });
-                                    }}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
-                                />
-                                <p className="text-[11px] text-gray-400 mt-1">{t('recipes.price_hint')}</p>
                             </div>
                         </div>
                         <div>
