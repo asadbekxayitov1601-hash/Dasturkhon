@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
-import { createRecipe } from '../api/recipesApi';
+import { createRecipe, updateRecipe } from '../api/recipesApi';
+import { Recipe } from '../types/kitchen';
+import { parseCookTime, composeCookTime } from '../lib/cookTime';
 import { ListInput } from './ListInput';
-import { X, Plus, Loader2, Upload } from 'lucide-react';
+import { X, Plus, Pencil, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,24 +13,52 @@ interface SubmitRecipeModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    editRecipe?: Recipe | null;
 }
 
-export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeModalProps) {
+const emptyForm = {
+    title: '',
+    image: '',
+    hours: 0,
+    minutes: 0,
+    servings: 4,
+    category: 'main',
+    youtubeUrl: '',
+    ingredients: [''] as string[],
+    instructions: [''] as string[],
+};
+
+export function SubmitRecipeModal({ isOpen, onClose, onSuccess, editRecipe }: SubmitRecipeModalProps) {
     const { t } = useTranslation();
     const { user } = useAuth();
+    const isEdit = !!editRecipe;
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        title: '',
-        image: '',
-        cookTime: '',
-        servings: 4,
-        category: 'main',
-        youtubeUrl: '',
-        ingredients: [''] as string[],
-        instructions: [''] as string[]
-    });
+    const [formData, setFormData] = useState({ ...emptyForm });
     const [imageMode, setImageMode] = useState<'url' | 'upload'>('url');
     const [previewImage, setPreviewImage] = useState<string>('');
+
+    // Prefill when opening in edit mode; reset when opening fresh.
+    useEffect(() => {
+        if (!isOpen) return;
+        if (editRecipe) {
+            const { hours, minutes } = parseCookTime(editRecipe.cookTime);
+            setFormData({
+                title: editRecipe.title || '',
+                image: editRecipe.image || '',
+                hours,
+                minutes,
+                servings: editRecipe.servings ?? 4,
+                category: editRecipe.category || 'main',
+                youtubeUrl: editRecipe.youtubeUrl || '',
+                ingredients: editRecipe.ingredients?.length ? editRecipe.ingredients : [''],
+                instructions: editRecipe.instructions?.length ? editRecipe.instructions : [''],
+            });
+            setPreviewImage(editRecipe.image || '');
+        } else {
+            setFormData({ ...emptyForm });
+            setPreviewImage('');
+        }
+    }, [isOpen, editRecipe]);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -63,29 +93,25 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
 
             if (ingredients.length === 0) { toast.error(t('recipe_form.need_ingredient')); setLoading(false); return; }
             if (instructions.length === 0) { toast.error(t('recipe_form.need_instruction')); setLoading(false); return; }
+            if (formData.hours === 0 && formData.minutes === 0) { toast.error(t('recipe_form.need_cook_time')); setLoading(false); return; }
 
-            await createRecipe({
-                ...formData,
+            const { hours, minutes, ...rest } = formData;
+            const payload = {
+                ...rest,
+                cookTime: composeCookTime(hours, minutes),
                 ingredients,
-                instructions
-            });
+                instructions,
+            };
 
-            if (user?.isAdmin) {
-                toast.success(t('recipe_form.created'));
+            if (isEdit && editRecipe) {
+                await updateRecipe(editRecipe.id, payload);
+                toast.success(t('recipe_form.updated'));
             } else {
-                toast.success(t('recipe_form.submitted'));
+                await createRecipe(payload);
+                toast.success(user?.isAdmin ? t('recipe_form.created') : t('recipe_form.submitted'));
             }
 
-            setFormData({
-                title: '',
-                image: '',
-                cookTime: '',
-                servings: 4,
-                category: 'main',
-                youtubeUrl: '',
-                ingredients: [''],
-                instructions: ['']
-            });
+            setFormData({ ...emptyForm });
             setPreviewImage('');
             onSuccess();
             onClose();
@@ -113,7 +139,9 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                 >
                     <div className="sticky top-0 bg-white p-4 border-b flex items-center justify-between z-10">
                         <h2 className="text-xl font-semibold flex items-center gap-2">
-                            <Plus className="w-5 h-5 text-primary" /> {user?.isAdmin ? t('recipe_form.create_title') : t('recipe_form.submit_title')}
+                            {isEdit
+                                ? <><Pencil className="w-5 h-5 text-primary" /> {t('recipe_form.edit_title')}</>
+                                : <><Plus className="w-5 h-5 text-primary" /> {user?.isAdmin ? t('recipe_form.create_title') : t('recipe_form.submit_title')}</>}
                         </h2>
                         <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                             <X className="w-5 h-5 text-gray-500" />
@@ -208,16 +236,32 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                             )}
                         </div>
                         <div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipe_form.cook_time')}</label>
-                                <input
-                                    required
-                                    type="text"
-                                    placeholder={t('recipe_form.cook_time_ph')}
-                                    value={formData.cookTime}
-                                    onChange={e => setFormData({ ...formData, cookTime: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
-                                />
+                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipe_form.cook_time')}</label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="48"
+                                        placeholder="0"
+                                        value={formData.hours === 0 ? '' : formData.hours}
+                                        onChange={e => setFormData({ ...formData, hours: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
+                                    />
+                                    <p className="text-[11px] text-gray-400 mt-1">{t('recipe_form.hours')}</p>
+                                </div>
+                                <div>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="59"
+                                        placeholder="0"
+                                        value={formData.minutes === 0 ? '' : formData.minutes}
+                                        onChange={e => setFormData({ ...formData, minutes: Math.min(59, Math.max(0, Math.floor(Number(e.target.value) || 0))) })}
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
+                                    />
+                                    <p className="text-[11px] text-gray-400 mt-1">{t('recipe_form.minutes')}</p>
+                                </div>
                             </div>
                         </div>
                         <div>
@@ -274,7 +318,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess }: SubmitRecipeMo
                                 className="w-full py-3 bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg hover:shadow-lg transition-all font-medium disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                             >
                                 {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-                                {user?.isAdmin ? t('recipe_form.create_btn') : t('recipe_form.submit_btn')}
+                                {isEdit ? t('recipe_form.save_btn') : (user?.isAdmin ? t('recipe_form.create_btn') : t('recipe_form.submit_btn'))}
                             </motion.button>
                         </div>
                     </form>

@@ -254,6 +254,7 @@ export function RecipesPage() {
         recipe={selectedRecipe}
         isOpen={isRecipeModalOpen}
         onClose={() => setIsRecipeModalOpen(false)}
+        onEdited={loadData}
       />
 
       <SubmitRecipeModal

@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { getRecipes, createRecipe, deleteRecipe, getPendingRecipes, updateRecipeStatus } from '../api/recipesApi';
 import { getAdminStats, AdminStats } from '../api/adminApi';
 import { Recipe } from '../types/kitchen';
+import { composeCookTime, formatCookTime } from '../lib/cookTime';
 import { Trash2, Plus, LogOut, X as XIcon, Clock, Users, Wifi, UserPlus, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -23,7 +24,8 @@ export function AdminPage() {
     const [formData, setFormData] = useState({
         title: '',
         image: '',
-        cookTime: '',
+        hours: 0,
+        minutes: 0,
         servings: 4,
         category: 'main',
         youtubeUrl: '',
@@ -68,8 +70,10 @@ export function AdminPage() {
             const ingredients = formData.ingredientsStr.split('\n').filter(s => s.trim());
             const instructions = formData.instructionsStr.split('\n').filter(s => s.trim());
 
+            const { hours, minutes, ingredientsStr, instructionsStr, ...rest } = formData;
             await createRecipe({
-                ...formData,
+                ...rest,
+                cookTime: composeCookTime(hours, minutes),
                 ingredients,
                 instructions,
                 isPro: formData.isPro
@@ -79,7 +83,8 @@ export function AdminPage() {
             setFormData({
                 title: '',
                 image: '',
-                cookTime: '',
+                hours: 0,
+                minutes: 0,
                 servings: 4,
                 category: 'main',
                 youtubeUrl: '',
@@ -196,7 +201,7 @@ export function AdminPage() {
                                         <div className="p-4 flex-1 flex flex-col">
                                             <h3 className="font-semibold text-lg text-gray-900 mb-1">{recipe.title}</h3>
                                             <div className="text-sm text-gray-500 mb-4 flex items-center gap-3">
-                                                <span>{recipe.cookTime}</span>
+                                                <span>{formatCookTime(recipe.cookTime, t)}</span>
                                             </div>
 
                                             {recipe.user && (
@@ -264,15 +269,27 @@ export function AdminPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Cook Time</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        placeholder="e.g. 45 min"
-                                        value={formData.cookTime}
-                                        onChange={e => setFormData({ ...formData, cookTime: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
-                                    />
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Cook Time (h / min)</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="48"
+                                            placeholder="Hours"
+                                            value={formData.hours === 0 ? '' : formData.hours}
+                                            onChange={e => setFormData({ ...formData, hours: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
+                                        />
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="59"
+                                            placeholder="Minutes"
+                                            value={formData.minutes === 0 ? '' : formData.minutes}
+                                            onChange={e => setFormData({ ...formData, minutes: Math.min(59, Math.max(0, Math.floor(Number(e.target.value) || 0))) })}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
+                                        />
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
@@ -365,7 +382,7 @@ export function AdminPage() {
                                         <div className="p-4 flex-1 flex flex-col">
                                             <h3 className="font-semibold text-lg text-gray-900 mb-1">{recipe.title}</h3>
                                             <div className="text-sm text-gray-500 mb-4 flex items-center gap-3">
-                                                <span>{recipe.cookTime}</span>
+                                                <span>{formatCookTime(recipe.cookTime, t)}</span>
                                             </div>
                                             <div className="mt-auto flex justify-end">
                                                 <button

@@ -143,6 +143,7 @@ export function FavoritesPage() {
                 recipe={selectedRecipe}
                 isOpen={isRecipeModalOpen}
                 onClose={() => setIsRecipeModalOpen(false)}
+                onEdited={loadFavorites}
             />
         </div>
     );

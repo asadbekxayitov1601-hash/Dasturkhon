@@ -291,6 +291,7 @@ export function ProfilePage() {
         recipe={selectedRecipe}
         isOpen={!!selectedRecipe}
         onClose={() => setSelectedRecipe(null)}
+        onEdited={() => { if (user) getChefProfile(user.id).then(setProfile).catch(() => {}); }}
       />
 
       <FollowListModal
