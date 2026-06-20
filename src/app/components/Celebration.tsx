@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { PartyPopper } from 'lucide-react';
 
 const COLORS = ['#4A7C7E', '#D17A52', '#E6B566', '#5A9FA3', '#E94F37', '#3CAEA3', '#F6C90E', '#FF6B9D'];
@@ -22,7 +22,7 @@ function makeParticles(): Particle[] {
     const distance = 120 + Math.random() * 240;
     return {
       dx: Math.cos(angle) * distance,
-      dy: Math.sin(angle) * distance,
+      dy: Math.sin(angle) * distance + 60, // slight downward drift (gravity)
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
       size: 6 + Math.random() * 8,
       rotate: (Math.random() - 0.5) * 720,
@@ -32,82 +32,90 @@ function makeParticles(): Particle[] {
   });
 }
 
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+interface Burst {
+  id: number;
+  message: string;
+  particles: Particle[];
+}
+
 // Listens for `celebrate()` events and shows a centered message with a
-// confetti / firecracker burst. Mounted once in App. Non-blocking (clicks
-// pass through) and auto-dismisses.
+// confetti / firecracker burst. Mounted once in App. Non-blocking (clicks pass
+// through), auto-dismisses, and respects prefers-reduced-motion.
 export function Celebration() {
-  const [message, setMessage] = useState<string | null>(null);
-  const [burst, setBurst] = useState(0); // bump to re-key the particle field
-  const particlesRef = useRef<Particle[]>([]);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [burst, setBurst] = useState<Burst | null>(null);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
+    let counter = 0;
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as { message?: string } | undefined;
-      particlesRef.current = makeParticles();
-      setMessage(detail?.message || '');
-      setBurst((b) => b + 1);
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => setMessage(null), DURATION_MS);
+      counter += 1;
+      setBurst({
+        id: counter,
+        message: detail?.message || '',
+        particles: prefersReducedMotion() ? [] : makeParticles(),
+      });
     };
     window.addEventListener('app-celebrate', handler as EventListener);
-    return () => {
-      window.removeEventListener('app-celebrate', handler as EventListener);
-      if (timer.current) clearTimeout(timer.current);
-    };
+    return () => window.removeEventListener('app-celebrate', handler as EventListener);
   }, []);
 
-  return (
-    <AnimatePresence>
-      {message !== null && (
-        <motion.div
-          key="celebration"
-          className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none overflow-hidden"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          aria-live="polite"
-        >
-          {/* Confetti / firecracker burst, emitted from the center */}
-          <div key={burst} className="absolute inset-0 flex items-center justify-center">
-            {particlesRef.current.map((p, i) => (
-              <motion.div
-                key={i}
-                className="absolute"
-                style={{
-                  width: p.size,
-                  height: p.shape === 'rect' ? p.size * 0.5 : p.size,
-                  backgroundColor: p.color,
-                  borderRadius: p.shape === 'circle' ? '9999px' : '2px',
-                }}
-                initial={{ x: 0, y: 0, opacity: 1, scale: 1, rotate: 0 }}
-                animate={{
-                  x: p.dx,
-                  y: [0, p.dy, p.dy + 80],
-                  opacity: [1, 1, 0],
-                  scale: [1, 1, 0.5],
-                  rotate: p.rotate,
-                }}
-                transition={{ duration: p.duration, ease: 'easeOut' }}
-              />
-            ))}
-          </div>
+  // Auto-dismiss with a brief fade-out; re-arms whenever a new burst arrives.
+  useEffect(() => {
+    if (!burst) return;
+    setLeaving(false);
+    const fade = setTimeout(() => setLeaving(true), DURATION_MS - 350);
+    const remove = setTimeout(() => setBurst(null), DURATION_MS);
+    return () => { clearTimeout(fade); clearTimeout(remove); };
+  }, [burst?.id]);
 
-          {/* Centered message card */}
-          <motion.div
-            initial={{ scale: 0.6, opacity: 0, y: 10 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 20 }}
-            className="relative flex items-center gap-3 px-7 py-5 rounded-3xl bg-card border border-border shadow-2xl max-w-[90vw]"
-          >
-            <span className="flex items-center justify-center w-11 h-11 rounded-2xl bg-accent/15 shrink-0">
-              <PartyPopper className="w-6 h-6 text-accent" />
-            </span>
-            <p className="text-base sm:text-lg font-semibold text-foreground">{message}</p>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+  if (!burst) return null;
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none overflow-hidden"
+      animate={{ opacity: leaving ? 0 : 1 }}
+      transition={{ duration: 0.35 }}
+    >
+      {/* Confetti / firecracker burst, emitted from the center.
+          Plain divs animated purely in CSS (GPU) so 90+ pieces stay smooth. */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        {burst.particles.map((p, i) => (
+          <div
+            key={`${burst.id}-${i}`}
+            className="dx-confetti-piece absolute"
+            style={{
+              width: p.size,
+              height: p.shape === 'rect' ? p.size * 0.5 : p.size,
+              backgroundColor: p.color,
+              borderRadius: p.shape === 'circle' ? '9999px' : '2px',
+              '--dx': `${p.dx}px`,
+              '--dy': `${p.dy}px`,
+              '--rot': `${p.rotate}deg`,
+              '--dur': `${p.duration}s`,
+            } as React.CSSProperties}
+          />
+        ))}
+      </div>
+
+      {/* Centered message card */}
+      <motion.div
+        key={burst.id}
+        initial={{ scale: 0.6, opacity: 0, y: 10 }}
+        animate={leaving ? { scale: 0.9, opacity: 0, y: 0 } : { scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 20 }}
+        className="relative flex items-center gap-3 px-7 py-5 rounded-3xl bg-card border border-border shadow-2xl max-w-[90vw]"
+        role="status"
+        aria-live="polite"
+      >
+        <span className="flex items-center justify-center w-11 h-11 rounded-2xl bg-accent/15 shrink-0">
+          <PartyPopper className="w-6 h-6 text-accent" />
+        </span>
+        <p className="text-base sm:text-lg font-semibold text-foreground">{burst.message}</p>
+      </motion.div>
+    </motion.div>
   );
 }
