@@ -34,7 +34,8 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess, editRecipe }: Su
     const isEdit = !!editRecipe;
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({ ...emptyForm });
-    const [imageMode, setImageMode] = useState<'url' | 'upload'>('url');
+    const [imageMode, setImageMode] = useState<'url' | 'upload'>('upload');
+    const [videoMode, setVideoMode] = useState<'url' | 'upload'>('upload');
     const [previewImage, setPreviewImage] = useState<string>('');
 
     // Prefill when opening in edit mode; reset when opening fresh.
@@ -54,9 +55,13 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess, editRecipe }: Su
                 instructions: editRecipe.instructions?.length ? editRecipe.instructions : [''],
             });
             setPreviewImage(editRecipe.image || '');
+            setImageMode(editRecipe.image?.startsWith('data:') ? 'upload' : (editRecipe.image ? 'url' : 'upload'));
+            setVideoMode(editRecipe.youtubeUrl?.startsWith('data:') ? 'upload' : (editRecipe.youtubeUrl ? 'url' : 'upload'));
         } else {
             setFormData({ ...emptyForm });
             setPreviewImage('');
+            setImageMode('upload');
+            setVideoMode('upload');
         }
     }, [isOpen, editRecipe]);
 
@@ -74,6 +79,22 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess, editRecipe }: Su
             const base64 = reader.result as string;
             setFormData({ ...formData, image: base64 });
             setPreviewImage(base64);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 20 * 1024 * 1024) {
+            toast.error(t('recipe_form.video_too_large'));
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setFormData(prev => ({ ...prev, youtubeUrl: reader.result as string }));
         };
         reader.readAsDataURL(file);
     };
@@ -282,14 +303,74 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess, editRecipe }: Su
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipe_form.youtube')}</label>
-                            <input
-                                type="url"
-                                placeholder="https://youtube.com/watch?v=..."
-                                value={formData.youtubeUrl}
-                                onChange={e => setFormData({ ...formData, youtubeUrl: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
-                            />
+                            <label className="block text-sm font-medium text-gray-700 mb-2">{t('recipe_form.video')}</label>
+                            <div className="flex bg-gray-100 p-1 rounded-xl mb-3 w-fit">
+                                <button
+                                    type="button"
+                                    onClick={() => setVideoMode('upload')}
+                                    className={`relative px-4 py-2 text-sm font-medium transition-colors z-0 ${videoMode === 'upload' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    {videoMode === 'upload' && (
+                                        <motion.div
+                                            layoutId="activeVideoMode"
+                                            className="absolute inset-0 bg-white rounded-lg shadow-sm -z-10"
+                                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                        />
+                                    )}
+                                    {t('recipe_form.upload_file')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setVideoMode('url')}
+                                    className={`relative px-4 py-2 text-sm font-medium transition-colors z-0 ${videoMode === 'url' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    {videoMode === 'url' && (
+                                        <motion.div
+                                            layoutId="activeVideoMode"
+                                            className="absolute inset-0 bg-white rounded-lg shadow-sm -z-10"
+                                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                        />
+                                    )}
+                                    {t('recipe_form.video_link')}
+                                </button>
+                            </div>
+
+                            {videoMode === 'url' ? (
+                                <input
+                                    type="url"
+                                    placeholder="https://youtube.com/watch?v=..."
+                                    value={formData.youtubeUrl.startsWith('data:') ? '' : formData.youtubeUrl}
+                                    onChange={e => setFormData({ ...formData, youtubeUrl: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
+                                />
+                            ) : (
+                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors">
+                                    <input
+                                        type="file"
+                                        accept="video/*"
+                                        onChange={handleVideoUpload}
+                                        className="hidden"
+                                        id="recipe-video-upload"
+                                    />
+                                    <label htmlFor="recipe-video-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                                        <Upload className="w-8 h-8 text-gray-400" />
+                                        <span className="text-sm text-gray-600">{t('recipe_form.upload_video_hint')}</span>
+                                    </label>
+                                </div>
+                            )}
+
+                            {formData.youtubeUrl.startsWith('data:') && (
+                                <div className="mt-3 relative rounded-lg overflow-hidden bg-black border">
+                                    <video src={formData.youtubeUrl} controls className="w-full max-h-56" />
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, youtubeUrl: '' })}
+                                        className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">{t('recipe_form.ingredients')}</label>
