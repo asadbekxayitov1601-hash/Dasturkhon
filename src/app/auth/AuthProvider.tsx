@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import { authFetch } from './authFetch';
+import { linkTelegramIfInMiniApp } from '../lib/telegram';
 import type { SocialLinks } from '../api/chefApi';
 
 interface User {
@@ -85,6 +86,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Once logged in, if we're inside the Telegram Mini App, link the account to
+  // the user's Telegram chat so the bot can send them notifications.
+  useEffect(() => {
+    if (user) linkTelegramIfInMiniApp();
+  }, [user]);
 
   const login = async (tkn: string) => {
     setToken(tkn);
