@@ -2,9 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "node scripts/prepare-schema.cjs && cd server && npm install && npx prisma generate && npx prisma db push"
+    "buildCommand": "node scripts/prepare-schema.cjs && cd server && npm install && npx prisma generate"
   },
   "deploy": {
+    "preDeployCommand": "cd server && npx prisma db push --accept-data-loss",
     "startCommand": "cd server && node index.js",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 30,
