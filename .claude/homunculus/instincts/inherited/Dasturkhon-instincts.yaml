@@ -1,0 +1,318 @@
+# Instincts generated from https://github.com/asadbekxayitov1601-hash/Dasturkhon
+# Generated: 2026-06-20T11:21:19.643Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: Dasturkhon-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat
+
+## Evidence
+
+- 1 commits analyzed
+- Detected conventional commit pattern
+- Examples: feat: edit recipe from detail modal + split cook time into hours/minutes
+
+---
+id: Dasturkhon-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Commit Length
+
+## Action
+
+Write moderate-length commit messages (~72 characters)
+
+## Evidence
+
+- Average commit message length: 72 chars
+- Based on 1 commits
+
+---
+id: Dasturkhon-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Naming Files
+
+## Action
+
+Use PascalCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: PascalCase
+
+---
+id: Dasturkhon-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: Dasturkhon-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: Dasturkhon-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: dasturkhon-instinct-file-naming
+trigger: "When creating a new file"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Instinct File Naming
+
+## Action
+
+Name the file using PascalCase
+
+## Evidence
+
+- Pattern in namingConventions.files: PascalCase
+
+---
+id: dasturkhon-instinct-function-naming
+trigger: "When defining a new function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Instinct Function Naming
+
+## Action
+
+Name the function using camelCase
+
+## Evidence
+
+- Pattern in namingConventions.functions: camelCase
+
+---
+id: dasturkhon-instinct-class-naming
+trigger: "When defining a new class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Instinct Class Naming
+
+## Action
+
+Name the class using PascalCase
+
+## Evidence
+
+- Pattern in namingConventions.classes: PascalCase
+
+---
+id: dasturkhon-instinct-constant-naming
+trigger: "When declaring a constant"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Instinct Constant Naming
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant names
+
+## Evidence
+
+- Pattern in namingConventions.constants: SCREAMING_SNAKE_CASE
+
+---
+id: dasturkhon-instinct-import-style
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Instinct Import Style
+
+## Action
+
+Use relative import paths
+
+## Evidence
+
+- Pattern in importStyle: relative
+
+---
+id: dasturkhon-instinct-export-style
+trigger: "When exporting modules or functions"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Instinct Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in exportStyle: named
+
+---
+id: dasturkhon-instinct-commit-format
+trigger: "When writing a commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Instinct Commit Format
+
+## Action
+
+Use the conventional commit format with 'feat' as the prefix for new features
+
+## Evidence
+
+- Pattern in commits.prefixes: feat
+- Example: 'feat: edit recipe from detail modal + split cook time into hours/minutes'
+
+---
+id: dasturkhon-instinct-commit-length
+trigger: "When composing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Instinct Commit Length
+
+## Action
+
+Keep the commit message around 72 characters
+
+## Evidence
+
+- Pattern in commits.averageLength: 72
+
+---
+id: dasturkhon-instinct-error-handling
+trigger: "When handling potential errors in code"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Instinct Error Handling
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- Pattern in errorHandling.style: try-catch
+
+---
+id: dasturkhon-instinct-test-location
+trigger: "When adding new tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: asadbekxayitov1601-hash/Dasturkhon
+---
+
+# Dasturkhon Instinct Test Location
+
+## Action
+
+Place test files in a separate location from source files
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation: separate
+
