@@ -23,6 +23,18 @@
     100% { background-position: 200% 0; }
   }
 
+  /* Celebration confetti — GPU-only transform/opacity so 90+ pieces stay smooth.
+     Trajectory per piece is supplied via CSS vars (--dx/--dy/--rot/--dur). */
+  @keyframes dx-confetti {
+    0%   { transform: translate(0, 0) rotate(0); opacity: 1; }
+    65%  { opacity: 1; }
+    100% { transform: translate(var(--dx, 0), var(--dy, 0)) rotate(var(--rot, 0deg)); opacity: 0; }
+  }
+  .dx-confetti-piece {
+    animation: dx-confetti var(--dur, 1.8s) cubic-bezier(0.15, 0.6, 0.4, 1) forwards;
+    will-change: transform, opacity;
+  }
+
   .animate-fade-in  { animation: dx-fade-in 0.6s ease both; }
   .animate-scale-in { animation: dx-scale-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
   .animate-float    { animation: dx-float 5s ease-in-out infinite; }
