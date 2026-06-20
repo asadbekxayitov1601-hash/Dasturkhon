@@ -175,26 +175,32 @@ export function RecipeDetailModal({ recipe, isOpen, onClose, onEdited }: RecipeD
             </div>
           )}
 
-          {/* Watch video */}
+          {/* Watch video — uploaded clips play inline; external links open in a new tab */}
           {recipe.youtubeUrl && (
-            <div
-              className="mb-8 p-6 rounded-[24px] flex flex-wrap items-center justify-between gap-6"
-              style={{
-                background: 'linear-gradient(135deg, rgba(74,124,126,0.05), rgba(230,181,102,0.06))',
-                border: '1px solid rgba(74,124,126,0.12)',
-              }}
-            >
-              <a
-                href={recipe.youtubeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-[#FF0000] text-white rounded-full hover:bg-[#CC0000] transition-colors shadow-lg"
-                style={{ boxShadow: '0 4px 12px rgba(255,0,0,0.2)' }}
+            recipe.youtubeUrl.startsWith('data:') ? (
+              <div className="mb-8 rounded-[24px] overflow-hidden bg-black border" style={{ borderColor: 'rgba(74,124,126,0.12)' }}>
+                <video src={recipe.youtubeUrl} controls className="w-full max-h-[28rem]" />
+              </div>
+            ) : (
+              <div
+                className="mb-8 p-6 rounded-[24px] flex flex-wrap items-center justify-between gap-6"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(74,124,126,0.05), rgba(230,181,102,0.06))',
+                  border: '1px solid rgba(74,124,126,0.12)',
+                }}
               >
-                <PlayCircle className="w-5 h-5" />
-                <span className="font-medium">Watch Video</span>
-              </a>
-            </div>
+                <a
+                  href={recipe.youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-6 py-3 bg-[#FF0000] text-white rounded-full hover:bg-[#CC0000] transition-colors shadow-lg"
+                  style={{ boxShadow: '0 4px 12px rgba(255,0,0,0.2)' }}
+                >
+                  <PlayCircle className="w-5 h-5" />
+                  <span className="font-medium">{t('recipes.watch_video')}</span>
+                </a>
+              </div>
+            )
           )}
 
           {/* Ingredients */}
