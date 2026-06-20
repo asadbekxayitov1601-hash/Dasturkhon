@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
+import { formatCookTime } from '../lib/cookTime';
 import { ConfirmDialog } from './ConfirmDialog';
 
 interface RecipeCardProps {
@@ -89,7 +90,7 @@ export function RecipeCard({ recipe, isFavorite, onAddToShoppingList, onViewReci
             {recipe.cookTime && (
               <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-md rounded-full px-3 py-1 text-gray-700 text-xs font-medium border border-white/20 shadow-sm">
                 <Clock className="w-3.5 h-3.5 text-primary" />
-                <span>{recipe.cookTime}</span>
+                <span>{formatCookTime(recipe.cookTime, t)}</span>
               </div>
             )}
             {(recipe.reviewCount ?? 0) > 0 && (

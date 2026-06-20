@@ -1,7 +1,7 @@
 // src/app/components/RecipeDetailModal.tsx
 // Updated: added DeliveryLinks section between instructions and reviews
 
-import { X, Clock, ChefHat, PlayCircle, User as UserIcon } from 'lucide-react';
+import { X, Clock, ChefHat, PlayCircle, Pencil, User as UserIcon } from 'lucide-react';
 import { Star } from 'lucide-react';
 import { Recipe } from '../types/kitchen';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ReviewSection } from './ReviewSection';
 import { DeliveryLinks } from './DeliveryLinks'; // NEW
+import { SubmitRecipeModal } from './SubmitRecipeModal';
+import { formatCookTime } from '../lib/cookTime';
 import { getRecipeReviews, averageRating } from '../api/reviewsApi';
 import { recordView } from '../api/analyticsApi';
 import { useAuth } from '../auth/AuthProvider';
@@ -20,9 +22,10 @@ interface RecipeDetailModalProps {
   recipe: Recipe | null;
   isOpen: boolean;
   onClose: () => void;
+  onEdited?: () => void;
 }
 
-export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModalProps) {
+export function RecipeDetailModal({ recipe, isOpen, onClose, onEdited }: RecipeDetailModalProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -30,9 +33,11 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
   const [reviewCount, setReviewCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const authorId = recipe?.user?.id ?? recipe?.userId;
   const isOwnRecipe = !!user && Number(user.id) === Number(authorId);
+  const canEdit = !!user && (user.isAdmin || isOwnRecipe);
 
   useEffect(() => {
     if (recipe) {
@@ -75,6 +80,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
   if (!isOpen || !recipe) return null;
 
   return (
+    <>
     <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={onClose}
@@ -104,7 +110,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
               {recipe.cookTime && (
                 <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm rounded-full px-4 py-2">
                   <Clock className="w-4 h-4 text-white" />
-                  <span className="text-white text-sm">{recipe.cookTime}</span>
+                  <span className="text-white text-sm">{formatCookTime(recipe.cookTime, t)}</span>
                 </div>
               )}
               {recipe.category && (
@@ -128,34 +134,44 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
         <div className="p-6 sm:p-8">
 
           {/* Publisher (Instagram-style author row) */}
-          {recipe.user && authorId && (
+          {authorId && (
             <div className="flex items-center gap-3 mb-6">
               <button onClick={goToChef} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-                {recipe.user.avatarUrl ? (
+                {recipe.user?.avatarUrl ? (
                   <img src={recipe.user.avatarUrl} alt="" className="w-11 h-11 rounded-full object-cover ring-2 ring-white shadow" />
                 ) : (
                   <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold ring-2 ring-white shadow" style={{ background: 'linear-gradient(135deg, var(--primary), #5A9FA3)' }}>
-                    {(recipe.user.name || recipe.user.email || 'C').slice(0, 2).toUpperCase() || <UserIcon className="w-5 h-5" />}
+                    {(recipe.user?.name || recipe.user?.email || 'C').slice(0, 2).toUpperCase() || <UserIcon className="w-5 h-5" />}
                   </div>
                 )}
                 <div className="min-w-0">
                   <p className="text-sm font-semibold truncate" style={{ color: 'var(--foreground)' }}>
-                    {recipe.user.name || recipe.user.email?.split('@')[0] || t('chef.anonymous')}
+                    {recipe.user?.name || recipe.user?.email?.split('@')[0] || t('chef.anonymous')}
                   </p>
                   <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{t('chef.view_profile')}</p>
                 </div>
               </button>
-              {!isOwnRecipe && (
-                <button
-                  onClick={toggleFollow}
-                  disabled={followBusy}
-                  className={`shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-colors disabled:opacity-60 ${
-                    isFollowing ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-primary text-white hover:bg-primary/90'
-                  }`}
-                >
-                  {isFollowing ? t('chef.following') : t('chef.follow')}
-                </button>
-              )}
+              <div className="flex items-center gap-2 shrink-0">
+                {canEdit && (
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" /> {t('recipes.edit')}
+                  </button>
+                )}
+                {!isOwnRecipe && (
+                  <button
+                    onClick={toggleFollow}
+                    disabled={followBusy}
+                    className={`px-5 py-2 rounded-full text-sm font-semibold transition-colors disabled:opacity-60 ${
+                      isFollowing ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-primary text-white hover:bg-primary/90'
+                    }`}
+                  >
+                    {isFollowing ? t('chef.following') : t('chef.follow')}
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -237,5 +253,15 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
         </div>
       </div>
     </div>
+
+    {editing && (
+      <SubmitRecipeModal
+        isOpen={editing}
+        editRecipe={recipe}
+        onClose={() => setEditing(false)}
+        onSuccess={() => { setEditing(false); onEdited?.(); onClose(); }}
+      />
+    )}
+    </>
   );
 }

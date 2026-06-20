@@ -411,6 +411,7 @@ export function ChefProfilePage() {
         recipe={selectedRecipe}
         isOpen={!!selectedRecipe}
         onClose={() => setSelectedRecipe(null)}
+        onEdited={loadChef}
       />
 
       <FollowListModal
