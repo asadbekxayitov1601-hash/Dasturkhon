@@ -5,7 +5,6 @@ import { useAuth } from '../auth/AuthProvider';
 import { ChefHat, Mail, Lock, User, AlertCircle, KeyRound } from 'lucide-react';
 import { config } from '../config';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
-import { TelegramLoginButton } from '../components/TelegramLoginButton';
 import { authErrorMessage } from '../lib/authError';
 
 export function SignupPage() {
@@ -194,7 +193,6 @@ export function SignupPage() {
                 <GoogleSignInButton onError={setError} />
               </div>
             )}
-            <TelegramLoginButton onError={setError} />
           </>
         ) : (
           <form className="space-y-6" onSubmit={handleCodeSubmit}>

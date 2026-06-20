@@ -352,44 +352,67 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// ── Telegram login ──────────────────────────────────────────────────────────
-// The frontend Telegram Login Widget returns the signed-in user's data + a hash.
-// We verify the hash with the bot token, then find-or-create the user.
+// ── Telegram bot (Mini App) ───────────────────────────────────────────────────
+// The site runs as a Telegram Mini App. There is no login widget; instead, while
+// a logged-in user is inside Telegram, the frontend posts the WebApp initData to
+// /api/me/telegram-link so we can store their Telegram chat id. The bot then
+// notifies them (e.g. when a chef they follow publishes) via sendTelegramMessage.
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-app.post('/api/auth/telegram', async (req, res) => {
-  if (!TELEGRAM_BOT_TOKEN) {
-    return res.status(503).json({ message: 'Telegram login is not configured', code: 'telegram_not_configured' });
-  }
-  const { hash, ...fields } = req.body || {};
-  if (!hash || !fields.id) return res.status(400).json({ message: 'Invalid Telegram data', code: 'invalid_telegram' });
+// Verify Telegram Mini App initData and return the embedded `user` object, or
+// null if invalid. https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+function verifyTelegramInitData(initData) {
+  if (!TELEGRAM_BOT_TOKEN || !initData) return null;
   try {
-    // Verify the data really came from Telegram (HMAC-SHA256, key = SHA256(bot token)).
-    const checkString = Object.keys(fields).sort().map((k) => `${k}=${fields[k]}`).join('\n');
-    const secret = crypto.createHash('sha256').update(TELEGRAM_BOT_TOKEN).digest();
-    const hmac = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
-    if (hmac !== hash) return res.status(401).json({ message: 'Telegram verification failed', code: 'invalid_telegram' });
+    const params = new URLSearchParams(initData);
+    const hash = params.get('hash');
+    if (!hash) return null;
+    params.delete('hash');
+    const dataCheckString = [...params.entries()]
+      .map(([k, v]) => `${k}=${v}`)
+      .sort()
+      .join('\n');
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TELEGRAM_BOT_TOKEN).digest();
+    const computed = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+    if (computed !== hash) return null;
     // Reject stale payloads (older than 1 day).
-    if (Math.abs(Date.now() / 1000 - Number(fields.auth_date || 0)) > 86400) {
-      return res.status(401).json({ message: 'Telegram data expired', code: 'invalid_telegram' });
-    }
-    const telegramId = String(fields.id);
-    let user = await prisma.user.findFirst({ where: { telegramId } });
-    if (!user) {
-      const name = [fields.first_name, fields.last_name].filter(Boolean).join(' ').trim();
-      user = await prisma.user.create({
-        data: {
-          telegramId,
-          telegramUsername: fields.username || null,
-          name: name || null,
-          avatarUrl: fields.photo_url || null,
-          isAdmin: false,
-        },
-      });
-    }
-    res.json({ token: makeToken(user), user: publicUser(user) });
+    if (Math.abs(Date.now() / 1000 - Number(params.get('auth_date') || 0)) > 86400) return null;
+    const userJson = params.get('user');
+    return userJson ? JSON.parse(userJson) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Send a message via the Telegram Bot API (best-effort; never throws).
+async function sendTelegramMessage(chatId, text) {
+  if (!TELEGRAM_BOT_TOKEN || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
+    });
   } catch (e) {
-    console.error('telegram auth error:', e);
+    console.error('telegram send failed:', e?.message || e);
+  }
+}
+
+// Link the current account to the Telegram user it's opened by (inside the Mini App).
+app.post('/api/me/telegram-link', requireAuth, async (req, res) => {
+  const tgUser = verifyTelegramInitData(req.body?.initData);
+  if (!tgUser?.id) return res.status(400).json({ message: 'Invalid Telegram data', code: 'invalid_telegram' });
+  try {
+    const telegramId = String(tgUser.id);
+    // Single-owner: detach this telegram id from any other account first.
+    await prisma.user.updateMany({ where: { telegramId, NOT: { id: req.user.id } }, data: { telegramId: null } });
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { telegramId, telegramUsername: tgUser.username || null },
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('telegram link error:', e);
     res.status(500).json({ message: 'Server error', code: 'server_error' });
   }
 });
@@ -1414,7 +1437,7 @@ async function notifyFollowers(authorId, recipe) {
       prisma.user.findUnique({ where: { id: authorId }, select: { name: true } }),
       prisma.follow.findMany({
         where: { followingId: authorId },
-        select: { follower: { select: { id: true, email: true } } },
+        select: { follower: { select: { id: true, email: true, telegramId: true } } },
       }),
     ]);
     if (follows.length === 0) return;
@@ -1451,6 +1474,12 @@ async function notifyFollowers(authorId, recipe) {
           <p style="color:#7A8B99;font-size:12px;margin:0">You receive this because you follow ${authorName} on Dasturkhon.</p>
         </div>`,
       }).catch(err => console.error('follower email failed:', err?.message || err));
+    }
+
+    // Best-effort Telegram bot notifications (for followers who opened the Mini App).
+    const tgText = `🍽 ${authorName} published a new recipe: "${recipe.title}"\n${appUrl}`;
+    for (const f of follows) {
+      if (f.follower.telegramId) sendTelegramMessage(f.follower.telegramId, tgText);
     }
   } catch (e) {
     console.error('notifyFollowers error:', e);
