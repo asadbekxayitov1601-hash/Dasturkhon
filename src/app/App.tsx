@@ -5,6 +5,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Toaster } from 'sonner';
 import { Header } from './components/Header';
+import { Celebration } from './components/Celebration';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
@@ -26,7 +27,7 @@ import { PanLoader } from './components/PanLoader';
 
 // Wraps the routed pages so each navigation fades/slides in for a modern feel.
 // Routes that require a logged-in user. Everything else (notably "/") is public.
-const PROTECTED_PREFIXES = ['/recipes', '/pantry', '/shopping', '/favorites', '/profile', '/admin', '/chef'];
+const PROTECTED_PREFIXES = ['/pantry', '/shopping', '/favorites', '/profile', '/admin', '/chef'];
 
 function AnimatedRoutes({ dailyCalories }: { dailyCalories: number }) {
   const location = useLocation();
@@ -59,7 +60,7 @@ function AnimatedRoutes({ dailyCalories }: { dailyCalories: number }) {
           <Route path="/chef/:id" element={<ProtectedRoute><ChefProfilePage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          <Route path="/recipes" element={<ProtectedRoute><RecipesPage /></ProtectedRoute>} />
+          <Route path="/recipes" element={<RecipesPage />} />
           <Route path="/pantry" element={<ProtectedRoute><PantryPage /></ProtectedRoute>} />
           <Route path="/shopping" element={<ProtectedRoute><ShoppingListPage /></ProtectedRoute>} />
           <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
@@ -117,6 +118,7 @@ function App() {
 
           {/* QR sync removed */}
           <Toaster position="top-right" richColors duration={3000} />
+          <Celebration />
         </div>
       </DndProvider>
     </BrowserRouter>

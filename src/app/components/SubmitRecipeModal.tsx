@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { createRecipe, updateRecipe } from '../api/recipesApi';
 import { Recipe } from '../types/kitchen';
 import { parseCookTime, composeCookTime } from '../lib/cookTime';
+import { celebrate } from '../lib/celebrate';
 import { ListInput } from './ListInput';
 import { X, Plus, Pencil, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
@@ -126,10 +127,10 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess, editRecipe }: Su
 
             if (isEdit && editRecipe) {
                 await updateRecipe(editRecipe.id, payload);
-                toast.success(t('recipe_form.updated'));
+                celebrate(t('recipe_form.updated'));
             } else {
                 await createRecipe(payload);
-                toast.success(user?.isAdmin ? t('recipe_form.created') : t('recipe_form.submitted'));
+                celebrate(user?.isAdmin ? t('recipe_form.created') : t('recipe_form.submitted'));
             }
 
             setFormData({ ...emptyForm });

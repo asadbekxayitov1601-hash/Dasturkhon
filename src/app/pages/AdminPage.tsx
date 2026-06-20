@@ -6,6 +6,7 @@ import { getRecipes, createRecipe, deleteRecipe, getPendingRecipes, updateRecipe
 import { getAdminStats, AdminStats } from '../api/adminApi';
 import { Recipe } from '../types/kitchen';
 import { composeCookTime, formatCookTime } from '../lib/cookTime';
+import { celebrate } from '../lib/celebrate';
 import { Trash2, Plus, LogOut, X as XIcon, Clock, Users, Wifi, UserPlus, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -79,7 +80,7 @@ export function AdminPage() {
                 isPro: formData.isPro
             });
 
-            toast.success('Recipe created!');
+            celebrate('Recipe created!');
             setFormData({
                 title: '',
                 image: '',
