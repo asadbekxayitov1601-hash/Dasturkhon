@@ -86,19 +86,28 @@ export function NotificationBell() {
               {items.length === 0 ? (
                 <p className="px-3 py-6 text-center text-sm text-gray-400">{t('notif.empty')}</p>
               ) : (
-                items.map((n) => (
-                  <button
-                    key={n.id}
-                    onClick={() => go(n)}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors flex gap-2 ${n.read ? '' : 'bg-primary/5'}`}
-                  >
-                    <span className="mt-1.5 w-2 h-2 rounded-full shrink-0" style={{ background: n.read ? 'transparent' : 'var(--primary)' }} />
-                    <span className="text-sm text-gray-700 leading-snug">
-                      <span className="font-medium">{t('notif.new_recipe', { name: n.actorName || t('chef.anonymous') })}</span>
-                      {n.recipeTitle && <span className="text-gray-500">: {n.recipeTitle}</span>}
-                    </span>
-                  </button>
-                ))
+                items.map((n) => {
+                  const name = n.actorName || t('chef.anonymous');
+                  const labelKey =
+                    n.type === 'follow' ? 'notif.follow'
+                    : n.type === 'review' ? 'notif.review'
+                    : 'notif.new_recipe';
+                  // Only recipe-related notifications carry a title to append.
+                  const showTitle = n.type !== 'follow' && n.recipeTitle;
+                  return (
+                    <button
+                      key={n.id}
+                      onClick={() => go(n)}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors flex gap-2 ${n.read ? '' : 'bg-primary/5'}`}
+                    >
+                      <span className="mt-1.5 w-2 h-2 rounded-full shrink-0" style={{ background: n.read ? 'transparent' : 'var(--primary)' }} />
+                      <span className="text-sm text-gray-700 leading-snug">
+                        <span className="font-medium">{t(labelKey, { name })}</span>
+                        {showTitle && <span className="text-gray-500">: {n.recipeTitle}</span>}
+                      </span>
+                    </button>
+                  );
+                })
               )}
             </motion.div>
         )}

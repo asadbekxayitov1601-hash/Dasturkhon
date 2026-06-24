@@ -417,6 +417,49 @@ app.post('/api/me/telegram-link', requireAuth, async (req, res) => {
   }
 });
 
+// ── Telegram Login Widget (register / log in from the normal website) ──────────
+// The frontend Telegram Login Widget returns the signed-in user's data + a hash.
+// We verify the hash with the bot token, then find-or-create the user. This is
+// the classic widget flow (distinct from the Mini App initData flow above) and
+// lets people register or log in with Telegram from the website. A widget user
+// has a telegramId but no email, so they receive notifications via the bot.
+app.post('/api/auth/telegram', async (req, res) => {
+  if (!TELEGRAM_BOT_TOKEN) {
+    return res.status(503).json({ message: 'Telegram login is not configured', code: 'telegram_not_configured' });
+  }
+  const { hash, ...fields } = req.body || {};
+  if (!hash || !fields.id) return res.status(400).json({ message: 'Invalid Telegram data', code: 'invalid_telegram' });
+  try {
+    // Verify the data really came from Telegram (HMAC-SHA256, key = SHA256(bot token)).
+    const checkString = Object.keys(fields).sort().map((k) => `${k}=${fields[k]}`).join('\n');
+    const secret = crypto.createHash('sha256').update(TELEGRAM_BOT_TOKEN).digest();
+    const hmac = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
+    if (hmac !== hash) return res.status(401).json({ message: 'Telegram verification failed', code: 'invalid_telegram' });
+    // Reject stale payloads (older than 1 day).
+    if (Math.abs(Date.now() / 1000 - Number(fields.auth_date || 0)) > 86400) {
+      return res.status(401).json({ message: 'Telegram data expired', code: 'invalid_telegram' });
+    }
+    const telegramId = String(fields.id);
+    let user = await prisma.user.findFirst({ where: { telegramId } });
+    if (!user) {
+      const name = [fields.first_name, fields.last_name].filter(Boolean).join(' ').trim();
+      user = await prisma.user.create({
+        data: {
+          telegramId,
+          telegramUsername: fields.username || null,
+          name: name || null,
+          avatarUrl: fields.photo_url || null,
+          isAdmin: false,
+        },
+      });
+    }
+    res.json({ token: makeToken(user), user: publicUser(user) });
+  } catch (e) {
+    console.error('telegram auth error:', e);
+    res.status(500).json({ message: 'Server error', code: 'server_error' });
+  }
+});
+
 // ── Password reset via emailed code ──────────────────────────────────────────
 // Request a reset code by email.
 app.post('/api/auth/forgot', async (req, res) => {
@@ -913,6 +956,9 @@ app.post('/api/recipes/:id/reviews', requireAuth, async (req, res) => {
       }
     });
 
+    // Notify the recipe's author (best-effort, never blocks the response).
+    notifyReview(req.user.id, recipe, Number(rating));
+
     res.json(review);
   } catch (e) {
     console.error(e);
@@ -1090,11 +1136,15 @@ app.post('/api/chefs/:id/follow', requireAuth, async (req, res) => {
     const chef = await prisma.user.findUnique({ where: { id: followingId } });
     if (!chef) return res.status(404).json({ message: 'Chef not found' });
 
-    await prisma.follow.upsert({
-      where: { followerId_followingId: { followerId: req.user.id, followingId } },
-      create: { followerId: req.user.id, followingId },
-      update: {}
+    // Create the follow only if it doesn't exist yet, so we notify exactly once
+    // (re-following is a harmless no-op and won't re-send a notification).
+    const already = await prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId: req.user.id, followingId } }
     });
+    if (!already) {
+      await prisma.follow.create({ data: { followerId: req.user.id, followingId } });
+      notifyNewFollower(req.user.id, followingId); // best-effort, never blocks the response
+    }
 
     const count = await prisma.follow.count({ where: { followingId } });
     res.json({ ok: true, followerCount: count });
@@ -1483,6 +1533,100 @@ async function notifyFollowers(authorId, recipe) {
     }
   } catch (e) {
     console.error('notifyFollowers error:', e);
+  }
+}
+
+// Best-effort out-of-app delivery to a single recipient. The in-app bell row is
+// created by the caller; this only handles email + Telegram and never throws.
+// A user registered via email/Google has an `email` (gets an email); a user
+// registered via the Telegram widget has a `telegramId` (gets a bot message).
+function deliverExternalAlert(recipient, { subject, text, html, tgText }) {
+  if (!recipient) return;
+  if (recipient.email && subject) {
+    sendMail({ to: recipient.email, subject, text, html })
+      .catch(err => console.error('alert email failed:', err?.message || err));
+  }
+  if (recipient.telegramId && tgText) {
+    sendTelegramMessage(recipient.telegramId, tgText);
+  }
+}
+
+// Notify a user that someone started following them (bell + email/Telegram).
+async function notifyNewFollower(followerId, followedId) {
+  try {
+    if (followerId === followedId) return;
+    const [follower, followed] = await Promise.all([
+      prisma.user.findUnique({ where: { id: followerId }, select: { name: true } }),
+      prisma.user.findUnique({ where: { id: followedId }, select: { id: true, email: true, telegramId: true } }),
+    ]);
+    if (!followed) return;
+    const followerName = follower?.name || 'Someone';
+
+    await prisma.notification.create({
+      data: {
+        userId: followedId,
+        type: 'follow',
+        actorId: followerId,
+        actorName: follower?.name || null,
+      },
+    });
+
+    const appUrl = process.env.APP_URL || 'https://dasturkhon.vercel.app';
+    deliverExternalAlert(followed, {
+      subject: `${followerName} started following you on Dasturkhon`,
+      text: `${followerName} started following you on Dasturkhon. Open the app: ${appUrl}`,
+      html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:8px">
+        <h2 style="color:#4A7C7E;margin:0 0 12px">New follower</h2>
+        <p style="font-size:16px;color:#2C3E50;margin:0 0 16px"><strong>${followerName}</strong> started following you.</p>
+        <p style="margin:0 0 20px"><a href="${appUrl}" style="display:inline-block;background:#4A7C7E;color:#fff;padding:11px 22px;border-radius:12px;text-decoration:none;font-weight:600">Open Dasturkhon</a></p>
+        <p style="color:#7A8B99;font-size:12px;margin:0">You receive this because you have an account on Dasturkhon.</p>
+      </div>`,
+      tgText: `👤 ${followerName} started following you on Dasturkhon.\n${appUrl}`,
+    });
+  } catch (e) {
+    console.error('notifyNewFollower error:', e);
+  }
+}
+
+// Notify a recipe's author that someone reviewed it (bell + email/Telegram).
+async function notifyReview(reviewerId, recipe, rating) {
+  try {
+    const authorId = recipe.userId;
+    if (!authorId || authorId === reviewerId) return; // don't notify self-reviews
+    const [reviewer, author] = await Promise.all([
+      prisma.user.findUnique({ where: { id: reviewerId }, select: { name: true } }),
+      prisma.user.findUnique({ where: { id: authorId }, select: { id: true, email: true, telegramId: true } }),
+    ]);
+    if (!author) return;
+    const reviewerName = reviewer?.name || 'Someone';
+
+    await prisma.notification.create({
+      data: {
+        userId: authorId,
+        type: 'review',
+        actorId: reviewerId,
+        actorName: reviewer?.name || null,
+        recipeId: recipe.id,
+        recipeTitle: recipe.title,
+      },
+    });
+
+    const appUrl = process.env.APP_URL || 'https://dasturkhon.vercel.app';
+    const stars = '⭐'.repeat(Math.max(1, Math.min(5, Number(rating) || 0)));
+    deliverExternalAlert(author, {
+      subject: `${reviewerName} reviewed your recipe: ${recipe.title}`,
+      text: `${reviewerName} left a ${rating}-star review on "${recipe.title}". Open the app: ${appUrl}`,
+      html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:8px">
+        <h2 style="color:#4A7C7E;margin:0 0 12px">New review</h2>
+        <p style="font-size:16px;color:#2C3E50;margin:0 0 8px"><strong>${reviewerName}</strong> reviewed <strong>${recipe.title}</strong>.</p>
+        <p style="font-size:16px;margin:0 0 16px">${stars}</p>
+        <p style="margin:0 0 20px"><a href="${appUrl}" style="display:inline-block;background:#4A7C7E;color:#fff;padding:11px 22px;border-radius:12px;text-decoration:none;font-weight:600">View on Dasturkhon</a></p>
+        <p style="color:#7A8B99;font-size:12px;margin:0">You receive this because you published this recipe on Dasturkhon.</p>
+      </div>`,
+      tgText: `${stars} ${reviewerName} reviewed your recipe "${recipe.title}".\n${appUrl}`,
+    });
+  } catch (e) {
+    console.error('notifyReview error:', e);
   }
 }
 

@@ -338,7 +338,9 @@
   "notif": {
     "title": "Bildirishnomalar",
     "empty": "Hozircha bildirishnomalar yo'q",
-    "new_recipe": "{{name}} yangi retsept e'lon qildi"
+    "new_recipe": "{{name}} yangi retsept e'lon qildi",
+    "follow": "{{name}} sizni kuzatishni boshladi",
+    "review": "{{name}} retseptingizga sharh qoldirdi"
   },
   "account": {
     "delete": "Akkauntni o'chirish",

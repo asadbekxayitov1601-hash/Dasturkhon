@@ -338,7 +338,9 @@
   "notif": {
     "title": "Notifications",
     "empty": "No notifications yet",
-    "new_recipe": "{{name}} published a new recipe"
+    "new_recipe": "{{name}} published a new recipe",
+    "follow": "{{name}} started following you",
+    "review": "{{name}} reviewed your recipe"
   },
   "account": {
     "delete": "Delete account",
