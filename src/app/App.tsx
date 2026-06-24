@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Toaster } from 'sonner';
+import { Analytics } from '@vercel/analytics/react';
 import { Header } from './components/Header';
 import { Celebration } from './components/Celebration';
 import { LoginPage } from './pages/LoginPage';
@@ -119,6 +120,7 @@ function App() {
           {/* QR sync removed */}
           <Toaster position="top-right" richColors duration={3000} />
           <Celebration />
+          <Analytics />
         </div>
       </DndProvider>
     </BrowserRouter>
