@@ -10,6 +10,8 @@ export interface Review {
   rating: number;
   comment?: string | null;
   photoUrl?: string | null;
+  reply?: string | null;       // recipe author's reply
+  repliedAt?: string | null;   // when the author replied
   createdAt: string;
   user: {
     id: number;
@@ -71,6 +73,24 @@ export async function deleteReview(reviewId: number): Promise<void> {
     const data = await res.json();
     throw new Error(data.message || 'Failed to delete review');
   }
+}
+
+// Recipe author (or admin) posts/updates a reply to a review.
+export async function replyToReview(reviewId: number, reply: string): Promise<Review> {
+  const res = await authFetch(`/api/reviews/${reviewId}/reply`, {
+    method: 'POST',
+    body: JSON.stringify({ reply }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to post reply');
+  return data;
+}
+
+export async function deleteReviewReply(reviewId: number): Promise<Review> {
+  const res = await authFetch(`/api/reviews/${reviewId}/reply`, { method: 'DELETE' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to remove reply');
+  return data;
 }
 
 export function averageRating(reviews: Review[]): number {

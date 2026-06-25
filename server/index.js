@@ -1064,6 +1064,59 @@ app.get('/api/recipes/:id/reviews/me', requireAuth, async (req, res) => {
   }
 });
 
+// Only the recipe's author (or an admin) may reply to a review on it.
+const reviewReplySelect = { user: { select: { id: true, name: true, email: true, avatarUrl: true } } };
+async function loadReviewForReply(id, user) {
+  if (!Number.isInteger(id)) return { error: 'Review not found', status: 404 };
+  const review = await prisma.review.findUnique({
+    where: { id },
+    include: { recipe: { select: { userId: true } } },
+  });
+  if (!review) return { error: 'Review not found', status: 404 };
+  if (!user.isAdmin && review.recipe.userId !== user.id) {
+    return { error: 'Only the recipe author can reply', status: 403, code: 'not_recipe_author' };
+  }
+  return { review };
+}
+
+// POST /api/reviews/:id/reply — add or update the author's reply.
+app.post('/api/reviews/:id/reply', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const reply = typeof req.body?.reply === 'string' ? req.body.reply.trim() : '';
+    if (!reply) return res.status(400).json({ message: 'Reply cannot be empty', code: 'reply_required' });
+    const { error, status, code } = await loadReviewForReply(id, req.user);
+    if (error) return res.status(status).json({ message: error, code });
+    const updated = await prisma.review.update({
+      where: { id },
+      data: { reply, repliedAt: new Date() },
+      include: reviewReplySelect,
+    });
+    res.json(updated);
+  } catch (e) {
+    console.error('review reply error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// DELETE /api/reviews/:id/reply — remove the author's reply.
+app.delete('/api/reviews/:id/reply', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { error, status, code } = await loadReviewForReply(id, req.user);
+    if (error) return res.status(status).json({ message: error, code });
+    const updated = await prisma.review.update({
+      where: { id },
+      data: { reply: null, repliedAt: null },
+      include: reviewReplySelect,
+    });
+    res.json(updated);
+  } catch (e) {
+    console.error('review reply delete error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CHEF PROFILE & FOLLOW ROUTES
 // Paste these into server/index.js before the app.listen() call
@@ -1821,8 +1874,42 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Server error' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server listening on port ${PORT}`);
+// Additive, idempotent schema guards applied at boot on Postgres (prod).
+// We deliberately do NOT use `prisma db push` on deploy: the prod DB carries
+// tables/columns that aren't in the Prisma schema (legacy `Order` table, a
+// `price` column), so `db push` would try to drop them — aborting the boot
+// (without --accept-data-loss) or destroying data (with it). These targeted
+// `ADD COLUMN IF NOT EXISTS` statements only ever ADD, never drop, so they are
+// safe with drift and let new columns reach prod automatically on deploy.
+async function ensureSchema() {
+  const stmts = [
+    'ALTER TABLE "Recipe" ADD COLUMN IF NOT EXISTS "orderable" BOOLEAN NOT NULL DEFAULT false',
+    'ALTER TABLE "Recipe" ADD COLUMN IF NOT EXISTS "orderPhone" TEXT',
+    'ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "reply" TEXT',
+    'ALTER TABLE "Review" ADD COLUMN IF NOT EXISTS "repliedAt" TIMESTAMP(3)',
+  ];
+  for (const sql of stmts) {
+    try {
+      await prisma.$executeRawUnsafe(sql);
+    } catch (e) {
+      console.error('ensureSchema failed for:', sql, '-', e?.message || e);
+    }
+  }
+}
+
+async function start() {
+  // Only Postgres (prod) needs this; dev uses sqlite via `prisma db push`.
+  if ((process.env.DATABASE_URL || '').includes('postgres')) {
+    await ensureSchema();
+  }
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
+}
+
+start().catch((e) => {
+  console.error('startup error:', e);
+  process.exit(1);
 });
 
 export default app;

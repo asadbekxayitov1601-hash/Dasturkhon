@@ -5,7 +5,7 @@
     "buildCommand": "node scripts/prepare-schema.cjs && cd server && npm install && npx prisma generate"
   },
   "deploy": {
-    "startCommand": "cd server && npx prisma db push --skip-generate && node index.js",
+    "startCommand": "cd server && node index.js",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",

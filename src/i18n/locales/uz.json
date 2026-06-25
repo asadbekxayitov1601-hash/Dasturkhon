@@ -329,7 +329,18 @@
     "no_reviews": "Hali hech kim sharh qoldirmagan. Birinchi bo'ling!",
     "login_to_review": "Sharh qoldirish uchun tizimga kiring.",
     "rating_required": "Iltimos, yulduz bahosini tanlang",
-    "photo_too_large": "Rasm 3MB dan kichik bo'lishi kerak"
+    "photo_too_large": "Rasm 3MB dan kichik bo'lishi kerak",
+    "edit_review": "Sharhni tahrirlash",
+    "delete_review": "Sharhni o'chirish",
+    "reply": "Javob berish",
+    "reply_placeholder": "Ushbu sharhga javob yozing…",
+    "reply_submit": "Javobni joylash",
+    "author_reply": "Muallif javobi",
+    "edit_reply": "Javobni tahrirlash",
+    "delete_reply": "Javobni o'chirish",
+    "reply_added": "Javob joylandi",
+    "reply_deleted": "Javob o'chirildi",
+    "reply_error": "Javobni yangilab bo'lmadi"
   },
   "common": {
     "back": "Orqaga",

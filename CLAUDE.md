@@ -32,10 +32,13 @@ Languages: Uzbek (Latin) + Russian are first-class; English third.
   (VerificationCode table), never in-memory Maps — Railway is ephemeral.
 - TWO schemas: `schema.prisma` (sqlite, dev) + `schema.prod.prisma` (postgres).
   Update BOTH. After schema edits: `cd server && npx prisma db push` (dev).
-  Prod (Railway) auto-applies the schema on boot: `startCommand` runs
-  `prisma db push --skip-generate && node index.js` (non-destructive — additive
-  changes apply automatically on deploy; a change needing data loss fails the
-  boot instead of silently dropping data, so handle those deliberately).
+  Prod is NOT migrated with `prisma db push` — the prod DB has objects not in
+  the Prisma schema (legacy `Order` table, a `price` column on Recipe), so
+  `db push` would try to drop them (abort the boot, or destroy data). Instead,
+  add the new column to `ensureSchema()` in server/index.js as an additive
+  `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` — it runs at boot on Postgres only,
+  is idempotent and drift-safe (only ever ADDs), so new columns reach prod
+  automatically on deploy. Destructive changes must be done deliberately by hand.
 - Be careful adding `@unique` to existing columns — it can break prod `db push`.
   Enforce uniqueness in app logic for new optional columns (googleId, phone, telegramId).
 - Frontend talks to the API same-origin in prod (config.ts); Vercel rewrites
