@@ -95,13 +95,21 @@ function ReviewCard({
       style={{ border: '1px solid rgba(74, 124, 126, 0.12)' }}
     >
       <div className="flex items-start gap-3">
-        {/* Avatar */}
-        <div 
-          className="w-10 h-10 rounded-full text-white flex items-center justify-center text-sm font-semibold flex-shrink-0"
-          style={{ background: 'linear-gradient(to bottom right, var(--primary), rgba(74, 124, 126, 0.6))' }}
-        >
-          {initials}
-        </div>
+        {/* Avatar — the reviewer's uploaded photo, falling back to initials */}
+        {review.user.avatarUrl ? (
+          <img
+            src={review.user.avatarUrl}
+            alt={displayName}
+            className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-sm"
+          />
+        ) : (
+          <div
+            className="w-10 h-10 rounded-full text-white flex items-center justify-center text-sm font-semibold flex-shrink-0"
+            style={{ background: 'linear-gradient(to bottom right, var(--primary), rgba(74, 124, 126, 0.6))' }}
+          >
+            {initials}
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 flex-wrap">

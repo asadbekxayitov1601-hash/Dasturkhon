@@ -87,6 +87,8 @@ model Recipe {
   instructions String
   youtubeUrl   String?
   isPro        Boolean    @default(false)
+  orderable    Boolean    @default(false) // NEW: chef takes direct orders for this dish
+  orderPhone   String?    // NEW: phone the chef entered for call-to-order (orderable only)
   status       String     @default("pending")
   userId       Int
   user         User       @relation(fields: [userId], references: [id])

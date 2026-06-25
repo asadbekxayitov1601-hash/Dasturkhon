@@ -188,6 +188,13 @@ export function ProfilePage() {
               <>
                 <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>{user.name || 'Your Name'}</h1>
                 <p className="text-sm mb-1" style={{ color: 'var(--muted-foreground)' }}>{user.email || user.phone}</p>
+                {profile && profile.reviewCount > 0 && (
+                  <div className="flex items-center justify-center sm:justify-start gap-1 mb-1">
+                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    <span className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{profile.avgRating.toFixed(1)}</span>
+                    <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>({profile.reviewCount})</span>
+                  </div>
+                )}
                 {user.bio && <p className="text-sm mb-3" style={{ color: 'var(--foreground)' }}>{user.bio}</p>}
                 {user.socialLinks && (
                   <div className="flex justify-center sm:justify-start mb-3">
@@ -251,7 +258,11 @@ export function ProfilePage() {
               {myRecipes.map((r) => (
                 <button
                   key={r.id}
-                  onClick={() => setSelectedRecipe(r as unknown as Recipe)}
+                  onClick={() => setSelectedRecipe({
+                    ...(r as unknown as Recipe),
+                    userId: Number(user.id),
+                    user: { id: Number(user.id), name: user.name, avatarUrl: user.avatarUrl, rating: profile?.avgRating, reviewCount: profile?.reviewCount },
+                  })}
                   className="group relative rounded-2xl overflow-hidden aspect-square bg-gray-100"
                 >
                   <ImageWithFallback src={r.image} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />

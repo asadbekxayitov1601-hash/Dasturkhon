@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Plus, Clock, ChefHat } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Recipe } from '../types/kitchen';
@@ -14,6 +15,18 @@ import { motion } from 'framer-motion';
 export function RecipesPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // The Add Recipe button is always visible; logged-out users are sent to the
+  // login page (and returned here afterwards) instead of opening the form.
+  const handleAddRecipe = () => {
+    if (!user) {
+      try { sessionStorage.setItem('redirectAfterLogin', '/recipes'); } catch { /* ignore */ }
+      navigate('/login');
+      return;
+    }
+    setIsSubmitModalOpen(true);
+  };
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -133,15 +146,13 @@ export function RecipesPage() {
             </p>
           </div>
 
-          {user && (
-            <button
-              onClick={() => setIsSubmitModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-            >
-              <Plus className="w-5 h-5" />
-              <span>{t('recipes.add', 'Add Recipe')}</span>
-            </button>
-          )}
+          <button
+            onClick={handleAddRecipe}
+            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          >
+            <Plus className="w-5 h-5" />
+            <span>{t('recipes.add', 'Add Recipe')}</span>
+          </button>
         </div>
 
         {loading ? (

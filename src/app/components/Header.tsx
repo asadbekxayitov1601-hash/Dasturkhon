@@ -19,6 +19,7 @@ export function Header() {
   const navItems = [
     { path: '/', label: t('nav.home') },
     { path: '/recipes', label: t('nav.recipes') },
+    { path: '/rating', label: t('nav.rating') },
     { path: '/pantry', label: t('nav.pantry') },
     { path: '/shopping', label: t('nav.shopping') },
   ];
@@ -152,9 +153,9 @@ export function Header() {
                   <div className="flex items-center gap-3">
                     <NotificationBell />
                     <Link to="/profile" className="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-primary transition-colors">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary relative">
-                        {auth.user.photoURL ? (
-                          <img src={auth.user.photoURL} alt={auth.user.name} className="w-full h-full rounded-full object-cover" />
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary relative overflow-hidden">
+                        {auth.user.avatarUrl || auth.user.photoURL ? (
+                          <img src={auth.user.avatarUrl || auth.user.photoURL} alt={auth.user.name} className="w-full h-full rounded-full object-cover" />
                         ) : (
                           <User className="w-4 h-4" />
                         )}
@@ -315,8 +316,12 @@ export function Header() {
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-700 hover:bg-gray-50"
                       >
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary relative">
-                          <User className="w-4 h-4" />
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary relative overflow-hidden">
+                          {auth.user.avatarUrl || auth.user.photoURL ? (
+                            <img src={auth.user.avatarUrl || auth.user.photoURL} alt={auth.user.name} className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            <User className="w-4 h-4" />
+                          )}
                         </div>
                         <span className="font-medium">{t('header.profile_name', { name: auth.user.name })}</span>
                       </Link>

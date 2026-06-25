@@ -27,6 +27,8 @@ export interface ChefProfile {
   followerCount: number;
   followingCount: number;
   recipeCount: number;
+  avgRating: number;   // chef's overall rating across all approved recipes (0 if none)
+  reviewCount: number; // total reviews across all approved recipes
 }
 
 export interface ChefRecipe {
@@ -40,9 +42,47 @@ export interface ChefRecipe {
   instructions: string[];
   youtubeUrl?: string | null;
   isPro: boolean;
+  orderable?: boolean;
+  orderPhone?: string | null;
   createdAt: string;
   reviewCount: number;
   avgRating: number | null;
+}
+
+// Aggregate stats for a single chef (used by the recipe modal).
+export interface ChefStats {
+  recipeCount: number;
+  reviewCount: number;
+  followerCount: number;
+  avgRating: number;
+}
+
+// One row of the chefs leaderboard / rating page.
+export interface ChefLeaderboardEntry {
+  id: number;
+  name: string | null;
+  email: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  isPro: boolean;
+  recipeCount: number;
+  reviewCount: number;
+  followerCount: number;
+  avgRating: number;
+}
+
+export type ChefSort = 'recipes' | 'rating' | 'followers';
+
+export async function getChefLeaderboard(sort: ChefSort = 'recipes'): Promise<ChefLeaderboardEntry[]> {
+  const res = await fetch(`${API}/api/chefs?sort=${encodeURIComponent(sort)}`);
+  if (!res.ok) throw new Error('Failed to load chefs');
+  return res.json();
+}
+
+export async function getChefStats(chefId: number | string): Promise<ChefStats> {
+  const res = await fetch(`${API}/api/chefs/${chefId}/stats`);
+  if (!res.ok) throw new Error('Failed to load chef stats');
+  return res.json();
 }
 
 export interface UserLite {

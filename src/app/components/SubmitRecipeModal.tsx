@@ -6,7 +6,7 @@ import { Recipe } from '../types/kitchen';
 import { parseCookTime, composeCookTime } from '../lib/cookTime';
 import { celebrate } from '../lib/celebrate';
 import { ListInput } from './ListInput';
-import { X, Plus, Pencil, Loader2, Upload } from 'lucide-react';
+import { X, Plus, Pencil, Loader2, Upload, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -25,6 +25,8 @@ const emptyForm = {
     servings: 4,
     category: 'main',
     youtubeUrl: '',
+    orderable: false,
+    orderPhone: '',
     ingredients: [''] as string[],
     instructions: [''] as string[],
 };
@@ -52,6 +54,8 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess, editRecipe }: Su
                 servings: editRecipe.servings ?? 4,
                 category: editRecipe.category || 'main',
                 youtubeUrl: editRecipe.youtubeUrl || '',
+                orderable: !!editRecipe.orderable,
+                orderPhone: editRecipe.orderPhone || '',
                 ingredients: editRecipe.ingredients?.length ? editRecipe.ingredients : [''],
                 instructions: editRecipe.instructions?.length ? editRecipe.instructions : [''],
             });
@@ -113,13 +117,16 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess, editRecipe }: Su
             const ingredients = formData.ingredients.map(s => s.trim()).filter(Boolean);
             const instructions = formData.instructions.map(s => s.trim()).filter(Boolean);
 
+            if (!formData.image.trim()) { toast.error(t('recipe_form.image_required')); setLoading(false); return; }
             if (ingredients.length === 0) { toast.error(t('recipe_form.need_ingredient')); setLoading(false); return; }
             if (instructions.length === 0) { toast.error(t('recipe_form.need_instruction')); setLoading(false); return; }
             if (formData.hours === 0 && formData.minutes === 0) { toast.error(t('recipe_form.need_cook_time')); setLoading(false); return; }
+            if (formData.orderable && !formData.orderPhone.trim()) { toast.error(t('recipe_form.order_phone_required')); setLoading(false); return; }
 
             const { hours, minutes, ...rest } = formData;
             const payload = {
                 ...rest,
+                orderPhone: formData.orderable ? formData.orderPhone.trim() : '',
                 cookTime: composeCookTime(hours, minutes),
                 ingredients,
                 instructions,
@@ -302,6 +309,46 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess, editRecipe }: Su
                                 <option value="bread">{t('categories.bread')}</option>
                                 <option value="drink">{t('categories.drink')}</option>
                             </select>
+                        </div>
+                        {/* Orderable: chef takes direct orders (call-to-order). The site
+                            is not involved in the order — buyers call the chef directly. */}
+                        <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <label htmlFor="recipe-orderable" className="flex items-center gap-2 text-sm font-medium text-gray-800 cursor-pointer">
+                                        <Phone className="w-4 h-4 text-primary" />
+                                        {t('recipe_form.orderable')}
+                                    </label>
+                                    <p className="text-xs text-gray-500 mt-1">{t('recipe_form.orderable_hint')}</p>
+                                </div>
+                                <button
+                                    id="recipe-orderable"
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={formData.orderable}
+                                    onClick={() => setFormData({ ...formData, orderable: !formData.orderable })}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${formData.orderable ? 'bg-primary' : 'bg-gray-300'}`}
+                                >
+                                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${formData.orderable ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                                </button>
+                            </div>
+
+                            {formData.orderable && (
+                                <div className="mt-3">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('recipe_form.order_phone')}</label>
+                                    <div className="relative">
+                                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <input
+                                            type="tel"
+                                            required={formData.orderable}
+                                            value={formData.orderPhone}
+                                            onChange={e => setFormData({ ...formData, orderPhone: e.target.value })}
+                                            className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/50 outline-none"
+                                            placeholder={t('recipe_form.order_phone_ph')}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">{t('recipe_form.video')}</label>

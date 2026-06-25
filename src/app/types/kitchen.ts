@@ -21,9 +21,11 @@ export interface Recipe {
   status?: 'pending' | 'approved' | 'rejected';
   userId?: number;
   isPro?: boolean;
+  orderable?: boolean;   // chef takes direct orders for this dish
+  orderPhone?: string | null; // phone for the call-to-order link (orderable only)
   rating?: number;       // average review rating (0 if none)
   reviewCount?: number;  // number of reviews
-  user?: { id?: number; name?: string | null; email?: string; avatarUrl?: string | null };
+  user?: { id?: number; name?: string | null; email?: string; avatarUrl?: string | null; rating?: number; reviewCount?: number };
   createdAt?: string;
 }
 
