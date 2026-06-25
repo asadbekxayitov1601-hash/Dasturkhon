@@ -195,10 +195,16 @@ function optionalAuth(req, _res, next) {
   next();
 }
 
+// Emailed verification codes for signup + login 2FA are OFF by default.
+// Set EMAIL_CODE_ENABLED=true to require the emailed code again. (Password
+// reset still uses an emailed code — that flow proves email ownership.)
+const EMAIL_CODE_ENABLED = process.env.EMAIL_CODE_ENABLED === 'true';
+
 // ── Signup with email verification code ─────────────────────────────────────
 // Step 1 (signup-request) validates input, stores the pending account (as a DB
 // verification code with the name+passwordHash payload) and emails a 6-digit
 // code. Step 2 (signup-verify) checks the code and creates the real account.
+// When EMAIL_CODE_ENABLED is false, the account is created immediately instead.
 app.post('/api/auth/signup-request', async (req, res) => {
   const { name, email, password } = req.body;
   if (typeof email !== 'string' || typeof password !== 'string') {
@@ -215,6 +221,21 @@ app.post('/api/auth/signup-request', async (req, res) => {
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) return res.status(409).json({ message: 'Email already registered', code: 'email_taken' });
     const passwordHash = await bcrypt.hash(password, 10);
+
+    // Verification disabled: create the account now and return the session token.
+    if (!EMAIL_CODE_ENABLED) {
+      const user = await prisma.user.create({
+        data: {
+          name: typeof name === 'string' ? name.trim() : '',
+          email: normalizedEmail,
+          passwordHash,
+          emailVerified: true,
+          isAdmin: false,
+        },
+      });
+      return res.json({ token: makeToken(user), user: publicUser(user) });
+    }
+
     const code = await createCode({
       email: normalizedEmail,
       type: 'signup',
@@ -279,6 +300,12 @@ app.post('/api/login', async (req, res) => {
     if (!user || !user.passwordHash) return res.status(401).json({ message: 'Invalid credentials', code: 'invalid_credentials' });
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ message: 'Invalid credentials', code: 'invalid_credentials' });
+
+    // 2FA disabled: issue the session token immediately, no emailed code.
+    if (!EMAIL_CODE_ENABLED) {
+      return res.json({ token: makeToken(user), user: publicUser(user) });
+    }
+
     const code = await createCode({ email: normalizedEmail, type: 'login', userId: user.id });
     try {
       await sendMail({
