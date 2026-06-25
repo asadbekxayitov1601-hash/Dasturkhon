@@ -1475,6 +1475,19 @@ app.delete('/api/account', requireAuth, async (req, res) => {
       await tx.recipeLike.deleteMany({ where: { userId: uid } });
       await tx.notification.deleteMany({ where: { OR: [{ userId: uid }, { actorId: uid }] } });
       await tx.follow.deleteMany({ where: { OR: [{ followerId: uid }, { followingId: uid }] } });
+      // Prod has a legacy "Order" table (not in the Prisma schema) with a
+      // creatorId FK to User (RESTRICT), so clear the user's orders before
+      // deleting their recipes/account, or the user delete fails. Raw SQL,
+      // Postgres-only, and only if the table actually exists (the
+      // information_schema check never aborts the transaction).
+      if ((process.env.DATABASE_URL || '').includes('postgres')) {
+        const hasOrder = await tx.$queryRawUnsafe(
+          `SELECT 1 FROM information_schema.tables WHERE table_name = 'Order' LIMIT 1`
+        );
+        if (Array.isArray(hasOrder) && hasOrder.length > 0) {
+          await tx.$executeRawUnsafe('DELETE FROM "Order" WHERE "creatorId" = $1', uid);
+        }
+      }
       // The user's recipes (cascades their favorites/reviews/views/likes)
       await tx.recipe.deleteMany({ where: { userId: uid } });
       // Finally the account
