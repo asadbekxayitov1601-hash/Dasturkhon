@@ -191,6 +191,12 @@ export function ChefProfilePage() {
       instructions: r.instructions,
       youtubeUrl: r.youtubeUrl || undefined,
       isPro: r.isPro,
+      orderable: r.orderable,
+      orderPhone: r.orderPhone,
+      userId: chef?.id,
+      user: chef
+        ? { id: chef.id, name: chef.name, avatarUrl: chef.avatarUrl, rating: chef.avgRating, reviewCount: chef.reviewCount }
+        : undefined,
     };
   }
 
@@ -274,10 +280,19 @@ export function ChefProfilePage() {
               <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--foreground)' }}>
                 {chef.name || t('chef.anonymous')}
               </h1>
-              <div className="flex items-center justify-center sm:justify-start gap-1.5 mb-3"
+              <div className="flex items-center justify-center sm:justify-start flex-wrap gap-x-3 gap-y-1.5 mb-3"
                 style={{ color: 'var(--muted-foreground)' }}>
-                <Calendar className="w-3.5 h-3.5" />
-                <span className="text-sm">{t('chef.joined')} {joinDate}</span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span className="text-sm">{t('chef.joined')} {joinDate}</span>
+                </span>
+                {chef.reviewCount > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Star className="w-4 h-4" fill="var(--accent)" stroke="var(--accent)" />
+                    <span className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>{chef.avgRating.toFixed(1)}</span>
+                    <span className="text-sm">({chef.reviewCount})</span>
+                  </span>
+                )}
               </div>
               {chef.bio ? (
                 <p className="text-sm leading-relaxed max-w-md" style={{ color: 'var(--foreground)' }}>

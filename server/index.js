@@ -711,7 +711,19 @@ app.get('/api/recipes/pending', requireAuth, requireAdmin, async (req, res) => {
 
 app.post('/api/recipes', requireAuth, async (req, res) => {
   try {
-    const { title, image, cookTime, servings, category, ingredients, instructions, youtubeUrl } = req.body;
+    const { title, image, cookTime, servings, category, ingredients, instructions, youtubeUrl, orderable, orderPhone } = req.body;
+
+    // A preview photo is mandatory — reject recipes without an image.
+    if (typeof image !== 'string' || !image.trim()) {
+      return res.status(400).json({ message: 'A recipe image is required', code: 'image_required' });
+    }
+
+    // Orderable recipes must carry a phone number for the call-to-order link.
+    const isOrderable = !!orderable;
+    const phone = isOrderable && typeof orderPhone === 'string' ? orderPhone.trim() : '';
+    if (isOrderable && !phone) {
+      return res.status(400).json({ message: 'A phone number is required for orderable recipes', code: 'order_phone_required' });
+    }
 
     const recipe = await prisma.recipe.create({
       data: {
@@ -721,6 +733,8 @@ app.post('/api/recipes', requireAuth, async (req, res) => {
         servings: Number(servings),
         category,
         youtubeUrl: youtubeUrl || null,
+        orderable: isOrderable,
+        orderPhone: isOrderable ? phone : null,
         ingredients: JSON.stringify(ingredients || []),
         instructions: JSON.stringify(instructions || []),
         userId: req.user.id,
@@ -729,7 +743,9 @@ app.post('/api/recipes', requireAuth, async (req, res) => {
     });
 
     // If it's published immediately (admin), notify the author's followers.
+    // Otherwise it's pending — let the site owner know a recipe needs approval.
     if (recipe.status === 'approved') notifyFollowers(req.user.id, recipe);
+    else notifyOwnerOfPendingRecipe(recipe, req.user);
 
     res.json({
       ...recipe,
@@ -773,7 +789,7 @@ app.put('/api/recipes/:id/status', requireAuth, requireAdmin, async (req, res) =
 app.put('/api/recipes/:id', requireAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { title, image, cookTime, servings, category, ingredients, instructions, youtubeUrl } = req.body;
+    const { title, image, cookTime, servings, category, ingredients, instructions, youtubeUrl, orderable, orderPhone } = req.body;
 
     // Check existence and permission
     const existing = await prisma.recipe.findUnique({ where: { id } });
@@ -782,6 +798,17 @@ app.put('/api/recipes/:id', requireAuth, async (req, res) => {
     // Allow admin or owner
     if (!req.user.isAdmin && existing.userId !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    // A preview photo stays mandatory on edit too.
+    if (typeof image !== 'string' || !image.trim()) {
+      return res.status(400).json({ message: 'A recipe image is required', code: 'image_required' });
+    }
+
+    const isOrderable = !!orderable;
+    const phone = isOrderable && typeof orderPhone === 'string' ? orderPhone.trim() : '';
+    if (isOrderable && !phone) {
+      return res.status(400).json({ message: 'A phone number is required for orderable recipes', code: 'order_phone_required' });
     }
 
     const updated = await prisma.recipe.update({
@@ -793,6 +820,8 @@ app.put('/api/recipes/:id', requireAuth, async (req, res) => {
         servings: Number(servings),
         category,
         youtubeUrl: youtubeUrl || null,
+        orderable: isOrderable,
+        orderPhone: isOrderable ? phone : null,
         ingredients: JSON.stringify(ingredients || []),
         instructions: JSON.stringify(instructions || [])
       }
@@ -909,7 +938,7 @@ app.get('/api/recipes/:id/reviews', async (req, res) => {
       where: { recipeId },
       orderBy: { createdAt: 'desc' },
       include: {
-        user: { select: { id: true, name: true, email: true } }
+        user: { select: { id: true, name: true, email: true, avatarUrl: true } }
       }
     });
     res.json(reviews);
@@ -952,7 +981,7 @@ app.post('/api/recipes/:id/reviews', requireAuth, async (req, res) => {
         photoUrl: photoUrl || null
       },
       include: {
-        user: { select: { id: true, name: true, email: true } }
+        user: { select: { id: true, name: true, email: true, avatarUrl: true } }
       }
     });
 
@@ -991,7 +1020,7 @@ app.put('/api/reviews/:id', requireAuth, async (req, res) => {
         photoUrl: photoUrl !== undefined ? photoUrl : existing.photoUrl
       },
       include: {
-        user: { select: { id: true, name: true, email: true } }
+        user: { select: { id: true, name: true, email: true, avatarUrl: true } }
       }
     });
 
@@ -1040,6 +1069,92 @@ app.get('/api/recipes/:id/reviews/me', requireAuth, async (req, res) => {
 // Paste these into server/index.js before the app.listen() call
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Compute aggregate stats for a set of users: approved-recipe count, follower
+// count, and overall rating/review count across all their approved recipes.
+// Batched (a few queries total) so it scales for the leaderboard.
+async function getChefStats(userIds) {
+  const stats = {};
+  for (const id of userIds) {
+    stats[id] = { recipeCount: 0, reviewCount: 0, followerCount: 0, ratingSum: 0 };
+  }
+  if (userIds.length === 0) return stats;
+
+  const [recipeGroups, followGroups, reviews] = await Promise.all([
+    prisma.recipe.groupBy({
+      by: ['userId'],
+      where: { userId: { in: userIds }, status: 'approved' },
+      _count: { _all: true },
+    }),
+    prisma.follow.groupBy({
+      by: ['followingId'],
+      where: { followingId: { in: userIds } },
+      _count: { _all: true },
+    }),
+    prisma.review.findMany({
+      where: { recipe: { userId: { in: userIds }, status: 'approved' } },
+      select: { rating: true, recipe: { select: { userId: true } } },
+    }),
+  ]);
+
+  for (const g of recipeGroups) if (stats[g.userId]) stats[g.userId].recipeCount = g._count._all;
+  for (const g of followGroups) if (stats[g.followingId]) stats[g.followingId].followerCount = g._count._all;
+  for (const rv of reviews) {
+    const uid = rv.recipe?.userId;
+    if (stats[uid]) { stats[uid].reviewCount += 1; stats[uid].ratingSum += rv.rating; }
+  }
+
+  const out = {};
+  for (const id of userIds) {
+    const s = stats[id];
+    out[id] = {
+      recipeCount: s.recipeCount,
+      reviewCount: s.reviewCount,
+      followerCount: s.followerCount,
+      avgRating: s.reviewCount ? Math.round((s.ratingSum / s.reviewCount) * 10) / 10 : 0,
+    };
+  }
+  return out;
+}
+
+// GET /api/chefs  —  public leaderboard of all chefs (every user) with stats.
+// ?sort=recipes (default) | rating | followers
+app.get('/api/chefs', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true, email: true, avatarUrl: true, bio: true, isPro: true },
+    });
+    const stats = await getChefStats(users.map(u => u.id));
+    const list = users.map(u => ({ ...u, ...stats[u.id] }));
+
+    const sort = req.query.sort;
+    if (sort === 'rating') {
+      list.sort((a, b) => b.avgRating - a.avgRating || b.reviewCount - a.reviewCount || b.recipeCount - a.recipeCount);
+    } else if (sort === 'followers') {
+      list.sort((a, b) => b.followerCount - a.followerCount || b.recipeCount - a.recipeCount);
+    } else {
+      list.sort((a, b) => b.recipeCount - a.recipeCount || b.avgRating - a.avgRating || b.followerCount - a.followerCount);
+    }
+    res.json(list);
+  } catch (e) {
+    console.error('chefs leaderboard error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/chefs/:id/stats  —  lightweight aggregate stats for a single chef
+// (used by the recipe modal to show the author's overall rating).
+app.get('/api/chefs/:id/stats', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ message: 'Invalid id' });
+    const stats = await getChefStats([id]);
+    res.json(stats[id]);
+  } catch (e) {
+    console.error('chef stats error:', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // GET /api/chefs/:id  —  public chef profile with stats
 app.get('/api/chefs/:id', async (req, res) => {
   try {
@@ -1063,6 +1178,7 @@ app.get('/api/chefs/:id', async (req, res) => {
             cookTime: true, servings: true, category: true,
             ingredients: true, instructions: true,
             youtubeUrl: true, isPro: true, createdAt: true,
+            orderable: true, orderPhone: true,
             reviews: { select: { rating: true } }
           }
         },
@@ -1078,11 +1194,15 @@ app.get('/api/chefs/:id', async (req, res) => {
 
     if (!chef) return res.status(404).json({ message: 'Chef not found' });
 
-    // Parse recipe JSON fields and calculate avg ratings
+    // Parse recipe JSON fields and calculate avg ratings; also aggregate the
+    // chef's overall rating across every approved recipe they published.
+    let ratingSum = 0;
+    let reviewTotal = 0;
     const recipes = chef.recipes.map(r => {
-      const avg = r.reviews.length
-        ? r.reviews.reduce((s, rv) => s + rv.rating, 0) / r.reviews.length
-        : null;
+      const sum = r.reviews.reduce((s, rv) => s + rv.rating, 0);
+      ratingSum += sum;
+      reviewTotal += r.reviews.length;
+      const avg = r.reviews.length ? sum / r.reviews.length : null;
       return {
         ...r,
         id: String(r.id),
@@ -1092,6 +1212,7 @@ app.get('/api/chefs/:id', async (req, res) => {
         avgRating: avg
       };
     });
+    const overallRating = reviewTotal ? Math.round((ratingSum / reviewTotal) * 10) / 10 : 0;
 
     res.json({
       id: chef.id,
@@ -1105,7 +1226,9 @@ app.get('/api/chefs/:id', async (req, res) => {
       recipes,
       followerCount: chef._count.followers,
       followingCount: chef._count.following,
-      recipeCount: chef._count.recipes
+      recipeCount: chef._count.recipes,
+      avgRating: overallRating,
+      reviewCount: reviewTotal
     });
   } catch (e) {
     console.error(e);
@@ -1627,6 +1750,31 @@ async function notifyReview(reviewerId, recipe, rating) {
     });
   } catch (e) {
     console.error('notifyReview error:', e);
+  }
+}
+
+// Email the site owner whenever a new recipe is submitted and awaits approval.
+// Recipient is OWNER_EMAIL (falls back to the project owner's address).
+const OWNER_EMAIL = process.env.OWNER_EMAIL || 'asadbekxayitov2010@gmail.com';
+function notifyOwnerOfPendingRecipe(recipe, author) {
+  try {
+    if (!OWNER_EMAIL) return;
+    const who = author?.name || author?.email || `user #${author?.id}`;
+    const appUrl = process.env.APP_URL || 'https://dasturkhon.vercel.app';
+    sendMail({
+      to: OWNER_EMAIL,
+      subject: `New recipe pending approval: ${recipe.title}`,
+      text: `${who} submitted "${recipe.title}" for approval on Dasturkhon. Review it in the admin panel: ${appUrl}/admin`,
+      html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:8px">
+        <h2 style="color:#4A7C7E;margin:0 0 12px">Recipe awaiting approval</h2>
+        <p style="font-size:16px;color:#2C3E50;margin:0 0 8px"><strong>${who}</strong> submitted a new recipe:</p>
+        <p style="font-size:18px;color:#2C3E50;margin:0 0 16px"><strong>${recipe.title}</strong></p>
+        <p style="margin:0 0 20px"><a href="${appUrl}/admin" style="display:inline-block;background:#4A7C7E;color:#fff;padding:11px 22px;border-radius:12px;text-decoration:none;font-weight:600">Review in admin panel</a></p>
+        <p style="color:#7A8B99;font-size:12px;margin:0">You receive this because you are the site owner of Dasturkhon.</p>
+      </div>`,
+    }).catch(err => console.error('owner pending-recipe email failed:', err?.message || err));
+  } catch (e) {
+    console.error('notifyOwnerOfPendingRecipe error:', e);
   }
 }
 

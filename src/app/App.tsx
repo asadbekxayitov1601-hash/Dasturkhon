@@ -18,6 +18,7 @@ import { FavoritesPage } from './pages/FavoritesPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AdminPage } from './pages/AdminPage';
 import { ChefProfilePage } from './pages/ChefProfilePage';
+import { RatingPage } from './pages/RatingPage';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import '../i18n/config';
 
@@ -61,6 +62,7 @@ function AnimatedRoutes({ dailyCalories }: { dailyCalories: number }) {
           <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/recipes" element={<RecipesPage />} />
+          <Route path="/rating" element={<RatingPage />} />
           <Route path="/pantry" element={<ProtectedRoute><PantryPage /></ProtectedRoute>} />
           <Route path="/shopping" element={<ProtectedRoute><ShoppingListPage /></ProtectedRoute>} />
           <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />

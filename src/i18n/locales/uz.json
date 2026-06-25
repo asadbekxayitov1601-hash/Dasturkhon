@@ -70,6 +70,7 @@
   "nav": {
     "home": "Bosh sahifa",
     "recipes": "Retseptlar",
+    "rating": "Reyting",
     "pantry": "Oshxona",
     "shopping": "Xarid ro'yxati",
     "favorites": "Sevimlilar",
@@ -177,7 +178,28 @@
     "created": "Retsept muvaffaqiyatli yaratildi",
     "submitted": "Retsept tasdiqlash uchun yuborildi",
     "create_failed": "Retsept yaratib bo'lmadi",
-    "image_too_large": "Rasm hajmi 5MB dan kam bo'lishi kerak"
+    "image_too_large": "Rasm hajmi 5MB dan kam bo'lishi kerak",
+    "image_required": "Iltimos, retsept rasmini qo'shing (fayl yuklang yoki havola joylang)",
+    "orderable": "Buyurtmaga mavjud",
+    "orderable_hint": "Xaridorlar ushbu taomni buyurtma qilish uchun sizga qo'ng'iroq qilishlari mumkin. Dasturkhon buyurtma yoki to'lovga aralashmaydi — hammasini o'zaro kelishasiz.",
+    "order_phone": "Buyurtma uchun telefon raqami",
+    "order_phone_ph": "+998 90 123 45 67",
+    "order_phone_required": "Iltimos, buyurtmalar uchun telefon raqamini kiriting"
+  },
+  "order": {
+    "order": "Buyurtma",
+    "call_hint": "Buyurtma berish uchun oshpazga qo'ng'iroq qiling"
+  },
+  "rating_page": {
+    "title": "Oshpazlar reytingi",
+    "subtitle": "Dasturxondagi eng yaxshi oshpazlarni kashf eting",
+    "sort_recipes": "Retseptlar",
+    "sort_rating": "Reyting",
+    "sort_followers": "Obunachilar",
+    "recipes": "Retseptlar",
+    "rating": "Reyting",
+    "followers": "Obunachilar",
+    "empty": "Hozircha oshpazlar yo'q"
   },
   "categories": {
     "all": "Hammasi",

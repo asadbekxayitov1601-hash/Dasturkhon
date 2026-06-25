@@ -15,6 +15,7 @@ export interface Review {
     id: number;
     name?: string | null;
     email: string;
+    avatarUrl?: string | null;
   };
 }
 
