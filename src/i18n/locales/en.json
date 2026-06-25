@@ -329,7 +329,18 @@
     "no_reviews": "No reviews yet. Be the first!",
     "login_to_review": "Log in to leave a review.",
     "rating_required": "Please select a star rating",
-    "photo_too_large": "Photo must be under 3 MB"
+    "photo_too_large": "Photo must be under 3 MB",
+    "edit_review": "Edit review",
+    "delete_review": "Delete review",
+    "reply": "Reply",
+    "reply_placeholder": "Write a reply to this review…",
+    "reply_submit": "Post reply",
+    "author_reply": "Author's reply",
+    "edit_reply": "Edit reply",
+    "delete_reply": "Delete reply",
+    "reply_added": "Reply posted",
+    "reply_deleted": "Reply removed",
+    "reply_error": "Couldn't update the reply"
   },
   "common": {
     "back": "Back",

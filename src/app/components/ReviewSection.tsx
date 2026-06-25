@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Star, Camera, Trash2, Pencil, X, CheckCircle } from 'lucide-react';
+import { Star, Camera, Trash2, Pencil, X, CheckCircle, MessageSquare, CornerDownRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
@@ -10,11 +10,15 @@ import {
   createReview,
   updateReview,
   deleteReview,
+  replyToReview,
+  deleteReviewReply,
   averageRating,
 } from '../api/reviewsApi';
 
 interface ReviewSectionProps {
   recipeId: string | number;
+  // The recipe's author id — only this user (or an admin) may reply to reviews.
+  recipeAuthorId?: number;
 }
 
 // ─── Star rating input ────────────────────────────────────────────────────────
@@ -72,12 +76,31 @@ function ReviewCard({
   isOwner,
   onEdit,
   onDelete,
+  canReply,
+  isReplying,
+  replyDraft,
+  onReplyDraftChange,
+  onStartReply,
+  onCancelReply,
+  onSubmitReply,
+  onDeleteReply,
+  replyBusy,
 }: {
   review: Review;
   isOwner: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  canReply: boolean;
+  isReplying: boolean;
+  replyDraft: string;
+  onReplyDraftChange: (v: string) => void;
+  onStartReply: () => void;
+  onCancelReply: () => void;
+  onSubmitReply: () => void;
+  onDeleteReply: () => void;
+  replyBusy: boolean;
 }) {
+  const { t } = useTranslation();
   const displayName = review.user.name || review.user.email.split('@')[0];
   const initials = displayName.slice(0, 2).toUpperCase();
   const date = new Date(review.createdAt).toLocaleDateString(undefined, {
@@ -90,7 +113,7 @@ function ReviewCard({
   const [isDeleteHovered, setIsDeleteHovered] = useState(false);
 
   return (
-    <div 
+    <div
       className="bg-white rounded-[20px] p-4 shadow-sm"
       style={{ border: '1px solid rgba(74, 124, 126, 0.12)' }}
     >
@@ -125,26 +148,26 @@ function ReviewCard({
                 <button
                   onClick={onEdit}
                   className="p-1.5 rounded-full transition-colors"
-                  style={{ 
+                  style={{
                     backgroundColor: isEditHovered ? 'var(--muted)' : 'transparent',
                     cursor: 'pointer'
                   }}
                   onMouseEnter={() => setIsEditHovered(true)}
                   onMouseLeave={() => setIsEditHovered(false)}
-                  title="Edit review"
+                  title={t('reviews.edit_review')}
                 >
                   <Pencil className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
                 </button>
                 <button
                   onClick={onDelete}
                   className="p-1.5 rounded-full transition-colors"
-                  style={{ 
+                  style={{
                     backgroundColor: isDeleteHovered ? 'var(--muted)' : 'transparent',
                     cursor: 'pointer'
                   }}
                   onMouseEnter={() => setIsDeleteHovered(true)}
                   onMouseLeave={() => setIsDeleteHovered(false)}
-                  title="Delete review"
+                  title={t('reviews.delete_review')}
                 >
                   <Trash2 className="w-3.5 h-3.5" style={{ color: 'var(--secondary)' }} />
                 </button>
@@ -164,6 +187,78 @@ function ReviewCard({
                 className="rounded-[12px] max-h-48 object-cover w-full"
               />
             </div>
+          )}
+
+          {/* Author's reply (shown when present and not being edited) */}
+          {review.reply && !isReplying && (
+            <div
+              className="mt-3 rounded-[14px] p-3"
+              style={{ background: 'rgba(74, 124, 126, 0.06)', border: '1px solid rgba(74, 124, 126, 0.12)' }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: 'var(--primary)' }}>
+                  <CornerDownRight className="w-3.5 h-3.5" />
+                  {t('reviews.author_reply')}
+                </span>
+                {canReply && (
+                  <div className="flex gap-1">
+                    <button onClick={onStartReply} className="p-1 rounded-full hover:bg-black/5 transition-colors" title={t('reviews.edit_reply')}>
+                      <Pencil className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+                    </button>
+                    <button onClick={onDeleteReply} disabled={replyBusy} className="p-1 rounded-full hover:bg-black/5 transition-colors disabled:opacity-50" title={t('reviews.delete_reply')}>
+                      <Trash2 className="w-3.5 h-3.5" style={{ color: 'var(--secondary)' }} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm mt-1.5 leading-relaxed" style={{ color: '#3C4849' }}>{review.reply}</p>
+            </div>
+          )}
+
+          {/* Inline reply composer (recipe author / admin only) */}
+          {isReplying && (
+            <div className="mt-3">
+              <textarea
+                value={replyDraft}
+                onChange={(e) => onReplyDraftChange(e.target.value)}
+                placeholder={t('reviews.reply_placeholder')}
+                rows={2}
+                autoFocus
+                className="w-full rounded-[12px] bg-white px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 resize-none"
+                style={{ border: '1px solid rgba(74,124,126,0.2)', color: '#2C3E3F', outlineColor: 'rgba(74,124,126,0.3)' }}
+              />
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={onSubmitReply}
+                  disabled={replyBusy || !replyDraft.trim()}
+                  className="flex items-center gap-1.5 px-4 py-1.5 text-white rounded-full text-sm font-medium transition-all disabled:opacity-50"
+                  style={{ background: 'var(--primary)' }}
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  {replyBusy ? t('reviews.submitting') : t('reviews.reply_submit')}
+                </button>
+                <button
+                  onClick={onCancelReply}
+                  disabled={replyBusy}
+                  className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors disabled:opacity-50"
+                  style={{ color: '#3C4849' }}
+                >
+                  {t('common.close')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Reply button (author / admin, when there's no reply yet) */}
+          {canReply && !review.reply && !isReplying && (
+            <button
+              onClick={onStartReply}
+              className="mt-3 flex items-center gap-1.5 text-xs font-medium transition-colors"
+              style={{ color: 'var(--primary)' }}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              {t('reviews.reply')}
+            </button>
           )}
         </div>
       </div>
@@ -333,7 +428,7 @@ function ReviewForm({
 }
 
 // ─── Main ReviewSection ───────────────────────────────────────────────────────
-export function ReviewSection({ recipeId }: ReviewSectionProps) {
+export function ReviewSection({ recipeId, recipeAuthorId }: ReviewSectionProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
 
@@ -344,7 +439,53 @@ export function ReviewSection({ recipeId }: ReviewSectionProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
 
+  // Reply state (recipe author / admin replying to a review)
+  const [replyingId, setReplyingId] = useState<number | null>(null);
+  const [replyDraft, setReplyDraft] = useState('');
+  const [replyBusy, setReplyBusy] = useState(false);
+
+  // Only the recipe's author or an admin may reply to its reviews.
+  const canReply = !!user && (!!user.isAdmin || (recipeAuthorId != null && Number(user.id) === Number(recipeAuthorId)));
+
   const [isWriteHovered, setIsWriteHovered] = useState(false);
+
+  const startReply = (review: Review) => {
+    setReplyingId(review.id);
+    setReplyDraft(review.reply || '');
+  };
+  const cancelReply = () => {
+    setReplyingId(null);
+    setReplyDraft('');
+  };
+
+  async function submitReply(reviewId: number) {
+    const text = replyDraft.trim();
+    if (!text) return;
+    setReplyBusy(true);
+    try {
+      const updated = await replyToReview(reviewId, text);
+      setReviews((prev) => prev.map((r) => (r.id === reviewId ? { ...r, reply: updated.reply, repliedAt: updated.repliedAt } : r)));
+      cancelReply();
+      toast.success(t('reviews.reply_added'));
+    } catch (e: any) {
+      toast.error(e.message || t('reviews.reply_error'));
+    } finally {
+      setReplyBusy(false);
+    }
+  }
+
+  async function removeReply(reviewId: number) {
+    setReplyBusy(true);
+    try {
+      await deleteReviewReply(reviewId);
+      setReviews((prev) => prev.map((r) => (r.id === reviewId ? { ...r, reply: null, repliedAt: null } : r)));
+      toast.success(t('reviews.reply_deleted'));
+    } catch (e: any) {
+      toast.error(e.message || t('reviews.reply_error'));
+    } finally {
+      setReplyBusy(false);
+    }
+  }
 
   // Load reviews on mount
   useEffect(() => {
@@ -505,6 +646,15 @@ export function ReviewSection({ recipeId }: ReviewSectionProps) {
                 isOwner={isOwner}
                 onEdit={() => setEditingReview(review)}
                 onDelete={() => handleDelete(review.id)}
+                canReply={canReply}
+                isReplying={replyingId === review.id}
+                replyDraft={replyingId === review.id ? replyDraft : ''}
+                onReplyDraftChange={setReplyDraft}
+                onStartReply={() => startReply(review)}
+                onCancelReply={cancelReply}
+                onSubmitReply={() => submitReply(review.id)}
+                onDeleteReply={() => removeReply(review.id)}
+                replyBusy={replyBusy}
               />
             );
           })}

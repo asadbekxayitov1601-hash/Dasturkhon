@@ -288,7 +288,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose, onEdited }: RecipeD
 
           {/* Reviews */}
           <div className="border-t mt-8 pt-8" style={{ borderColor: 'rgba(74,124,126,0.1)' }}>
-            <ReviewSection recipeId={recipe.id} />
+            <ReviewSection recipeId={recipe.id} recipeAuthorId={authorId == null ? undefined : Number(authorId)} />
           </div>
         </div>
       </div>

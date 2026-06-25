@@ -135,6 +135,8 @@ model Review {
   rating    Int
   comment   String?
   photoUrl  String?
+  reply     String?  // NEW: recipe author's reply to this review
+  repliedAt DateTime? // NEW: when the author replied
   createdAt DateTime @default(now())
 
   @@unique([userId, recipeId])
