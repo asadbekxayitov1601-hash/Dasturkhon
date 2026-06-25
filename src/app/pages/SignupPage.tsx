@@ -43,6 +43,7 @@ export function SignupPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(authErrorMessage(data, t));
+      if (data.token) { await finish(data.token); return; } // verification disabled
       setStep('code');
     } catch (err: any) {
       setError(err.message || t('auth.signup_error'));
