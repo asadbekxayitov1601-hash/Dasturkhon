@@ -27,6 +27,20 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" />
   </noscript>
   <script>
+    // Initialize a default Trusted Types policy to allow third-party scripts (like Telegram WebApp)
+    // that are not Trusted Types compliant to safely assign HTML/Script strings.
+    if (window.trustedTypes && window.trustedTypes.createPolicy && !window.trustedTypes.defaultPolicy) {
+      try {
+        window.trustedTypes.createPolicy('default', {
+          createHTML: (string) => string,
+          createScript: (string) => string,
+          createScriptURL: (string) => string,
+        });
+      } catch (e) {
+        console.error('Failed to create default Trusted Types policy:', e);
+      }
+    }
+
     // Apply saved theme before paint to avoid a flash.
     try { if (localStorage.getItem('dasturxon-theme') === 'dark') document.documentElement.classList.add('dark'); } catch (e) {}
   </script>
