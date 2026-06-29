@@ -123,8 +123,6 @@ export function ProfilePage() {
               <img
                 src={avatarPreview || user.avatarUrl}
                 alt={user.name || 'Profile'}
-                width={96}
-                height={96}
                 className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-lg"
               />
             ) : (
@@ -267,7 +265,7 @@ export function ProfilePage() {
                   })}
                   className="group relative rounded-2xl overflow-hidden aspect-square bg-gray-100"
                 >
-                  <ImageWithFallback src={r.image} alt={r.title} width={180} height={180} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <ImageWithFallback src={r.image} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-2 text-left">
                     <p className="text-white text-xs font-semibold line-clamp-2 capitalize">{r.title}</p>

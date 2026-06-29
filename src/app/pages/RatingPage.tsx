@@ -54,7 +54,7 @@ function ChefRow({ chef, rank, sort, onClick }: { chef: ChefLeaderboardEntry; ra
 
       {/* Avatar */}
       {chef.avatarUrl ? (
-        <img src={chef.avatarUrl} alt="" width={44} height={44} className="w-11 h-11 rounded-full object-cover ring-2 ring-white shadow flex-shrink-0" />
+        <img src={chef.avatarUrl} alt="" className="w-11 h-11 rounded-full object-cover ring-2 ring-white shadow flex-shrink-0" />
       ) : (
         <div
           className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold ring-2 ring-white shadow flex-shrink-0"

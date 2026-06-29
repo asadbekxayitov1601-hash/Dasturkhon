@@ -102,9 +102,6 @@ export function HomePage({ dailyCalories }: HomePageProps) {
                       <ImageWithFallback
                         src={recipe.image}
                         alt={recipe.title}
-                        width={index === 0 ? 560 : 270}
-                        height={index === 0 ? 315 : 152}
-                        loading="eager"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />

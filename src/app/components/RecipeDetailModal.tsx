@@ -112,8 +112,6 @@ export function RecipeDetailModal({ recipe, isOpen, onClose, onEdited }: RecipeD
           <ImageWithFallback
             src={recipe.image}
             alt={recipe.title}
-            width={896}
-            height={320}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -151,7 +149,7 @@ export function RecipeDetailModal({ recipe, isOpen, onClose, onEdited }: RecipeD
             <div className="flex items-center flex-wrap gap-3 mb-6">
               <button onClick={goToChef} className="flex items-center gap-3 flex-1 min-w-0 text-left">
                 {recipe.user?.avatarUrl ? (
-                  <img src={recipe.user.avatarUrl} alt="" width={44} height={44} className="w-11 h-11 rounded-full object-cover ring-2 ring-white shadow" />
+                  <img src={recipe.user.avatarUrl} alt="" className="w-11 h-11 rounded-full object-cover ring-2 ring-white shadow" />
                 ) : (
                   <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold ring-2 ring-white shadow" style={{ background: 'linear-gradient(135deg, var(--primary), #5A9FA3)' }}>
                     {(recipe.user?.name || recipe.user?.email || 'C').slice(0, 2).toUpperCase() || <UserIcon className="w-5 h-5" />}
