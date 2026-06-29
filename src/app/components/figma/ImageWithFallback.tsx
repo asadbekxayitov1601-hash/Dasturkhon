@@ -20,6 +20,6 @@ export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElemen
       <ImageIcon className="w-1/3 h-1/3 opacity-20" />
     </div>
   ) : (
-    <img src={src} alt={alt} className={className} style={style} {...rest} onError={handleError} />
+    <img src={src} alt={alt} className={className} style={style} loading={props.loading ?? 'lazy'} {...rest} onError={handleError} />
   )
 }

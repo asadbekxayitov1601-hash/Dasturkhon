@@ -96,8 +96,12 @@ app.use(cors({
     if (!origin) return callback(null, true);
     const normalized = normalizeOrigin(origin);
     // Allow configured origins (trailing-slash-insensitive) and any
-    // *.vercel.app deployment (covers preview deployments too).
-    if (allowedOrigins.includes(normalized) || /\.vercel\.app$/.test(normalized)) {
+    // *.vercel.app deployment (covers preview deployments too), or localhost in dev.
+    if (
+      allowedOrigins.includes(normalized) ||
+      /\.vercel\.app$/.test(normalized) ||
+      /^https?:\/\/localhost(:\d+)?$/.test(normalized)
+    ) {
       return callback(null, true);
     }
     callback(new Error(`CORS blocked: ${origin}`));

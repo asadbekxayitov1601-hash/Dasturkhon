@@ -123,6 +123,8 @@ function ReviewCard({
           <img
             src={review.user.avatarUrl}
             alt={displayName}
+            width={40}
+            height={40}
             className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-sm"
           />
         ) : (
@@ -184,6 +186,8 @@ function ReviewCard({
               <img
                 src={review.photoUrl}
                 alt="Cooked dish"
+                width={600}
+                height={192}
                 className="rounded-[12px] max-h-48 object-cover w-full"
               />
             </div>
@@ -342,6 +346,8 @@ function ReviewForm({
             <img
               src={photoPreview}
               alt="preview"
+              width={112}
+              height={112}
               className="h-28 rounded-[12px] object-cover"
             />
             <button

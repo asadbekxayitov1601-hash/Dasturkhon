@@ -250,7 +250,7 @@ export function SubmitRecipeModal({ isOpen, onClose, onSuccess, editRecipe }: Su
 
                             {previewImage && (
                                 <div className="mt-3 relative h-40 w-full rounded-lg overflow-hidden bg-gray-100 border">
-                                    <img src={previewImage} alt="Preview" className="w-full h-full object-cover" />
+                                    <img src={previewImage} alt="Preview" width={640} height={160} className="w-full h-full object-cover" />
                                     <button
                                         type="button"
                                         onClick={() => {
