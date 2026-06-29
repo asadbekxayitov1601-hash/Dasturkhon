@@ -129,6 +129,8 @@ function RecipeRow({ recipe, rank }: { recipe: RecipeStat; rank: number }) {
       <img
         src={recipe.image}
         alt={recipe.title}
+        width={48}
+        height={48}
         className="w-12 h-12 rounded-[10px] object-cover flex-shrink-0"
       />
 
@@ -304,6 +306,8 @@ export function AnalyticsDashboard() {
               <img
                 src={topRecipe.image}
                 alt={topRecipe.title}
+                width={56}
+                height={56}
                 className="w-14 h-14 rounded-[12px] object-cover flex-shrink-0"
               />
               <div className="flex-1">

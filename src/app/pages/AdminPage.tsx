@@ -194,7 +194,7 @@ export function AdminPage() {
                                             Pending
                                         </div>
                                         <div className="h-48 overflow-hidden relative">
-                                            <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" />
+                                            <img src={recipe.image} alt={recipe.title} width={360} height={192} className="w-full h-full object-cover" />
                                             <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-medium uppercase tracking-wider text-gray-700">
                                                 {t(`categories.${recipe.category}`, recipe.category)}
                                             </div>
@@ -375,7 +375,7 @@ export function AdminPage() {
                                         className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col"
                                     >
                                         <div className="h-48 overflow-hidden relative">
-                                            <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" />
+                                            <img src={recipe.image} alt={recipe.title} width={360} height={192} className="w-full h-full object-cover" />
                                             <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-medium uppercase tracking-wider">
                                                 {t(`categories.${recipe.category}`, recipe.category)}
                                             </div>

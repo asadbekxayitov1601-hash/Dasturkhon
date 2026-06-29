@@ -67,6 +67,8 @@ export function Header() {
               whileTap={{ scale: 0.97 }}
               src={logo}
               alt="Dasturkhon"
+              width={176}
+              height={56}
               className="h-11 sm:h-14 w-auto object-contain select-none !border-none !outline-none !ring-0 bg-transparent block"
             />
           </Link>
@@ -108,7 +110,7 @@ export function Header() {
                   onClick={() => setIsLangMenuOpen((o) => !o)}
                   className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-2xl bg-white/40 backdrop-blur-md border border-white/50 shadow-sm hover:bg-white/60 transition-colors"
                 >
-                  <img src={currentLang.flag} alt="" className="w-6 h-[18px] rounded-[3px] object-cover shadow-sm" />
+                  <img src={currentLang.flag} alt="" width={24} height={18} className="w-6 h-[18px] rounded-[3px] object-cover shadow-sm" />
                   <span className="text-sm font-medium text-gray-800">{currentLang.name}</span>
                   <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
                 </motion.button>
@@ -133,7 +135,7 @@ export function Header() {
                               onClick={() => changeLanguage(lang.code)}
                               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${active ? 'bg-white/70 text-primary font-semibold' : 'text-gray-700 hover:bg-white/50'}`}
                             >
-                              <img src={lang.flag} alt="" className="w-6 h-[18px] rounded-[3px] object-cover shadow-sm" />
+                              <img src={lang.flag} alt="" width={24} height={18} className="w-6 h-[18px] rounded-[3px] object-cover shadow-sm" />
                               <span className="text-sm">{lang.name}</span>
                               {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
                             </button>
@@ -155,7 +157,7 @@ export function Header() {
                     <Link to="/profile" className="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-primary transition-colors">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary relative overflow-hidden">
                         {auth.user.avatarUrl || auth.user.photoURL ? (
-                          <img src={auth.user.avatarUrl || auth.user.photoURL} alt={auth.user.name} className="w-full h-full rounded-full object-cover" />
+                          <img src={auth.user.avatarUrl || auth.user.photoURL} alt={auth.user.name} width={32} height={32} className="w-full h-full rounded-full object-cover" />
                         ) : (
                           <User className="w-4 h-4" />
                         )}
@@ -302,7 +304,7 @@ export function Header() {
                           : 'bg-white border-gray-100 hover:border-gray-200'
                           }`}
                       >
-                        <img src={lang.flag} alt="" className="w-8 h-6 rounded-[3px] object-cover shadow-sm" />
+                        <img src={lang.flag} alt="" width={32} height={24} className="w-8 h-6 rounded-[3px] object-cover shadow-sm" />
                         <span className="text-xs font-medium">{lang.name.split(' ')[0]}</span>
                       </button>
                     ))}
@@ -318,7 +320,7 @@ export function Header() {
                       >
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary relative overflow-hidden">
                           {auth.user.avatarUrl || auth.user.photoURL ? (
-                            <img src={auth.user.avatarUrl || auth.user.photoURL} alt={auth.user.name} className="w-full h-full rounded-full object-cover" />
+                            <img src={auth.user.avatarUrl || auth.user.photoURL} alt={auth.user.name} width={32} height={32} className="w-full h-full rounded-full object-cover" />
                           ) : (
                             <User className="w-4 h-4" />
                           )}

@@ -2,7 +2,7 @@
 # Serves the built frontend (dist) and proxies /api/* to the Node backend.
 # Install: copy to /etc/caddy/Caddyfile, then `sudo systemctl reload caddy`.
 
-dasturkhon.uz, www.dasturkhon.uz {
+dasturkhonhub.com, www.dasturkhonhub.com {
 	encode gzip zstd
 
 	# API requests → Node backend on localhost:4000

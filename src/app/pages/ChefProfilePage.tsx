@@ -68,6 +68,8 @@ function MiniRecipeCard({
         <ImageWithFallback
           src={recipe.image}
           alt={recipe.title}
+          width={270}
+          height={152}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       </div>
@@ -263,6 +265,8 @@ export function ChefProfilePage() {
                 <img
                   src={chef.avatarUrl}
                   alt={chef.name || 'Chef'}
+                  width={96}
+                  height={96}
                   className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-lg"
                 />
               ) : (

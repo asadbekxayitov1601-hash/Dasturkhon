@@ -13,7 +13,7 @@ Browser ──HTTPS──> Caddy ──/api/*──> Node API (localhost:4000) �
 
 ## 0. Before you start
 - A **Hetzner Cloud** server (CX22 or similar, **Ubuntu 24.04**).
-- Your domain (`dasturkhon.uz`) with a DNS **A record** pointing to the server's IP
+- Your domain (`dasturkhonhub.com`) with a DNS **A record** pointing to the server's IP
   (and `www` too). Wait for DNS to propagate before step 6.
 - Your Neon `DATABASE_URL` / `DIRECT_URL`, a `JWT_SECRET`, and your `BREVO_API_KEY`.
 
@@ -84,8 +84,8 @@ systemctl reload caddy
 ```
 
 ## 7. Verify
-- Open **https://dasturkhon.uz** — the site should load over HTTPS.
-- `curl https://dasturkhon.uz/api/health` → `{"status":"ok",...}`.
+- Open **https://dasturkhonhub.com** — the site should load over HTTPS.
+- `curl https://dasturkhonhub.com/api/health` → `{"status":"ok",...}`.
 - Test signup → email code arrives (Brevo), login → 2FA code, create a recipe.
 
 ## 8. Create your admin account
